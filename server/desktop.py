@@ -140,7 +140,22 @@ def _open_window(url: str, *, server: tuple[Any, threading.Thread] | None, log_f
     except ImportError:
         logging.error("pywebview is not installed; opening the default browser instead")
         return _browser_fallback(url, server)
-    window = webview.create_window(TITLE, url, width=1400, height=900, min_size=(900, 600))
+    from server.desktop_bridge import Bridge
+
+    bridge = Bridge()
+    window = webview.create_window(
+        TITLE,
+        url,
+        width=1400,
+        height=900,
+        min_size=(900, 600),
+        js_api=bridge,
+        # Answers are meant to be selected and copied; pywebview disables that by default.
+        text_select=True,
+        # The light theme's page colour, so the window never flashes white-then-grey on open.
+        background_color="#F8F9FB",
+    )
+    bridge.window = window
     if window is None:
         logging.error("pywebview returned no window; opening the default browser instead")
         return _browser_fallback(url, server)

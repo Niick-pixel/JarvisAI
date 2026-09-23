@@ -1,78 +1,73 @@
-// The jobs themselves, with the last thing each one did. "Run now" uses the same code path the
-// scheduler does, so testing a job is testing the job.
+// The routines, with the last thing each one did. "Run now" uses the same code path the scheduler
+// does, so trying a routine is testing the routine.
+import { Bot, Pause, Play, Plus, Trash2, Zap } from "lucide-react";
 import { useState } from "react";
 import type { Job, JobRun } from "../api/types";
 import { useAgents } from "../store/agents";
-import Button from "../ui/Button";
-import JobForm from "./JobForm";
+import { Button, Empty, IconButton } from "../ui/controls";
+import JobForm, { describe } from "./JobForm";
 
-const STATUS_STYLE: Record<string, string> = {
-  running: "text-sky-200",
-  waiting_approval: "text-amber-200",
-  done: "text-emerald-200",
-  failed: "text-rose-200",
-  cancelled: "text-ink-faint",
+const STATUS: Record<string, string> = {
+  running: "Running now",
+  waiting_approval: "Waiting for your OK",
+  done: "Finished",
+  failed: "Failed",
+  cancelled: "Cancelled",
 };
 
 function when(ms: number | null | undefined): string {
   if (!ms) return "never";
-  return new Date(ms).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" });
+  return new Date(ms).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" });
 }
 
 export default function JobList() {
-  const jobs = useAgents((s) => s.jobs);
-  const runs = useAgents((s) => s.runs);
-  const tools = useAgents((s) => s.tools);
-  const busy = useAgents((s) => s.busy);
-  const runNow = useAgents((s) => s.runNow);
-  const toggle = useAgents((s) => s.toggle);
-  const remove = useAgents((s) => s.remove);
+  const { jobs, runs, tools, busy, runNow, toggle, remove } = useAgents();
   const [adding, setAdding] = useState(false);
-
   const lastRun = (job: Job): JobRun | undefined => runs.find((r) => r.job_id === job.id);
 
   if (adding) return <JobForm tools={tools} onDone={() => setAdding(false)} />;
 
   return (
-    <div className="flex flex-col gap-2 px-3 py-2">
-      <Button onClick={() => setAdding(true)}>New job</Button>
-      {jobs.length === 0 && (
-        <p className="py-4 text-sm text-ink-faint">
-          No jobs. A job is a prompt, a cron line, and the tools you are willing to let it use.
-        </p>
+    <div>
+      {jobs.length === 0 ? (
+        <Empty icon={Bot} title="No routines yet">
+          A routine is an instruction, a schedule, and the tools you allow it - "every morning, summarise what changed in
+          my notes folder".
+        </Empty>
+      ) : (
+        <div className="-mx-4">
+          {jobs.map((job) => {
+            const run = lastRun(job);
+            return (
+              <article key={job.id} className="group flex items-start gap-3 rounded-3xl px-4 py-3.5 transition-colors hover:bg-ink/[0.03]">
+                <div className="min-w-0 flex-1">
+                  <p className={`truncate text-[15px] font-medium ${job.enabled ? "text-ink" : "text-ink-faint"}`}>{job.name}</p>
+                  <p className="mt-0.5 text-[12.5px] text-ink-faint">
+                    {job.enabled ? `${describe(job.cron)} · next ${when(job.next_run_at)}` : "Paused"}
+                  </p>
+                  {run && (
+                    <p className={`mt-1 line-clamp-2 text-[13px] ${run.status === "failed" ? "text-danger" : "text-ink-muted"}`}>
+                      {STATUS[run.status] ?? run.status}
+                      {run.summary ? ` - ${run.summary}` : ""}
+                      {run.error ? ` - ${run.error}` : ""}
+                    </p>
+                  )}
+                </div>
+                <div className="flex opacity-60 transition-opacity group-hover:opacity-100">
+                  <IconButton icon={Zap} label="Run now" size={32} disabled={busy === job.id} onClick={() => void runNow(job.id)} />
+                  <IconButton icon={job.enabled ? Pause : Play} label={job.enabled ? "Pause" : "Resume"} size={32} onClick={() => void toggle(job)} />
+                  <IconButton icon={Trash2} label="Delete" size={32} onClick={() => void remove(job.id)} />
+                </div>
+              </article>
+            );
+          })}
+        </div>
       )}
-      {jobs.map((job) => {
-        const run = lastRun(job);
-        return (
-          <article key={job.id} className="glass rounded-xl p-3 text-sm">
-            <div className="flex items-baseline gap-2">
-              <h3 className="min-w-0 flex-1 truncate text-ink">{job.name}</h3>
-              <code className="text-xs text-ink-faint">{job.cron}</code>
-            </div>
-            <p className="mt-1 text-xs text-ink-faint">
-              next {job.enabled ? when(job.next_run_at) : "paused"} · last {when(job.last_run_at)}
-            </p>
-            <p className="mt-1 text-xs text-ink-muted">
-              {job.tools.length ? job.tools.join(", ") : "no tools"}
-              {job.workspace ? ` · writes in ${job.workspace}` : " · cannot write"}
-            </p>
-            {run && (
-              <p className={`mt-2 text-xs ${STATUS_STYLE[run.status] ?? ""}`}>
-                {run.status.replace("_", " ")}
-                {run.summary ? `: ${run.summary}` : ""}
-                {run.error ? `: ${run.error}` : ""}
-              </p>
-            )}
-            <div className="mt-2 flex flex-wrap justify-end gap-1">
-              <Button disabled={busy === job.id} onClick={() => void runNow(job.id)}>
-                Run now
-              </Button>
-              <Button onClick={() => void toggle(job)}>{job.enabled ? "Pause" : "Resume"}</Button>
-              <Button onClick={() => void remove(job.id)}>Delete</Button>
-            </div>
-          </article>
-        );
-      })}
+      <div className="mt-2 flex justify-center">
+        <Button icon={Plus} onClick={() => setAdding(true)}>
+          New routine
+        </Button>
+      </div>
     </div>
   );
 }

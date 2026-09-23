@@ -1,88 +1,131 @@
-// Creating a job. The tool list is the backend's catalogue, so what you can tick is exactly what
-// the model will be told it has - and the ones that stop at the gate say so here too.
+// A new routine. The schedule is chosen in words and written as cron underneath; the tool list is
+// the backend's own catalogue, so what you tick is exactly what the model is told it has.
 import { useState } from "react";
 import type { ToolInfo } from "../api/types";
 import { useAgents } from "../store/agents";
-import Button from "../ui/Button";
+import { Button, FIELD, Segmented, Switch } from "../ui/controls";
 
-const FIELD =
-  "w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-white/25";
+type Every = "day" | "weekdays" | "week" | "hour" | "custom";
+const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+function clock(h: number, m: number): string {
+  return new Date(2000, 0, 1, h, m).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+
+/** Cron, read back as a sentence where it is one of the shapes this form writes. */
+export function describe(cron: string): string {
+  const [m, h, dom, mon, dow] = cron.trim().split(/\s+/);
+  if (dom !== "*" || mon !== "*") return cron;
+  if (h === "*" && /^\d+$/.test(m ?? "") && dow === "*") return "Every hour";
+  if (!/^\d+$/.test(m ?? "") || !/^\d+$/.test(h ?? "")) return cron;
+  const at = clock(Number(h), Number(m));
+  if (dow === "*") return `Every day at ${at}`;
+  if (dow === "1-5") return `Weekdays at ${at}`;
+  if (/^[0-6]$/.test(dow ?? "")) return `${DAYS[Number(dow)]}s at ${at}`;
+  return cron;
+}
+
+function build(every: Every, time: string, day: number, custom: string): string {
+  const [h, m] = time.split(":").map(Number);
+  if (every === "hour") return "0 * * * *";
+  if (every === "custom") return custom.trim();
+  const dow = every === "day" ? "*" : every === "weekdays" ? "1-5" : String(day);
+  return `${m ?? 0} ${h ?? 9} * * ${dow}`;
+}
 
 export default function JobForm({ tools, onDone }: { tools: ToolInfo[]; onDone: () => void }) {
   const create = useAgents((s) => s.create);
   const [name, setName] = useState("");
-  const [cron, setCron] = useState("0 19 * * *");
   const [prompt, setPrompt] = useState("");
+  const [every, setEvery] = useState<Every>("day");
+  const [time, setTime] = useState("09:00");
+  const [day, setDay] = useState(1);
+  const [custom, setCustom] = useState("0 19 * * *");
   const [workspace, setWorkspace] = useState("");
   const [chosen, setChosen] = useState<string[]>([]);
+  const ready = Boolean(name.trim() && prompt.trim());
 
   const submit = async () => {
-    if (!name.trim() || !prompt.trim()) return;
-    const ok = await create({
-      name: name.trim(),
-      cron: cron.trim(),
-      prompt: prompt.trim(),
-      tools: chosen,
-      workspace: workspace.trim(),
-      enabled: true,
-    });
-    if (ok) onDone();
+    if (!ready) return;
+    const cron = build(every, time, day, custom);
+    const body = { name: name.trim(), cron, prompt: prompt.trim(), tools: chosen, workspace: workspace.trim(), enabled: true };
+    if (await create(body)) onDone();
   };
 
   return (
-    <div className="flex flex-col gap-2 px-3 py-2">
-      <input className={FIELD} placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
-      <input
-        className={FIELD}
-        placeholder="Cron, five fields"
-        value={cron}
-        onChange={(e) => setCron(e.target.value)}
-        title="minute hour day-of-month month day-of-week, in this machine's local time"
-      />
+    <div className="space-y-4">
+      <input className={FIELD} placeholder="Name it - e.g. Morning briefing" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
       <textarea
-        className={`${FIELD} min-h-24 resize-y`}
-        placeholder="What should it do? Written as an instruction, the way you would ask a person."
+        className={`${FIELD} min-h-28 resize-y`}
+        placeholder="What should it do? Ask the way you'd ask a person."
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
       />
+      <div>
+        <p className="mb-2 text-[13px] font-medium text-ink-muted">When</p>
+        <Segmented
+          id="every"
+          value={every}
+          onChange={setEvery}
+          options={[
+            { value: "day", label: "Daily" },
+            { value: "weekdays", label: "Weekdays" },
+            { value: "week", label: "Weekly" },
+            { value: "hour", label: "Hourly" },
+            { value: "custom", label: "Custom" },
+          ]}
+        />
+        <div className="mt-2 flex gap-2">
+          {every === "week" && (
+            <select value={day} onChange={(e) => setDay(Number(e.target.value))} className={`${FIELD} w-44`}>
+              {DAYS.map((d, i) => (
+                <option key={d} value={i}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          )}
+          {every !== "hour" && every !== "custom" && (
+            <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className={`${FIELD} w-36`} />
+          )}
+          {every === "custom" && (
+            <input value={custom} onChange={(e) => setCustom(e.target.value)} className={`${FIELD} font-mono`} title="minute hour day month weekday" />
+          )}
+        </div>
+      </div>
+      <div>
+        <p className="mb-1 text-[13px] font-medium text-ink-muted">What it may use</p>
+        <div className="divide-y divide-ink/[0.06]">
+          {tools.map((tool) => (
+            <div key={tool.name} className="flex items-center gap-4 py-2.5">
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] text-ink">
+                  {tool.name}
+                  {tool.side_effect && <span className="ml-2 text-[12px] text-ink-faint">asks you first</span>}
+                </p>
+                <p className="text-[12.5px] leading-snug text-ink-faint">{tool.summary}</p>
+              </div>
+              <Switch
+                label={tool.name}
+                checked={chosen.includes(tool.name)}
+                onChange={(on) => setChosen((c) => (on ? [...c, tool.name] : c.filter((n) => n !== tool.name)))}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
       <input
         className={FIELD}
-        placeholder="Workspace directory (blank means it cannot write anywhere)"
+        placeholder="A folder it may write in (leave empty and it can't write anywhere)"
         value={workspace}
         onChange={(e) => setWorkspace(e.target.value)}
       />
-      <fieldset className="rounded-xl border border-white/10 p-2">
-        <legend className="px-1 text-[11px] uppercase tracking-wide text-ink-faint">Tools</legend>
-        {tools.map((tool) => (
-          <label key={tool.name} className="flex items-start gap-2 px-1 py-1 text-sm text-ink-muted">
-            <input
-              type="checkbox"
-              className="mt-1"
-              checked={chosen.includes(tool.name)}
-              onChange={(e) =>
-                setChosen((current) =>
-                  e.target.checked
-                    ? [...current, tool.name]
-                    : current.filter((n) => n !== tool.name),
-                )
-              }
-            />
-            <span className="min-w-0">
-              <span className="text-ink">{tool.name}</span>
-              {tool.side_effect && (
-                <span className="ml-2 rounded-full bg-amber-300/15 px-2 py-0.5 text-[11px] text-amber-200">
-                  asks first
-                </span>
-              )}
-              <span className="block text-xs text-ink-faint">{tool.summary}</span>
-            </span>
-          </label>
-        ))}
-      </fieldset>
       <div className="flex justify-end gap-2">
-        <Button onClick={onDone}>Cancel</Button>
-        <Button variant="primary" onClick={() => void submit()} disabled={!name.trim() || !prompt.trim()}>
-          Create
+        <Button tone="ghost" onClick={onDone}>
+          Cancel
+        </Button>
+        <Button tone="primary" onClick={() => void submit()} disabled={!ready}>
+          Create routine
         </Button>
       </div>
     </div>

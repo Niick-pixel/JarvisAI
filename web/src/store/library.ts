@@ -45,20 +45,14 @@ export const useLibrary = create<LibraryState>((set, get) => ({
   },
 
   create: async () => {
-    const conversation = await api.createConversation("New conversation");
-    await useSession.getState().openConversation(conversation.id);
-    await get().refresh();
+    useSession.getState().newChat();
   },
 
   remove: async (id: string) => {
     await api.deleteConversation(id);
     await get().refresh();
     // Deleting the conversation you were reading should land you somewhere, not nowhere.
-    if (useSession.getState().conversation?.id === id) {
-      const next = get().conversations[0];
-      if (next) await useSession.getState().openConversation(next.id);
-      else await get().create();
-    }
+    if (useSession.getState().conversation?.id === id) useSession.getState().newChat();
   },
 
   selectModel: async (id: string | null) => {

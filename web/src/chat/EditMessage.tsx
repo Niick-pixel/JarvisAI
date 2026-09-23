@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useGraph } from "../store/graph";
 import { useSession } from "../store/session";
-import Button from "../ui/Button";
+import { Button, FIELD } from "../ui/controls";
 
 export default function EditMessage({
   messageId,
@@ -46,22 +46,25 @@ export default function EditMessage({
           if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) void save();
         }}
         rows={Math.min(16, draft.split("\n").length + 2)}
-        className="w-full resize-y rounded-xl border border-white/15 bg-black/25 p-3 text-ink outline-none"
+        className={`${FIELD} resize-y leading-relaxed`}
       />
-      <div className="flex items-center gap-2 text-[11px] text-ink-faint">
-        <Button variant="primary" onClick={() => void save()}>
-          Save as new branch
+      <div className="flex flex-wrap items-center gap-2 text-[12px] text-ink-faint">
+        <Button tone="primary" small onClick={() => void save()}>
+          Save
         </Button>
         {isAssistant && (
           <Button
+            small
             onClick={() => void saveAndContinue()}
             title="Fork with your text, then let the model carry on from it"
           >
             Save and continue
           </Button>
         )}
-        <Button onClick={cancelEdit}>Cancel</Button>
-        <span className="ml-auto">The original is kept as a sibling — ⌘/Ctrl+Enter saves.</span>
+        <Button small tone="ghost" onClick={cancelEdit}>
+          Cancel
+        </Button>
+        <span className="ml-auto">The original is kept - Ctrl+Enter saves</span>
       </div>
     </div>
   );

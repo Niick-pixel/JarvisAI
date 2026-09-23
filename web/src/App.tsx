@@ -1,100 +1,73 @@
-import { AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
-import AgentsPanel from "./agents/AgentsPanel";
+import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
+import { useEffect } from "react";
 import Approvals from "./agents/Approvals";
 import Composer from "./chat/Composer";
-import Nudge from "./chat/Nudge";
-import ContextBar from "./context/ContextBar";
-import Conversations from "./chat/Conversations";
-import ErrorBanner from "./chat/ErrorBanner";
-import MessageList from "./chat/MessageList";
-import Minimap from "./graph/Minimap";
-import StatusBar from "./chat/StatusBar";
-import CouncilPanel from "./council/CouncilPanel";
-import SourcesPanel from "./knowledge/SourcesPanel";
-import CaptureToast from "./memory/CaptureToast";
-import MemoryPage from "./memory/MemoryPage";
+import Home from "./chat/Home";
+import Thread from "./chat/Thread";
+import CaptureCard from "./memory/CaptureCard";
 import GetModel from "./models/GetModel";
-import Background from "./scene/Background";
-import EdgeGlow from "./scene/EdgeGlow";
-import { useSession } from "./store/session";
+import Halo from "./shell/Halo";
+import ModelPill from "./shell/ModelPill";
+import SheetHost from "./shell/SheetHost";
+import Sidebar from "./shell/Sidebar";
+import Toasts from "./shell/Toasts";
 import { useAgents } from "./store/agents";
 import { useDownloads } from "./store/downloads";
+import { useSession } from "./store/session";
+import { useUi } from "./store/ui";
 import { useVoice } from "./store/voice";
-import VoiceNotice from "./voice/VoiceNotice";
-import { useVisual } from "./store/visual";
+import { BOUNCE } from "./ui/motion";
+import VoiceMode from "./voice/VoiceMode";
 
 export default function App() {
   const bootstrap = useSession((s) => s.bootstrap);
-  const refreshVoice = useVoice((s) => s.refresh);
-  const watchAgents = useAgents((s) => s.watch);
-  const checkFirstRun = useDownloads((s) => s.checkFirstRun);
-  const preset = useVisual((s) => s.preset);
-  const performanceMode = useVisual((s) => s.performanceMode);
-  const setPreset = useVisual((s) => s.setPreset);
-  const setPerformanceMode = useVisual((s) => s.setPerformanceMode);
-  const [sidebar, setSidebar] = useState(false);
-  const [memoryOpen, setMemoryOpen] = useState(false);
-  const [sourcesOpen, setSourcesOpen] = useState(false);
-  const [councilOpen, setCouncilOpen] = useState(false);
-  const [agentsOpen, setAgentsOpen] = useState(false);
+  const hasTurns = useSession((s) => s.activePath.length > 0 || s.streamingId !== null);
+  const busy = useSession((s) => s.runId !== null);
+  const listening = useVoice((s) => s.phase === "listening");
+  const voiceMode = useUi((s) => s.voiceMode);
 
   useEffect(() => {
     void bootstrap().catch(() => undefined);
-    // Asked once, at boot: the answer decides whether the mic button explains itself or works.
-    void refreshVoice().catch(() => undefined);
-    // A fresh desktop install has llama.cpp but no model yet: offer one instead of an empty chat.
-    void checkFirstRun().catch(() => undefined);
+    // Asked once, at boot: the answer decides whether the mic explains itself or works.
+    void useVoice.getState().refresh().catch(() => undefined);
+    // A fresh install has llama.cpp but no model yet: offer one instead of an empty chat.
+    void useDownloads.getState().checkFirstRun().catch(() => undefined);
     // Jobs fire while you are elsewhere; this is what makes an approval appear without a reload.
-    return watchAgents();
-  }, [bootstrap, refreshVoice, watchAgents, checkFirstRun]);
+    return useAgents.getState().watch();
+  }, [bootstrap]);
 
   return (
-    <>
-      <Background preset={preset} performanceMode={performanceMode} />
-      <EdgeGlow />
-      <div className="relative z-10 flex h-full">
-        <AnimatePresence>
-          {sidebar && <Conversations onClose={() => setSidebar(false)} />}
-        </AnimatePresence>
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="scrim relative z-30">
-            <StatusBar
-              preset={preset}
-              onPreset={setPreset}
-              performanceMode={performanceMode}
-              onPerformanceMode={setPerformanceMode}
-              onToggleSidebar={() => setSidebar((open) => !open)}
-              onToggleMemory={() => setMemoryOpen((open) => !open)}
-              onToggleSources={() => setSourcesOpen((open) => !open)}
-              onToggleCouncil={() => setCouncilOpen((open) => !open)}
-              onToggleAgents={() => setAgentsOpen((open) => !open)}
-            />
-          </div>
-          <main className="relative flex min-h-0 flex-1 flex-col">
-            <Minimap />
-            <MessageList />
-            <AnimatePresence>
-              {councilOpen && <CouncilPanel onClose={() => setCouncilOpen(false)} />}
-            </AnimatePresence>
-          </main>
-          <div className="scrim">
-            <ErrorBanner />
-            <Approvals />
-            <ContextBar />
-            <Nudge />
-            <VoiceNotice />
-            <Composer />
-          </div>
-        </div>
-        <AnimatePresence>
-          {agentsOpen && <AgentsPanel onClose={() => setAgentsOpen(false)} />}
-          {sourcesOpen && <SourcesPanel onClose={() => setSourcesOpen(false)} />}
-          {memoryOpen && <MemoryPage onClose={() => setMemoryOpen(false)} />}
-        </AnimatePresence>
-      </div>
-      <CaptureToast />
+    <div className="flex h-full">
+      <Sidebar />
+      <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-bg">
+        <Halo state={listening ? "listening" : busy ? "busy" : "rest"} placement={hasTurns ? "bottom" : "center"} />
+        <header className="relative z-10 flex h-14 shrink-0 items-center px-3">
+          <ModelPill />
+        </header>
+        <LayoutGroup>
+          {hasTurns ? (
+            <>
+              <Thread />
+              <div className="relative z-10 mx-auto w-full max-w-[760px] px-6 pb-4">
+                <motion.div layoutId="composer" transition={BOUNCE}>
+                  <Composer />
+                </motion.div>
+                <p className="mt-2 text-center text-[12px] text-ink-muted">
+                  Runs on this PC. Nothing you say leaves it.
+                </p>
+              </div>
+            </>
+          ) : (
+            <Home />
+          )}
+        </LayoutGroup>
+      </main>
+      <SheetHost />
+      <AnimatePresence>{voiceMode && <VoiceMode />}</AnimatePresence>
+      <CaptureCard />
+      <Approvals />
+      <Toasts />
       <GetModel />
-    </>
+    </div>
   );
 }

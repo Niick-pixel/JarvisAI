@@ -2,10 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: dark;
-}
-
 html,
 body,
 #root {
@@ -14,15 +10,165 @@ body,
 }
 
 body {
-  background: #05060a;
-  color: theme("colors.ink.DEFAULT");
+  background: rgb(var(--c-bg));
+  color: rgb(var(--c-ink));
   font-family: theme("fontFamily.sans");
+  font-size: 15px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   overflow: hidden;
 }
 
-/* The shader and the glow are decoration that signals state. When the user has asked for less
-   motion, both go still - section 5.5 calls this non-negotiable, so it is not a setting. */
+::selection {
+  background: rgb(var(--c-accent) / 0.22);
+}
+
+:focus-visible {
+  outline: 2px solid rgb(var(--c-accent) / 0.55);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+/* Scrollbars that appear only when you look for them. */
+.scroll-quiet {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.scroll-quiet:hover {
+  scrollbar-color: rgb(var(--c-ink) / 0.18) transparent;
+}
+.scroll-quiet::-webkit-scrollbar {
+  width: 10px;
+}
+.scroll-quiet::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+.scroll-quiet:hover::-webkit-scrollbar-thumb {
+  background-color: rgb(var(--c-ink) / 0.18);
+}
+
+/* "Thinking…" - the shimmer Gemini and friends use, done with a moving gradient on the text. */
+.shimmer {
+  background: linear-gradient(
+    100deg,
+    rgb(var(--c-ink-faint)) 0%,
+    rgb(var(--c-ink-faint)) 40%,
+    rgb(var(--c-ink)) 50%,
+    rgb(var(--c-ink-faint)) 60%,
+    rgb(var(--c-ink-faint)) 100%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 1.8s linear infinite;
+}
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+/* The greeting's name, in the brand gradient. */
+.gradient-text {
+  background: linear-gradient(90deg, rgb(var(--c-grad-a)), rgb(var(--c-grad-b)) 45%, rgb(var(--c-grad-c)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Answers, rendered from markdown. Typography first; nothing is boxed that does not need to be. */
+.prose-jarvis {
+  font-size: 15.5px;
+  line-height: 1.7;
+  color: rgb(var(--c-ink));
+  overflow-wrap: anywhere;
+}
+.prose-jarvis > * + * {
+  margin-top: 0.85em;
+}
+.prose-jarvis h1,
+.prose-jarvis h2,
+.prose-jarvis h3 {
+  font-weight: 600;
+  line-height: 1.3;
+  margin-top: 1.4em;
+}
+.prose-jarvis h1 {
+  font-size: 1.35em;
+}
+.prose-jarvis h2 {
+  font-size: 1.2em;
+}
+.prose-jarvis h3 {
+  font-size: 1.05em;
+}
+.prose-jarvis strong {
+  font-weight: 600;
+}
+.prose-jarvis a {
+  color: rgb(var(--c-accent));
+  text-decoration: underline;
+  text-decoration-color: rgb(var(--c-accent) / 0.35);
+  text-underline-offset: 3px;
+}
+.prose-jarvis ul,
+.prose-jarvis ol {
+  padding-left: 1.4em;
+}
+.prose-jarvis ul {
+  list-style: disc;
+}
+.prose-jarvis ol {
+  list-style: decimal;
+}
+.prose-jarvis li + li {
+  margin-top: 0.3em;
+}
+.prose-jarvis li::marker {
+  color: rgb(var(--c-ink-faint));
+}
+.prose-jarvis :not(pre) > code {
+  font-family: theme("fontFamily.mono");
+  font-size: 0.88em;
+  background: rgb(var(--c-code));
+  border: 1px solid rgb(var(--c-ink) / 0.06);
+  border-radius: 6px;
+  padding: 0.1em 0.35em;
+}
+.prose-jarvis blockquote {
+  border-left: 3px solid rgb(var(--c-ink) / 0.12);
+  padding-left: 1em;
+  color: rgb(var(--c-ink-muted));
+}
+.prose-jarvis table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.94em;
+}
+.prose-jarvis th,
+.prose-jarvis td {
+  text-align: left;
+  padding: 0.5em 0.75em;
+  border-bottom: 1px solid rgb(var(--c-ink) / 0.08);
+}
+.prose-jarvis th {
+  font-weight: 600;
+  color: rgb(var(--c-ink-muted));
+}
+.prose-jarvis hr {
+  border: 0;
+  border-top: 1px solid rgb(var(--c-ink) / 0.08);
+}
+
+/* Section 5.5: reduced motion is not a setting. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -31,27 +177,4 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
-}
-
-.glass {
-  background: theme("colors.panel");
-  backdrop-filter: blur(18px) saturate(140%);
-  border: 1px solid theme("colors.edge");
-}
-
-/* Chrome text sits on a flat scrim rather than straight on the shader. scripts/contrast_check.py
-   models this exact surface, so its opacity is a contract, not a taste decision. */
-.scrim {
-  background: rgba(5, 6, 10, 0.72);
-  backdrop-filter: blur(12px);
-}
-
-.scroll-thin::-webkit-scrollbar {
-  width: 10px;
-}
-.scroll-thin::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
-  border: 3px solid transparent;
-  background-clip: content-box;
 }

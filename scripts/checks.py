@@ -43,7 +43,11 @@ TELEMETRY_MARKERS = [
     b"gtag(",
     b"posthog",
     b"mixpanel",
-    b"amplitude",
+    # Not the bare word: "amplitude" is also an SVG attribute, listed in the HTML property table
+    # the Markdown renderer ships. These are the SDK's own names and endpoint.
+    b"amplitude.com",
+    b"@amplitude",
+    b"amplitude.getInstance",
     b"sentry.io",
     b"segment.io",
     b"telemetry",

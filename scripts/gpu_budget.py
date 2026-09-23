@@ -4,7 +4,8 @@
 2. What the model actually generates, in tokens/sec, on this card.
 
 The background measurement is a guided A/B rather than a fake automation: run it once with the
-shader on, once with Performance mode on, and it reports the delta against the 3% budget. A
+glow moving, once with Settings > Appearance > Reduce effects on, and it reports the delta
+against the 3% budget. A
 headless browser in WSL2 usually falls back to software rendering, which would make an automated
 number confidently wrong - so it asks you instead.
 """
@@ -49,7 +50,7 @@ def sample(seconds: float) -> dict[str, float]:
         raise SystemExit(
             "NVML did not expose GPU utilisation on this machine (common under WSL2), so the "
             "background cost cannot be measured here. Use Windows Task Manager's GPU graph "
-            "instead, and compare shader-on against Performance mode."
+            "instead, and compare the glow moving against Reduce effects."
         )
     return {
         "utilisation_mean": statistics.fmean(utilisation),
@@ -65,7 +66,7 @@ def background_ab(seconds: float) -> int:
 
     if baseline is None:
         print(
-            "Step 1 of 2. Open the app with Performance mode ON (the shader is not running),\n"
+            "Step 1 of 2. Open the app with Reduce effects ON (the glow is still),\n"
             "start a generation, and leave it generating. Press Enter to sample for "
             f"{seconds:.0f}s."
         )
@@ -75,36 +76,36 @@ def background_ab(seconds: float) -> int:
         print(
             f"\nBaseline recorded: {result['utilisation_mean']:.1f}% GPU, "
             f"{result['vram_used_mb']:.0f} MB VRAM.\n"
-            "Now turn Performance mode OFF so the shader runs, start another generation, "
+            "Now turn Reduce effects OFF so the glow moves, start another generation, "
             "and run `make bench` again."
         )
         return 0
 
     print(
-        "Step 2 of 2. Open the app with Performance mode OFF (the shader is running),\n"
+        "Step 2 of 2. Open the app with Reduce effects OFF (the glow is moving),\n"
         f"start a generation, and leave it generating. Press Enter to sample for {seconds:.0f}s."
     )
     input()
-    shader = sample(seconds)
-    delta_pct = shader["utilisation_mean"] - baseline["utilisation_mean"]
-    delta_vram = shader["vram_used_mb"] - baseline["vram_used_mb"]
+    moving = sample(seconds)
+    delta_pct = moving["utilisation_mean"] - baseline["utilisation_mean"]
+    delta_vram = moving["vram_used_mb"] - baseline["vram_used_mb"]
     SAMPLE_FILE.unlink(missing_ok=True)
 
     print("\n--- background cost, measured ---")
     print(
-        f"  without shader : {baseline['utilisation_mean']:.1f}% GPU, "
+        f"  glow still     : {baseline['utilisation_mean']:.1f}% GPU, "
         f"{baseline['vram_used_mb']:.0f} MB VRAM"
     )
     print(
-        f"  with shader    : {shader['utilisation_mean']:.1f}% GPU, "
-        f"{shader['vram_used_mb']:.0f} MB VRAM"
+        f"  glow moving    : {moving['utilisation_mean']:.1f}% GPU, "
+        f"{moving['vram_used_mb']:.0f} MB VRAM"
     )
     print(f"  delta          : {delta_pct:+.1f}% GPU, {delta_vram:+.0f} MB VRAM")
     print(f"  budget         : {BUDGET_PCT:.0f}% GPU")
     if delta_pct > BUDGET_PCT:
         print(
-            "\nOver budget. Section 5.6 says simplify the shader rather than ship it: drop an\n"
-            "fBm octave in warp.frag, or lower BACKGROUND_DPR in perf.ts."
+            "\nOver budget. Section 5.6 says simplify the effect rather than ship it: lower the\n"
+            "blur radius or the blob count in web/src/shell/Halo.tsx."
         )
         return 1
     print("\nWithin budget.")
