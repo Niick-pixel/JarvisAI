@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import os
 import time
+import urllib.error
 import urllib.request
 from collections.abc import Callable
 from threading import Thread
@@ -100,6 +101,11 @@ def _voice(url: str) -> tuple[str, str]:
         heard = json.loads(
             _request(f"{url}/api/voice/transcribe", wav, timeout=180, content_type="audio/wav")
         ).get("text", "")
+    except urllib.error.HTTPError as exc:
+        # The body is the app's own sentence about what is missing; the status code alone is not.
+        body = exc.read().decode(errors="replace")[:400]
+        status = _json(f"{url}/api/voice/status")
+        return "", f"speak/transcribe failed: {exc.code} {body} | voice status: {status}"
     except (OSError, ValueError) as exc:
         return "", f"speak/transcribe failed: {exc}"
     ok = "hello" in heard.lower()

@@ -62,7 +62,7 @@ def _load(settings: Settings) -> Engine:
         if plan.device != "cuda":
             raise VoiceUnavailable(
                 f"Whisper failed to load from {plan.model_dir}: {exc}",
-                "Re-run `make voice` to fetch the files again.",
+                capability.DOWNLOAD_FIX,
             ) from exc
         # A card NVML can see is not the same as a CUDA runtime CTranslate2 can use. Falling back
         # to CPU is better than refusing, as long as the status says so afterwards.
