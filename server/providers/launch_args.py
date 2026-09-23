@@ -11,6 +11,7 @@ import functools
 import shutil
 import sqlite3
 import subprocess
+import sys
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -128,8 +129,17 @@ def flash_attn_args(binary: str) -> list[str]:
     """
     resolved = shutil.which(binary) or binary
     try:
+        # No console window on Windows: a windowed app must not flash a terminal to ask a question.
+        flags = 0
+        if sys.platform == "win32":
+            flags = subprocess.CREATE_NO_WINDOW
         result = subprocess.run(
-            [resolved, "--help"], capture_output=True, text=True, timeout=15, check=False
+            [resolved, "--help"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
+            creationflags=flags,
         )
     except (OSError, subprocess.SubprocessError):
         return []

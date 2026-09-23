@@ -1,0 +1,101 @@
+# Builds the Windows desktop app and proves it runs, on a real Windows machine.
+#
+# The smoke test is the point of this file, not the build: it launches the packaged Jarvis.exe,
+# has the bundled llama-server.exe load a tiny real model, and streams one reply through the whole
+# app. No GPU here, so it runs on CPU - which is the part that proves the Windows launcher and the
+# packaging, not the part that measures speed.
+name: windows-app
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  LLAMA_TAG: b11139
+  # 15M parameters, ~20MB: enough to prove tokens come out, small enough not to matter.
+  SMOKE_MODEL_REPO: ggml-org/models
+  SMOKE_MODEL_FILE: tinyllamas/stories15M-q4_0.gguf
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install Python dependencies
+        run: python -m pip install -e ".[desktop]"
+
+      - name: Build the frontend
+        working-directory: web
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Fetch llama.cpp (Windows, CUDA 12)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python packaging/fetch_llama.py $env:LLAMA_TAG
+
+      - name: The bundled llama-server runs on Windows
+        run: packaging\llama\llama-server.exe --version
+
+      - name: Render the icon
+        run: python packaging/make_icon.py
+
+      - name: Build Jarvis.exe
+        run: pyinstaller packaging/jarvis.spec --noconfirm --distpath build/dist --workpath build/work
+
+      - name: Fetch a tiny model for the smoke test
+        run: |
+          New-Item -ItemType Directory -Force smoke-home/models | Out-Null
+          Invoke-WebRequest "https://huggingface.co/$env:SMOKE_MODEL_REPO/resolve/main/$env:SMOKE_MODEL_FILE" -OutFile smoke-home/models/stories15M-q4_0.gguf
+
+      - name: Smoke test the packaged app
+        shell: pwsh
+        run: |
+          $env:JARVIS_HOME = (Resolve-Path smoke-home).Path
+          $env:JARVIS_SMOKE_CHAT = "1"
+          $env:JARVIS_PROVIDERS__LLAMACPP__MODEL_PATH = (Resolve-Path smoke-home/models/stories15M-q4_0.gguf).Path
+          $env:JARVIS_PROVIDERS__LLAMACPP__CTX_LEN = "512"
+          $env:JARVIS_PROVIDERS__OLLAMA__ENABLED = "false"
+          $env:JARVIS_PROVIDERS__LMSTUDIO__ENABLED = "false"
+          # A windowed exe does not block the shell and has no console: wait on it explicitly,
+          # then read what it wrote to its log.
+          $p = Start-Process -FilePath build\dist\Jarvis\Jarvis.exe -ArgumentList "--smoke-test" -Wait -PassThru
+          Get-Content smoke-home\logs\jarvis.log | Select-String -Pattern "smoke test|tokens_streamed|problems|ERROR|Traceback" -Context 0,3
+          if (Test-Path smoke-home\data\llama-server.log) { Write-Host "--- llama-server.log (tail) ---"; Get-Content smoke-home\data\llama-server.log -Tail 25 }
+          if ($p.ExitCode -ne 0) { throw "smoke test failed with exit code $($p.ExitCode)" }
+
+      - name: Build the installer
+        run: |
+          choco install innosetup --no-progress -y
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" packaging\jarvis.iss
+
+      - name: Zip the portable folder
+        run: Compress-Archive -Path build\dist\Jarvis -DestinationPath build\Jarvis-portable.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Jarvis-windows
+          path: |
+            build/installer/JarvisSetup.exe
+            build/Jarvis-portable.zip
+          if-no-files-found: error
+          retention-days: 30
