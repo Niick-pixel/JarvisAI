@@ -155,7 +155,7 @@ def _open_window(url: str, *, server: tuple[Any, threading.Thread] | None, log_f
         # The light theme's page colour, so the window never flashes white-then-grey on open.
         background_color="#F8F9FB",
     )
-    bridge.window = window
+    bridge._attach(window)  # noqa: SLF001 - private so pywebview does not expose it
     if window is None:
         logging.error("pywebview returned no window; opening the default browser instead")
         return _browser_fallback(url, server)

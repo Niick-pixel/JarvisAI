@@ -23,9 +23,15 @@ function detail(option: ModelOption): string {
 export default function ModelPill() {
   const { models, selectedModelId, refreshModels, selectModel } = useLibrary();
 
+  const empty = models.length === 0;
   useEffect(() => {
     void refreshModels().catch(() => undefined);
-  }, [refreshModels]);
+    // On launch llama-server can take a while to load the model. Keep asking until one appears,
+    // instead of saying "No model" until someone happens to click.
+    if (!empty) return;
+    const timer = window.setInterval(() => void refreshModels().catch(() => undefined), 3000);
+    return () => window.clearInterval(timer);
+  }, [refreshModels, empty]);
 
   const auto = models.find((m) => m.recommended);
   const current = models.find((m) => m.model.id === selectedModelId) ?? auto;

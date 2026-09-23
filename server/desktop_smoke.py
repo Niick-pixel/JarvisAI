@@ -112,6 +112,20 @@ def _voice(url: str) -> tuple[str, str]:
     return heard, "" if ok else f"Whisper heard {heard!r}, not {SPOKEN!r}"
 
 
+def _bridge_problems() -> list[str]:
+    """pywebview recurses into every public non-callable attribute of the JS API object. One that
+    reached the Window froze the app on its first real launch, and CI never opens a window - so
+    the rule is checked here instead: nothing public on the bridge but its methods."""
+    from server.desktop_bridge import Bridge
+
+    bridge = Bridge()
+    bridge._attach(object())  # noqa: SLF001
+    public = [name for name in dir(bridge) if not name.startswith("_")]
+    return [
+        f"desktop bridge exposes {name}" for name in public if not callable(getattr(bridge, name))
+    ]
+
+
 def smoke(url: str, stop: Callable[[], None], thread: Thread) -> int:
     try:
         frontend = _request(f"{url}/").decode(errors="replace")
@@ -127,7 +141,7 @@ def smoke(url: str, stop: Callable[[], None], thread: Thread) -> int:
             ("migrations missing", not health.get("migrations_applied")),
         )
         if failed
-    ]
+    ] + _bridge_problems()
     tokens = 0
     if os.environ.get("JARVIS_SMOKE_CHAT") == "1":
         tokens, why = _chat(url)

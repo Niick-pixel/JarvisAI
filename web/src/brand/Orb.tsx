@@ -19,7 +19,13 @@ export default function Orb({ size = 22, state = "idle" }: { size?: number; stat
   const reactive = state === "listening" || state === "speaking";
 
   useEffect(() => {
-    if (reduced) return;
+    // At rest the orb is still: a frame loop per orb, all day, for a drift nobody is watching is
+    // exactly the kind of cost that makes a window feel heavy.
+    if (reduced || state === "idle") {
+      light.current?.setAttribute("transform", "translate(0 0)");
+      body.current?.setAttribute("transform", "");
+      return;
+    }
     let frame = 0;
     let last = performance.now();
     let t = Math.random() * 10;

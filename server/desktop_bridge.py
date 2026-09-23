@@ -11,15 +11,23 @@ from typing import Any
 
 
 class Bridge:
+    """Every public attribute here becomes callable from the page, and pywebview walks public
+    objects recursively to find them. The window is private for that reason: walking it calls
+    its size, position and DOM getters, which on Windows wait for the UI thread - the thread
+    doing the walk - and the app froze at "Not Responding" on its first launch."""
+
     def __init__(self) -> None:
-        self.window: Any = None
+        self._window: Any = None
+
+    def _attach(self, window: Any) -> None:
+        self._window = window
 
     def pick_folder(self) -> str | None:
         import webview
 
-        if self.window is None:
+        if self._window is None:
             return None
-        chosen = self.window.create_file_dialog(webview.FOLDER_DIALOG)
+        chosen = self._window.create_file_dialog(webview.FOLDER_DIALOG)
         if not chosen:
             return None
         return str(chosen[0] if isinstance(chosen, (list, tuple)) else chosen)
