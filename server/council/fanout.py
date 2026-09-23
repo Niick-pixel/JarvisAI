@@ -85,7 +85,9 @@ async def _run_member(
 
     async with _maybe(gate):
         await queue.put(AnswerStartEvent(label=member.label, model_id=member.model_id))
-        params = SamplingParams(seed=member.seed or 0, temperature=0.7, max_tokens=512, n_probs=0)
+        params = SamplingParams(
+            seed=member.seed or 0, temperature=0.7, max_tokens=512, n_probs=0, thinking=False
+        )
         try:
             async for item in provider.stream(
                 [PromptMessage(role="user", content=question)],

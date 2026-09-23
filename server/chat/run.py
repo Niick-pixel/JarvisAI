@@ -9,23 +9,23 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
+from server.chat import budget, titles
 from server.chat.steering import resolve_steering
 from server.context.assembler import assemble, to_prompt_messages
 from server.db import repo
 from server.db.connection import Database
 from server.errors import NotFound, SovereignError
-from server.hardware import probe, recommend, selection
+from server.hardware import probe, selection
 from server.ids import now_ms
 from server.knowledge import memory_index, research, retrieval
 from server.models.context import ContextAssembly
+from server.models.conversation import ConversationUpdate
 from server.models.params import SamplingParams
 from server.models.provider import ModelInfo
 from server.models.stream import ChatRequest
 from server.providers.base import ModelProvider, PromptMessage
 from server.providers.registry import ProviderRegistry
 from server.settings import Settings
-
-DEFAULT_CTX_FALLBACK = 4096
 
 
 @dataclass
@@ -90,6 +90,10 @@ async def prepare(
         messages = repo.messages.list_for_conversation(conn, conversation.id)
         parent_id = request.parent_id or conversation.active_leaf_id
         if request.content is not None:
+            if titles.needs_title(conversation.title):
+                repo.conversations.update(
+                    conn, conversation.id, ConversationUpdate(title=titles.instant(request.content))
+                )
             user_message = repo.messages.create(
                 conn,
                 conversation_id=conversation.id,
@@ -102,9 +106,9 @@ async def prepare(
         if parent_id is None:
             raise SovereignError("invalid_request", "Nothing to generate from: send a message.")
 
-        ctx_len = _resolve_ctx_len(request, model, settings)
+        ctx_len = budget.resolve_ctx_len(request, model, settings)
         params = request.params.resolved()
-        _preflight_vram(model, ctx_len, settings, provider)
+        budget.preflight_vram(model, ctx_len, settings, provider)
 
         steering = resolve_steering(conn, request)
         prefix = steering.prefix
@@ -188,48 +192,6 @@ async def prepare(
         model=model,
         ctx_len=ctx_len,
         assistant_prefix=prefix,
-    )
-
-
-def _resolve_ctx_len(request: ChatRequest, model: ModelInfo, settings: Settings) -> int:
-    if request.ctx_len:
-        return min(request.ctx_len, model.ctx_len_max or request.ctx_len)
-    gpus, _ = probe.probe_gpus()
-    gpu = gpus[0] if gpus else None
-    if gpu is None:
-        return model.ctx_len_max or DEFAULT_CTX_FALLBACK
-    return recommend.max_ctx_for(
-        model,
-        gpu=gpu,
-        browser_reserve_mb=settings.hardware.browser_vram_reserve_mb,
-        kv_dtype=settings.hardware.kv_cache_dtype,
-    )
-
-
-def _preflight_vram(
-    model: ModelInfo, ctx_len: int, settings: Settings, provider: ModelProvider
-) -> None:
-    """Refuse before the backend OOMs, and hand back the fix (BRIEF.md section 2)."""
-    if provider.kind not in ("llamacpp", "ollama", "lmstudio"):
-        return
-    gpus, _ = probe.probe_gpus()
-    if not gpus:
-        return
-    budget = recommend.budget_for(
-        model,
-        ctx_len=ctx_len,
-        gpu=gpus[0],
-        browser_reserve_mb=settings.hardware.browser_vram_reserve_mb,
-        kv_dtype=settings.hardware.kv_cache_dtype,
-    )
-    if budget.fits or model.size_bytes is None:
-        # Without a real file size the estimate is too rough to refuse on; the backend decides.
-        return
-    raise SovereignError(
-        "vram_insufficient",
-        budget.explanation,
-        remedy=budget.remedy,
-        status_code=507,
     )
 
 

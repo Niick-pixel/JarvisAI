@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 import re
 
+from server.chat import thinking
 from server.knowledge import websearch
 from server.models.params import SamplingParams
 from server.models.search import ResearchReport, ResearchStep, SearchResult
@@ -65,7 +66,7 @@ def parse_queries(raw: str, limit: int) -> list[str]:
 async def _ask(
     provider: ModelProvider, model_id: str, ctx_len: int, prompt: str, limit: int
 ) -> list[str]:
-    params = SamplingParams(seed=11, temperature=0.3, max_tokens=160, n_probs=0)
+    params = SamplingParams(seed=11, temperature=0.3, max_tokens=160, n_probs=0, thinking=False)
     chunks: list[str] = []
     try:
         async for item in provider.stream(
@@ -79,7 +80,7 @@ async def _ask(
     except Exception as exc:  # noqa: BLE001 - fall back to searching the question verbatim
         log.warning("research: query planning failed: %s", exc)
         return []
-    return parse_queries("".join(chunks), limit)
+    return parse_queries(thinking.strip_all("".join(chunks)), limit)
 
 
 def _render(results: list[SearchResult], limit: int = 8) -> str:

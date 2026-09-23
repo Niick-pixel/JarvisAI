@@ -2712,6 +2712,8 @@ export interface components {
              * @default 0.8
              */
             temperature: number;
+            /** Thinking */
+            thinking?: boolean | null;
             /**
              * Top K
              * @default 40

@@ -21,8 +21,8 @@ def create(
     rid = new_id("run")
     conn.execute(
         "INSERT INTO runs (id, message_id, model_id, model_sha256, seed, temperature, top_p,"
-        " top_k, repeat_penalty, ctx_len, parent_run_id, created_at)"
-        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+        " top_k, repeat_penalty, ctx_len, parent_run_id, created_at, thinking)"
+        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (
             rid,
             message_id,
@@ -36,6 +36,7 @@ def create(
             ctx_len,
             parent_run_id,
             now_ms(),
+            None if params.thinking is None else int(params.thinking),
         ),
     )
     return rid
@@ -151,7 +152,7 @@ def byte_start(conn: sqlite3.Connection, run_id: str, idx: int) -> int | None:
 
 def params_for(conn: sqlite3.Connection, message_id: str) -> sqlite3.Row | None:
     return conn.execute(
-        "SELECT model_id, seed, temperature, top_p, top_k, repeat_penalty, ctx_len"
+        "SELECT model_id, seed, temperature, top_p, top_k, repeat_penalty, ctx_len, thinking"
         " FROM runs WHERE message_id = ? ORDER BY created_at DESC LIMIT 1",
         (message_id,),
     ).fetchone()

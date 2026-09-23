@@ -14,6 +14,7 @@ from __future__ import annotations
 import logging
 import re
 
+from server.chat import thinking
 from server.models.params import SamplingParams
 from server.providers.base import ModelProvider, PromptMessage, Token
 
@@ -63,8 +64,15 @@ async def propose(
     answer: str,
     limit: int,
 ) -> list[str]:
-    params = SamplingParams(seed=7, temperature=0.2, max_tokens=200, n_probs=0)
-    messages = [PromptMessage(role="user", content=PROMPT.format(question=question, answer=answer))]
+    # Thinking off, and stripped on both sides: a reasoning model's thoughts are not facts about
+    # you, and before this they were being saved as if they were ("Wait, the user might be new…").
+    params = SamplingParams(seed=7, temperature=0.2, max_tokens=200, n_probs=0, thinking=False)
+    visible = thinking.strip(answer)
+    if not visible.strip():
+        return []
+    messages = [
+        PromptMessage(role="user", content=PROMPT.format(question=question, answer=visible))
+    ]
     chunks: list[str] = []
     try:
         async for item in provider.stream(messages, params, model_id=model_id, ctx_len=ctx_len):
@@ -73,4 +81,4 @@ async def propose(
     except Exception as exc:  # noqa: BLE001 - extraction failing must never fail the turn
         log.warning("memory: extraction failed: %s", exc)
         return []
-    return parse_facts("".join(chunks), limit)
+    return parse_facts(thinking.strip_all("".join(chunks)), limit)

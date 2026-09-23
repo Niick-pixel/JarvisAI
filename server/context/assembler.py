@@ -7,6 +7,7 @@ quietly - every eviction produces a notice the UI shows loudly (BRIEF.md 4.2).
 
 from __future__ import annotations
 
+from server.chat import thinking
 from server.context import blocks as build
 from server.context.tokenizer import TokenCounter
 from server.db.repo.blocks import BlockPref
@@ -60,11 +61,15 @@ async def assemble(
         blocks.append(build.web(result, count, len(blocks)))
 
     for message in path:
-        if not message.content.strip():
+        # A model's earlier thinking is not part of the conversation: resending it wastes context
+        # and reasoning models are trained without it. Counted after stripping, so the
+        # accounting still matches the prompt byte for byte.
+        text = thinking.strip(message.content) if message.role == "assistant" else message.content
+        if not text.strip():
             continue
         # Chat templates add a few tokens per turn that no tokenizer call sees.
-        count = await counter.count(message.content) + RESERVED_TEMPLATE_TOKENS
-        blocks.append(build.history(message, count, len(blocks)))
+        count = await counter.count(text) + RESERVED_TEMPLATE_TOKENS
+        blocks.append(build.history(message, count, len(blocks), content=text))
 
     if nudge:
         count = await counter.count(nudge)

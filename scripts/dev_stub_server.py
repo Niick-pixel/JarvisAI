@@ -21,7 +21,14 @@ import random
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, StreamingResponse
-from stub_content import WORDS, fake_vector, lines_for, overlap_score, shuffled_words
+from stub_content import (
+    WORDS,
+    fake_vector,
+    lines_for,
+    overlap_score,
+    reply_pieces,
+    shuffled_words,
+)
 
 app = FastAPI(title="llama.cpp stand-in (development only)")
 
@@ -48,9 +55,13 @@ async def tokenize(request: Request) -> dict[str, list[int]]:
 
 @app.post("/apply-template")
 async def apply_template(request: Request) -> dict[str, str]:
-    messages = (await request.json()).get("messages", [])
+    body = await request.json()
+    messages = body.get("messages", [])
     rendered = "".join(f"<|{m['role']}|>\n{m['content']}\n" for m in messages)
-    return {"prompt": rendered + "<|assistant|>\n"}
+    # What Qwen3's template does with enable_thinking=false: an empty thought, pre-filled.
+    kwargs = body.get("chat_template_kwargs") or {}
+    closed = "<think>\n\n</think>\n\n" if kwargs.get("enable_thinking") is False else ""
+    return {"prompt": rendered + "<|assistant|>\n" + closed}
 
 
 # An OpenAI-compatible surface too, so one stand-in can present several distinct models. That is
@@ -180,18 +191,18 @@ async def completion(request: Request) -> StreamingResponse | JSONResponse:
         # Seeded shuffling, so two council members with different seeds differ - otherwise the
         # agreement matrix would be a wall of 1.0 and prove nothing.
         words = list(WORDS)
-        rng.shuffle(words)
-        count = min(n_predict, len(words))
+        pieces = reply_pieces(prompt, rng)
+        count = min(n_predict, len(pieces))
         for index in range(count):
             await asyncio.sleep(delay)
-            chunk: dict[str, object] = {"content": words[index] + " ", "stop": False}
+            chunk: dict[str, object] = {"content": pieces[index], "stop": False}
             if n_probs:
                 confidence = 0.55 + 0.4 * abs(math.sin(index * 1.7))
                 chunk["completion_probabilities"] = [
                     {
-                        "content": words[index],
+                        "content": pieces[index],
                         "probs": [
-                            {"tok_str": words[index], "prob": confidence},
+                            {"tok_str": pieces[index], "prob": confidence},
                             *[
                                 {"tok_str": rng.choice(words), "prob": (1 - confidence) / 4}
                                 for _ in range(min(n_probs - 1, 4))
