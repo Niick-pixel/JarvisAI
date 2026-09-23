@@ -147,3 +147,30 @@ def flash_attn_args(binary: str) -> list[str]:
     if "on|off|auto" in help_text:
         return []  # auto already enables it whenever the backend can
     return ["--flash-attn"] if "--flash-attn" in help_text else []
+
+
+CACHE_TYPE_REFUSAL = "does not divide n_embd_head_k"
+"""llama.cpp's words when a quantised KV cache's block size does not fit the model's head size."""
+
+
+def cache_type_refused(detail: str) -> bool:
+    return CACHE_TYPE_REFUSAL in detail
+
+
+def with_cache_type(argv: list[str], cache_type: str) -> list[str]:
+    """The same command with both KV cache types replaced - and no flash-attn flag, which an f16
+    cache does not need and older builds only accept alongside a quantised one."""
+    out: list[str] = []
+    skip = False
+    for index, arg in enumerate(argv):
+        if skip:
+            skip = False
+            continue
+        if arg in ("--cache-type-k", "--cache-type-v"):
+            out += [arg, cache_type]
+            skip = True
+        elif arg == "--flash-attn" and (index + 1 == len(argv) or argv[index + 1].startswith("-")):
+            continue
+        else:
+            out.append(arg)
+    return out

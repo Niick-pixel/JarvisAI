@@ -88,7 +88,21 @@ class LlamaServer:
             log_path=str(self.log_path),
             detail="starting llama-server and loading the model",
         )
-        return await self._spawn(argv, cfg.startup_timeout_s)
+        status = await self._spawn(argv, cfg.startup_timeout_s)
+        if status.started or not launch_args.cache_type_refused(status.detail):
+            return status
+        # A quantised KV cache needs the model's head size to be a multiple of the quant block
+        # (32 for q8_0). Most chat models use 64 or 128; some do not, and refusing to serve them
+        # at all is worse than spending more VRAM on their cache. Say which happened.
+        f16 = launch_args.with_cache_type(argv, "f16")
+        self.status = self.status.model_copy(update={"command": f16})
+        status = await self._spawn(f16, cfg.startup_timeout_s)
+        if status.started:
+            status = self._note(
+                f"{status.detail} (f16 KV cache: this model's head size does not fit "
+                f"{self.settings.hardware.kv_cache_dtype})"
+            )
+        return status
 
     def _resolve(self) -> tuple[str, int]:
         cfg = self.settings.providers.llamacpp
