@@ -32,8 +32,15 @@ WHISPER_REPOS = {
     "distil-large-v3": "Systran/faster-distil-whisper-large-v3",
 }
 WHISPER_REQUIRED = ["model.bin", "config.json"]
-WHISPER_OPTIONAL = ["tokenizer.json", "vocabulary.txt"]
-"""Optional because they differ between sizes; a 404 on one of these is not a failure."""
+WHISPER_OPTIONAL = [
+    "tokenizer.json",
+    "vocabulary.txt",
+    "vocabulary.json",
+    "preprocessor_config.json",
+]
+"""Which of these a repo has differs between sizes (the vocabulary is .txt in some and .json in
+others), so each is tried and a 404 skips it. CTranslate2 needs one vocabulary; `_run` checks."""
+VOCABULARY = ("vocabulary.txt", "vocabulary.json")
 PIPER_REPO = "rhasspy/piper-voices"
 
 
@@ -106,20 +113,33 @@ class VoicePack:
             self._update(bytes_total=sum(sizes), detail="")
             base = 0
             for (url, target, required), size in zip(files, sizes, strict=True):
-                if not target.is_file() and (size or required):
-                    await self._fetch(url, target, base)
+                # Presence is decided by the GET, never by the size probe: a HEAD that reports
+                # no length must not quietly drop a file Whisper cannot load without.
+                if not target.is_file():
+                    await self._fetch(url, target, base, required)
                 base += size
                 self._update(bytes_done=base)
+            folder = capability.whisper_dir(self.settings, self.settings.voice.stt_model)
+            if not any((folder / name).is_file() for name in VOCABULARY):
+                raise ValueError(f"the Whisper repo had no {' or '.join(VOCABULARY)}")
             self._update(state="done", file="", detail="Voice is ready.")
         except asyncio.CancelledError:
             self._update(state="cancelled", detail="Paused. Getting it again resumes from here.")
         except (httpx.HTTPError, OSError, ValueError) as exc:
             self._update(state="failed", detail=f"{exc}. Trying again resumes from here.")
 
-    async def _fetch(self, url: str, target: Path, base: int) -> None:
+    async def _fetch(self, url: str, target: Path, base: int, required: bool) -> None:
         part = target.with_name(target.name + ".part")
         self._update(file=target.name)
-        _, sha256 = await stream_to(url, part, lambda done: self._update(bytes_done=base + done))
+        try:
+            _, sha256 = await stream_to(
+                url, part, lambda done: self._update(bytes_done=base + done)
+            )
+        except httpx.HTTPStatusError as exc:
+            if required or exc.response.status_code != 404:
+                raise
+            part.unlink(missing_ok=True)
+            return
         if sha256:
             self._update(state="verifying")
             if not await asyncio.to_thread(matches, part, sha256):
