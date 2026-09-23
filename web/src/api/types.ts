@@ -85,3 +85,5 @@ export type Decision = S["Decision"];
 export type ToolGrant = S["ToolGrant"];
 export type AuditEntry = S["AuditEntry"];
 export type ExportResult = S["ExportResult"];
+export type DownloadProgress = S["DownloadProgress"];
+export type LaunchStatus = S["LaunchStatus"];

@@ -11,6 +11,7 @@ from fastapi import Depends, Request
 from server.agents.approvals import Approvals
 from server.chat.live import LiveRuns
 from server.db.connection import Database
+from server.hardware.downloader import Downloader
 from server.knowledge.indexer import Indexer
 from server.knowledge.watcher import Watcher
 from server.models.memory import MemoryBatch
@@ -34,6 +35,8 @@ class AppState:
     """Who is waiting at the tool gate. Held here so a decision in the UI reaches the parked run."""
     scheduler: JobScheduler | None = None
     """None only before the lifespan starts, and in tests that never fire a job."""
+    downloader: Downloader | None = None
+    """The one model download that may be in flight. Created with the app."""
     llama: LlamaServer | None = None
     """The llama-server this process started, if it started one. None when autostart is off."""
     extractions: dict[str, asyncio.Task[MemoryBatch]] = field(default_factory=dict)

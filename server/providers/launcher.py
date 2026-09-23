@@ -25,6 +25,7 @@ from typing import IO, Any
 
 import httpx
 
+from server.db import repo
 from server.db.connection import Database
 from server.models.launch import LaunchStatus
 from server.providers import launch_args
@@ -73,7 +74,8 @@ class LlamaServer:
         model_path, ctx_len = self._resolve()
         if not model_path:
             return self._note(
-                f"no GGUF found in {self.settings.paths.models_dir} - run `make models` first"
+                f"no model yet - pick one to download (or run `make models`); models live in "
+                f"{self.settings.paths.models_dir}"
             )
 
         argv = [binary, *launch_args.command(self.settings, model_path, ctx_len)[1:]]
@@ -94,7 +96,11 @@ class LlamaServer:
             return cfg.model_path, cfg.ctx_len or launch_args.FALLBACK_CTX
         with self.db.session() as conn:
             models = launch_args.registered_models(conn, self.settings.paths.models_dir)
-        model, ctx = launch_args.choose(models, self.settings)
+            pinned = repo.settings.get(conn, repo.settings.SELECTED_MODEL)
+        # The model you picked - in the picker, or by downloading it - wins over the automatic
+        # choice, as long as it is a file that is actually here.
+        chosen = [m for m in models if m.id == pinned]
+        model, ctx = launch_args.choose(chosen or models, self.settings)
         if model is None:
             return "", 0
         return model.file_path or "", cfg.ctx_len or ctx
@@ -139,6 +145,12 @@ class LlamaServer:
 
         await self.stop()
         return self._note(f"llama-server did not answer within {timeout:.0f}s: {self._tail()}")
+
+    async def restart(self) -> LaunchStatus:
+        """Serve whatever `_resolve` now picks. Used after a download, so the new model is live
+        without restarting the app. A server this process did not start is still left alone."""
+        await self.stop()
+        return await self.start()
 
     async def stop(self) -> None:
         """Only ever kills a process this object started. A server you ran yourself is yours."""

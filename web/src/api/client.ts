@@ -4,6 +4,7 @@ import type {
   ContextAssembly,
   Conversation,
   Decision,
+  DownloadProgress,
   ConversationTree,
   ErrorBody,
   ExportResult,
@@ -14,6 +15,7 @@ import type {
   JobCreate,
   JobPatch,
   JobRun,
+  LaunchStatus,
   IndexProgress,
   LifetimeCounters,
   MemoryBatch,
@@ -74,6 +76,14 @@ export const api = {
       body: JSON.stringify({ model_id: modelId }),
     }),
   catalog: () => request<ModelRecommendation[]>("/api/hardware/catalog"),
+  downloadProgress: () => request<DownloadProgress>("/api/hardware/download"),
+  startDownload: (key: string) =>
+    request<DownloadProgress>("/api/hardware/download", {
+      method: "POST",
+      body: JSON.stringify({ key }),
+    }),
+  cancelDownload: () => request<DownloadProgress>("/api/hardware/download", { method: "DELETE" }),
+  launchStatus: () => request<LaunchStatus>("/api/providers/launch"),
 
   listConversations: () => request<Conversation[]>("/api/conversations"),
   createConversation: (title = "", systemPrompt = "") =>

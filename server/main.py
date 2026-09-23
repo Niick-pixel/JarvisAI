@@ -38,6 +38,7 @@ from server.db.connection import Database
 from server.db.migrate import migrate
 from server.deps import AppState, State
 from server.errors import SovereignError, handle_sovereign_error
+from server.hardware.downloader import Downloader
 from server.knowledge import retrieval
 from server.knowledge.indexer import Indexer
 from server.knowledge.watcher import Watcher
@@ -81,6 +82,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         watcher=Watcher(reindex),
         approvals=approvals,
         llama=LlamaServer(settings, db),
+        downloader=Downloader(db, settings.paths.models_dir),
     )
 
     @asynccontextmanager

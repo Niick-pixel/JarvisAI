@@ -91,3 +91,31 @@ class ModelRecommendation(BaseModel):
     note: str = ""
     tags: list[str] = []
     installed: bool = False
+
+
+DownloadState = Literal[
+    "idle", "resolving", "downloading", "verifying", "done", "failed", "cancelled"
+]
+
+
+class DownloadProgress(BaseModel):
+    """One model download. There is only ever one: a card holds one model, and two multi-GB
+    downloads racing each other finish later than either would have alone."""
+
+    state: DownloadState = "idle"
+    key: str = ""
+    display_name: str = ""
+    filename: str = ""
+    bytes_done: int = 0
+    bytes_total: int | None = None
+    """None when the registry did not say; the bar then shows bytes, not a fake percentage."""
+    resumed_from: int = 0
+    """Bytes that were already on disk from an interrupted attempt, and were not fetched again."""
+    path: str = ""
+    detail: str = ""
+
+
+class DownloadRequest(BaseModel):
+    key: str
+    """A `key` from the catalogue, never a URL: the app downloads what models.toml describes, and
+    nothing a page or a prompt could talk it into."""
