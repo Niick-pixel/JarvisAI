@@ -5,13 +5,13 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from pathlib import Path
 from pathlib import Path as _Path
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from server import paths
 from server.agents import loop as agent_loop
 from server.agents.approvals import Approvals
 from server.agents.scheduler import JobScheduler
@@ -45,7 +45,7 @@ from server.providers.launcher import LlamaServer
 from server.providers.registry import ProviderRegistry
 from server.settings import Settings, load_settings
 
-WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
+WEB_DIST = paths.resource("web", "dist")
 
 
 class Health(BaseModel):

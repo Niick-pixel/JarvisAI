@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 from fastapi import APIRouter
 
+from server import paths
 from server.deps import State
 from server.errors import NotFound
 from server.hardware import catalog as catalog_mod
@@ -11,7 +10,7 @@ from server.hardware import probe, recommend
 from server.models.hardware import HardwareReport, ModelRecommendation, VramBudget
 
 router = APIRouter(prefix="/api/hardware", tags=["hardware"])
-CATALOG_PATH = Path(__file__).resolve().parent.parent.parent / "models.toml"
+CATALOG_PATH = paths.resource("models.toml")
 
 
 @router.get("")

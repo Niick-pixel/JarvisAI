@@ -17,9 +17,11 @@ import logging
 import os
 import shutil
 import signal
+import subprocess
+import sys
 import time
 from pathlib import Path
-from typing import IO
+from typing import IO, Any
 
 import httpx
 
@@ -108,7 +110,7 @@ class LlamaServer:
                 *argv,
                 stdout=self._log,
                 stderr=asyncio.subprocess.STDOUT,
-                start_new_session=True,
+                **_detached(),
             )
         except OSError as exc:
             self._close_log()
@@ -145,13 +147,11 @@ class LlamaServer:
         if process is None or process.returncode is not None:
             self._close_log()
             return
-        with contextlib.suppress(ProcessLookupError):
-            os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+        _signal(process, force=False)
         try:
             await asyncio.wait_for(process.wait(), timeout=TERM_GRACE_S)
         except TimeoutError:
-            with contextlib.suppress(ProcessLookupError):
-                os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+            _signal(process, force=True)
             await process.wait()
         log.info("stopped llama-server pid=%s", process.pid)
         self._close_log()
@@ -175,6 +175,27 @@ class LlamaServer:
         if self._log is not None:
             self._log.close()
             self._log = None
+
+
+def _detached() -> dict[str, Any]:
+    """Keep terminal signals away from the model, so the app decides when it stops.
+
+    On Windows the same idea is a new process group, plus no console window: a desktop app that
+    flashes a black terminal every time the model starts looks broken even when it is not.
+    """
+    if sys.platform == "win32":
+        flags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW
+        return {"creationflags": flags}
+    return {"start_new_session": True}
+
+
+def _signal(process: asyncio.subprocess.Process, *, force: bool) -> None:
+    with contextlib.suppress(ProcessLookupError):
+        if sys.platform == "win32":
+            # llama-server spawns no children, so terminating the one process is the whole job.
+            process.kill() if force else process.terminate()
+        else:
+            os.killpg(os.getpgid(process.pid), signal.SIGKILL if force else signal.SIGTERM)
 
 
 async def healthy(base_url: str) -> bool:

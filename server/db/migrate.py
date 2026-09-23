@@ -5,7 +5,9 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-MIGRATIONS_DIR = Path(__file__).resolve().parent / "migrations"
+from server import paths
+
+MIGRATIONS_DIR = paths.resource("server", "db", "migrations")
 
 
 def applied_versions(conn: sqlite3.Connection) -> set[int]:
