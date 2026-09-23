@@ -91,11 +91,22 @@ jobs:
       - name: Zip the portable folder
         run: Compress-Archive -Path build\dist\Jarvis -DestinationPath build\Jarvis-portable.zip
 
-      - uses: actions/upload-artifact@v4
+      # Two artifacts, not one: each is most of a gigabyte (the CUDA runtime is the bulk), and you
+      # only ever want one of them. Bundled together you would download both.
+      - name: Upload the installer
+        uses: actions/upload-artifact@v4
         with:
-          name: Jarvis-windows
-          path: |
-            build/installer/JarvisSetup.exe
-            build/Jarvis-portable.zip
+          name: JarvisSetup
+          path: build/installer/JarvisSetup.exe
           if-no-files-found: error
           retention-days: 30
+          compression-level: 0  # already LZMA-compressed; zipping it again only costs time
+
+      - name: Upload the portable folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: Jarvis-portable
+          path: build/Jarvis-portable.zip
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
