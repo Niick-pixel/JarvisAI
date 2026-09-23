@@ -10,6 +10,7 @@ import { useLibrary } from "../store/library";
 import { type ThinkMode, useUi } from "../store/ui";
 import { useVoice } from "../store/voice";
 import { Button, FIELD, Row, Segmented, Switch } from "../ui/controls";
+import VoicePack from "../voice/VoicePack";
 import Machine from "./Machine";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -26,7 +27,8 @@ function Engine({ title, engine }: { title: string; engine?: EngineStatus }) {
   if (engine.available) {
     return <Row title={title} detail={`Ready - runs on this PC (${engine.engine}, ${engine.device})`} />;
   }
-  return <Row title={title} detail={`${engine.reason}${engine.fix ? ` ${engine.fix}` : ""}`} />;
+  const fix = engine.fix && !engine.downloadable ? ` ${engine.fix}` : "";
+  return <Row title={title} detail={`${engine.reason}${fix}`} />;
 }
 
 export default function SettingsSheet() {
@@ -90,6 +92,9 @@ export default function SettingsSheet() {
       <Section title="Voice">
         <Engine title="Dictation" engine={voice?.stt} />
         <Engine title="Reading aloud" engine={voice?.tts} />
+        <div className="flex justify-end py-3 empty:hidden">
+          <VoicePack />
+        </div>
       </Section>
 
       <Section title="This PC">

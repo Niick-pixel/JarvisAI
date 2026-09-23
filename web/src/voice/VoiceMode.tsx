@@ -9,6 +9,7 @@ import { useUi } from "../store/ui";
 import { useVoice } from "../store/voice";
 import { BOUNCE, GLIDE } from "../ui/motion";
 import { type LoopState, useVoiceLoop } from "./loop";
+import VoicePack from "./VoicePack";
 
 const LABEL: Record<LoopState, string> = {
   listening: "Listening",
@@ -103,8 +104,17 @@ export default function VoiceMode() {
       ) : (
         <div className="relative flex max-w-md flex-col items-center px-8 text-center">
           <Orb size={120} />
-          <p className="mt-8 text-[20px] font-semibold text-ink">Voice isn't set up on this PC yet</p>
-          <p className="mt-2 text-[14.5px] leading-relaxed text-ink-muted">{stt ? `${stt.reason} ${stt.fix}` : "Checking…"}</p>
+          <p className="mt-8 text-[20px] font-semibold text-ink">Give Jarvis a voice</p>
+          <p className="mt-2 text-[14.5px] leading-relaxed text-ink-muted">
+            {!stt
+              ? "Checking…"
+              : stt.downloadable
+                ? "Listening and speaking both run on this PC. It's a one-time download of about half a gigabyte."
+                : `${stt.reason} ${stt.fix}`}
+          </p>
+          <div className="mt-6 w-full">
+            <VoicePack />
+          </div>
           <div className="mt-10">
             <Round label="Close" onClick={close}>
               <X size={26} strokeWidth={2} />

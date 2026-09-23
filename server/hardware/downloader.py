@@ -67,9 +67,7 @@ class Downloader:
             target = self.models_dir / Path(filename).name
             await self._stream(HF_FILE_URL.format(repo=entry["hf_repo"], filename=filename), target)
             self._update(state="verifying")
-            if sha256 and not await asyncio.to_thread(
-                _matches, target.with_suffix(".part"), sha256
-            ):
+            if sha256 and not await asyncio.to_thread(matches, target.with_suffix(".part"), sha256):
                 target.with_suffix(".part").unlink(missing_ok=True)
                 self._fail("the file's sha256 did not match the registry, so it was discarded")
                 return
@@ -87,25 +85,10 @@ class Downloader:
 
     async def _stream(self, url: str, target: Path) -> None:
         self.models_dir.mkdir(parents=True, exist_ok=True)
-        part = target.with_suffix(".part")
-        have = part.stat().st_size if part.exists() else 0
-        headers = {"Range": f"bytes={have}-"} if have else {}
-        timeout = httpx.Timeout(30.0, read=120.0)
-        async with (
-            httpx.AsyncClient(follow_redirects=True, timeout=timeout) as client,
-            client.stream("GET", url, headers=headers) as response,
-        ):
-            if response.status_code == 416:  # already complete
-                self._update(bytes_done=have, resumed_from=have)
-                return
-            response.raise_for_status()
-            if have and response.status_code != 206:
-                have = 0  # the server ignored the range: start over rather than corrupt the file
-            self._update(bytes_done=have, resumed_from=have)
-            with part.open("ab" if have else "wb") as handle:
-                async for chunk in response.aiter_bytes(CHUNK):
-                    await asyncio.to_thread(handle.write, chunk)
-                    self._update(bytes_done=self.progress.bytes_done + len(chunk))
+        resumed, _ = await stream_to(
+            url, target.with_suffix(".part"), lambda done: self._update(bytes_done=done)
+        )
+        self._update(resumed_from=resumed)
 
     def _update(self, **fields: Any) -> None:
         self.progress = self.progress.model_copy(update=fields)
@@ -114,7 +97,48 @@ class Downloader:
         self._update(state="failed", detail=detail)
 
 
-def _matches(path: Path, expected: str) -> bool:
+async def stream_to(url: str, part: Path, on_bytes: Callable[[int], None]) -> tuple[int, str]:
+    """Fetch `url` into `part`, resuming from whatever an earlier attempt left there.
+
+    Reports the bytes on disk as they grow. Returns how many bytes were already there, and the
+    sha256 Hugging Face publishes for the file (its X-Linked-Etag), or "" when there is none.
+    """
+    part.parent.mkdir(parents=True, exist_ok=True)
+    have = part.stat().st_size if part.exists() else 0
+    headers = {"Range": f"bytes={have}-"} if have else {}
+    timeout = httpx.Timeout(30.0, read=120.0)
+    async with (
+        httpx.AsyncClient(follow_redirects=True, timeout=timeout) as client,
+        client.stream("GET", url, headers=headers) as response,
+    ):
+        etag = _linked_sha256(response.history, response.headers)
+        if response.status_code == 416:  # already complete
+            on_bytes(have)
+            return have, etag
+        response.raise_for_status()
+        if have and response.status_code != 206:
+            have = 0  # the server ignored the range: start over rather than corrupt the file
+        done = have
+        on_bytes(done)
+        with part.open("ab" if have else "wb") as handle:
+            async for chunk in response.aiter_bytes(CHUNK):
+                await asyncio.to_thread(handle.write, chunk)
+                done += len(chunk)
+                on_bytes(done)
+    return have, etag
+
+
+def _linked_sha256(history: list[httpx.Response], headers: httpx.Headers) -> str:
+    """Hugging Face names a large file's sha256 on the redirect that points at its storage."""
+    for response in [*history, None]:
+        source = response.headers if response is not None else headers
+        value = source.get("x-linked-etag", "").strip('"')
+        if len(value) == 64:
+            return value
+    return ""
+
+
+def matches(path: Path, expected: str) -> bool:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for block in iter(lambda: handle.read(CHUNK), b""):

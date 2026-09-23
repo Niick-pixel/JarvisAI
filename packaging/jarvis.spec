@@ -6,7 +6,7 @@
 import sys
 from pathlib import Path
 
-from PyInstaller.utils.hooks import collect_submodules
+from PyInstaller.utils.hooks import collect_all, collect_submodules
 
 ROOT = Path(SPECPATH).parent  # noqa: F821 - SPECPATH is injected by PyInstaller
 WINDOWS = sys.platform == "win32"
@@ -39,13 +39,22 @@ hiddenimports = (
     + ["webview"]
 )
 
+# Voice: the engines ship in the app, the weights do not (Settings > Voice fetches them). Each of
+# these carries native libraries or data files beside its code - CTranslate2's DLLs, ONNX Runtime,
+# PyAV's FFmpeg, Piper's espeak-ng phoneme data - which only collect_all brings along.
+for package in ("faster_whisper", "ctranslate2", "onnxruntime", "av", "tokenizers", "piper"):
+    pkg_datas, pkg_binaries, pkg_hidden = collect_all(package)
+    datas += pkg_datas
+    binaries += pkg_binaries
+    hiddenimports += pkg_hidden
+
 a = Analysis(  # noqa: F821
     [str(ROOT / "packaging" / "entry.py")],
     pathex=[str(ROOT)],
     binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
-    excludes=["tkinter", "matplotlib", "torch", "faster_whisper", "piper", "IPython"],
+    excludes=["tkinter", "matplotlib", "torch", "IPython"],
     noarchive=False,
 )
 pyz = PYZ(a.pure)  # noqa: F821

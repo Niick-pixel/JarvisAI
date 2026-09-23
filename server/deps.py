@@ -18,6 +18,7 @@ from server.models.memory import MemoryBatch
 from server.providers.launcher import LlamaServer
 from server.providers.registry import ProviderRegistry
 from server.settings import Settings
+from server.voice.pack import VoicePack
 
 if TYPE_CHECKING:  # the scheduler imports the loop, which imports this module
     from server.agents.scheduler import JobScheduler
@@ -37,6 +38,8 @@ class AppState:
     """None only before the lifespan starts, and in tests that never fire a job."""
     downloader: Downloader | None = None
     """The one model download that may be in flight. Created with the app."""
+    voice_pack: VoicePack | None = None
+    """The voice pack download, when you ask for one from Settings or voice mode."""
     llama: LlamaServer | None = None
     """The llama-server this process started, if it started one. None when autostart is off."""
     extractions: dict[str, asyncio.Task[MemoryBatch]] = field(default_factory=dict)

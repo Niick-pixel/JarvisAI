@@ -1031,6 +1031,40 @@ same server in its own window, not a second implementation of anything.
 and the bare flag the launcher appended made any recent server exit at startup. That affected
 `make dev` as much as the app. The launcher now reads the binary's `--help` to choose the spelling.
 
+### The interface, rebuilt after the first Windows test
+
+The first person to run the .exe rejected the interface outright: raw `<think>` tags and raw
+Markdown in answers, a "9 / 6,144 tokens" meter they had not asked about, a Windows file path as the
+model name, and Memory and Knowledge opening side by side. They asked for something closer to
+Gemini and Grok: light, calm, bouncy, one clean mark, and voice. **This supersedes §5's visual spec**
+(the dark full-screen shader, the edge glow, the presets); the §5 rules that were about behaviour -
+springs only, reduced motion honoured, 4.5:1 contrast proved by a script, the GPU belongs to the
+model - still hold.
+
+1. **Tokens, not a shader.** `web/src/design/tokens.json` is the palette for light (default) and
+   dark; `theme.ts` turns it into CSS variables before first paint, and `contrast_check.py` reads the
+   same file. The background is three blurred CSS blobs behind the composer (`Halo.tsx`), whose
+   alphas also live in tokens.json so the check can prove text over them at their brightest. The
+   WebGL canvas, and three.js with it, are gone.
+2. **One thing at a time.** A Gemini-style sidebar (chats grouped by date, then Memory, Knowledge,
+   Agents, Settings) and one centred sheet; opening another replaces it. The instruments stayed but
+   moved behind a tap: x-ray, replay and continue under "more" on each answer, the Context Inspector
+   behind a ring that only appears past 70% full.
+3. **Thinking is folded, not shown.** `server/chat/thinking.py` splits reasoning from the answer;
+   history, memory extraction, titles and the Council never see it; the UI shows "Thought for 6s".
+   A Think / Fast / Auto choice reaches the chat template as `enable_thinking`.
+4. **Answers are Markdown.** `react-markdown` + `remark-gfm` (approved), with code blocks that copy.
+5. **Voice mode** is the full-screen orb: listen until a short silence, send, speak the answer a
+   sentence at a time as it streams, listen again. No automatic barge-in - with speakers on, the
+   mic would hear Jarvis and interrupt itself - so interrupting is a tap. The engines ship in the
+   .exe; the weights come from **Get voice** (`server/voice/pack.py`), which uses the model
+   downloader's resumable, checksum-verified streaming. The Windows smoke test now downloads the
+   smallest Whisper that way, has Piper say a sentence and Whisper transcribe it.
+6. **Smaller fixes the complaints exposed:** llama.cpp's own `n_ctx` is the context length (the old
+   figure double-counted VRAM); model names are derived from the file ("Qwen3 8B"); chats get an
+   instant title from the first message, refined by the model after the answer; a new chat is only
+   written to disk when you say something.
+
 
 ---
 

@@ -40,7 +40,7 @@ jobs:
           cache-dependency-path: web/package-lock.json
 
       - name: Install Python dependencies
-        run: python -m pip install -e ".[desktop]"
+        run: python -m pip install -e ".[desktop,voice]"
 
       - name: Build the frontend
         working-directory: web
@@ -72,6 +72,10 @@ jobs:
         run: |
           $env:JARVIS_HOME = (Resolve-Path smoke-home).Path
           $env:JARVIS_SMOKE_CHAT = "1"
+          # Voice too: fetch the smallest Whisper through the app's own voice pack download, then
+          # speak a sentence with Piper and hear it back - both engines, inside the packaged exe.
+          $env:JARVIS_SMOKE_VOICE = "1"
+          $env:JARVIS_VOICE__STT_MODEL = "tiny.en"
           $env:JARVIS_PROVIDERS__LLAMACPP__MODEL_PATH = (Resolve-Path smoke-home/models/stories15M-q4_0.gguf).Path
           $env:JARVIS_PROVIDERS__LLAMACPP__CTX_LEN = "512"
           $env:JARVIS_PROVIDERS__OLLAMA__ENABLED = "false"
@@ -79,7 +83,7 @@ jobs:
           # A windowed exe does not block the shell and has no console: wait on it explicitly,
           # then read what it wrote to its log.
           $p = Start-Process -FilePath build\dist\Jarvis\Jarvis.exe -ArgumentList "--smoke-test" -Wait -PassThru
-          Get-Content smoke-home\logs\jarvis.log | Select-String -Pattern "smoke test|tokens_streamed|problems|ERROR|Traceback" -Context 0,3
+          Get-Content smoke-home\logs\jarvis.log | Select-String -Pattern "smoke test|tokens_streamed|heard|problems|ERROR|Traceback" -Context 0,3
           if (Test-Path smoke-home\data\llama-server.log) { Write-Host "--- llama-server.log (tail) ---"; Get-Content smoke-home\data\llama-server.log -Tail 25 }
           if ($p.ExitCode -ne 0) { throw "smoke test failed with exit code $($p.ExitCode)" }
 

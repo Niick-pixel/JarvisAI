@@ -16,33 +16,15 @@ sys.path.insert(0, str(ROOT))
 from server.models.voice import EngineStatus  # noqa: E402
 from server.settings import load_settings  # noqa: E402
 from server.voice import capability  # noqa: E402
+from server.voice.pack import (  # noqa: E402
+    PIPER_REPO,
+    WHISPER_OPTIONAL,
+    WHISPER_REPOS,
+    WHISPER_REQUIRED,
+    piper_paths,
+)
 
-WHISPER_REPOS = {
-    "tiny": "Systran/faster-whisper-tiny",
-    "tiny.en": "Systran/faster-whisper-tiny.en",
-    "base": "Systran/faster-whisper-base",
-    "base.en": "Systran/faster-whisper-base.en",
-    "small": "Systran/faster-whisper-small",
-    "small.en": "Systran/faster-whisper-small.en",
-    "medium": "Systran/faster-whisper-medium",
-    "medium.en": "Systran/faster-whisper-medium.en",
-    "large-v2": "Systran/faster-whisper-large-v2",
-    "large-v3": "Systran/faster-whisper-large-v3",
-    "distil-large-v3": "Systran/faster-distil-whisper-large-v3",
-}
-WHISPER_FILES = ["model.bin", "config.json", "tokenizer.json", "vocabulary.txt"]
-PIPER_REPO = "rhasspy/piper-voices"
-
-
-def piper_paths(name: str) -> tuple[str, str]:
-    """`en_US-lessac-medium` lives at `en/en_US/lessac/medium/` in the voices repo."""
-    try:
-        locale, speaker, quality = name.split("-")
-        language = locale.split("_")[0]
-    except ValueError as exc:
-        raise SystemExit(f"Voice name {name!r} is not <locale>-<speaker>-<quality>.") from exc
-    folder = f"{language}/{locale}/{speaker}/{quality}"
-    return f"{folder}/{name}.onnx", f"{folder}/{name}.onnx.json"
+WHISPER_FILES = WHISPER_REQUIRED + WHISPER_OPTIONAL
 
 
 def print_status(status: EngineStatus) -> None:
