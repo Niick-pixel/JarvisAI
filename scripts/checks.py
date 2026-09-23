@@ -108,7 +108,7 @@ def check_case_collisions() -> list[str]:
     return [
         f"{' and '.join(paths)} differ only in case (or, as imports, in extension)"
         for paths in by_lower.values()
-        if len({p.rsplit('.', 1)[0] if p.startswith('web/src/') else p for p in paths}) > 1
+        if len({p.rsplit(".", 1)[0] if p.startswith("web/src/") else p for p in paths}) > 1
     ]
 
 
