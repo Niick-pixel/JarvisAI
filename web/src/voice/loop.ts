@@ -6,7 +6,7 @@
 // barge-in: with the speakers on, the mic would hear Jarvis and interrupt itself, so interrupting
 // is a tap.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { split } from "../chat/thinking";
+import { split } from "../chat/reasoning";
 import { useSession } from "../store/session";
 import { useVoice } from "../store/voice";
 import { drive } from "./level";

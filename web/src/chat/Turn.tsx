@@ -16,7 +16,7 @@ import Markdown from "./Markdown";
 import ReplayDiff from "./ReplayDiff";
 import SiblingNav from "./SiblingNav";
 import Thinking from "./Thinking";
-import { split } from "./thinking";
+import { split } from "./reasoning";
 import XRay from "./XRay";
 
 const arrive = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, transition: BOUNCE };

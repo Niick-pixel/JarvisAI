@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -94,8 +95,25 @@ def check_no_phone_home() -> list[str]:
     return failures
 
 
+def check_case_collisions() -> list[str]:
+    """Windows ignores case, so `Thinking.tsx` and `thinking.ts` are one file there - and a build
+    that passes here breaks on the machine the app is for."""
+    tracked = subprocess.run(
+        ["git", "ls-files"], cwd=ROOT, capture_output=True, text=True, check=True
+    ).stdout.split("\n")
+    by_lower: dict[str, list[str]] = {}
+    for path in filter(None, tracked):
+        stem = path.rsplit(".", 1)[0] if path.startswith("web/src/") else path
+        by_lower.setdefault(stem.lower(), []).append(path)
+    return [
+        f"{' and '.join(paths)} differ only in case (or, as imports, in extension)"
+        for paths in by_lower.values()
+        if len({p.rsplit('.', 1)[0] if p.startswith('web/src/') else p for p in paths}) > 1
+    ]
+
+
 def main() -> int:
-    failures = check_file_lengths() + check_no_phone_home()
+    failures = check_file_lengths() + check_no_phone_home() + check_case_collisions()
     for failure in failures:
         print(f"  {failure}", file=sys.stderr)
     if failures:

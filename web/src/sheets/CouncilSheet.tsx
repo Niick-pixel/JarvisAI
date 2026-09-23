@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import type { ScoreboardRow } from "../api/types";
 import Markdown from "../chat/Markdown";
-import { split } from "../chat/thinking";
+import { split } from "../chat/reasoning";
 import AgreementMatrix from "../council/AgreementMatrix";
 import Sheet from "../shell/Sheet";
 import { useCouncil } from "../store/council";

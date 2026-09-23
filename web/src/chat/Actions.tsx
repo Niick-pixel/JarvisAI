@@ -11,7 +11,7 @@ import { useXray } from "../store/xray";
 import { IconButton } from "../ui/controls";
 import Menu, { type MenuItem } from "../ui/Menu";
 import SiblingNav from "./SiblingNav";
-import { split } from "./thinking";
+import { split } from "./reasoning";
 
 export function CopyButton({ text }: { text: string }) {
   const [done, setDone] = useState(false);
