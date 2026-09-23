@@ -14,6 +14,35 @@ Sovereign HUD, memory as files you own, RAG with reranking, private web search, 
 in and out, and scheduled agents behind an approval gate. What is listed below is built; what is
 not built is not listed.
 
+## The Windows app
+
+Run `JarvisSetup.exe`. It needs no administrator prompt and no WSL, Python or Node. It installs Jarvis
+with llama.cpp bundled, and on first launch it opens *Pick a model for this machine*: the same
+ranking `make models` prints, with real download sizes, a progress bar you can pause, and a hash
+check before a file counts as installed. When the download finishes the model is serving.
+
+- **Where things live.** The program installs to `%LOCALAPPDATA%\Programs\Jarvis`; your data
+  (conversations, memory, models, logs, `config.toml`) goes to `%LOCALAPPDATA%\Jarvis`, which the
+  uninstaller leaves alone.
+- **The window** is Edge WebView2, which Windows 11 includes. Without it the app opens your default
+  browser instead and says why in `logs\jarvis.log`.
+- **The GPU build of llama.cpp** is CUDA 12, which needs an NVIDIA driver from 2023 or later. On a
+  machine without one it runs on the CPU, slowly, rather than refusing.
+- **Voice is not in the app yet.** Its engines are an optional install that the bundle leaves out
+  to stay small; the app says so where the mic button would work.
+
+Building it yourself happens on Windows, because PyInstaller does not cross-compile. The
+`windows-app` workflow does exactly that on every pull request and attaches both
+`JarvisSetup.exe` and a portable zip to the run:
+
+```powershell
+pip install -e ".[desktop]"; cd web; npm ci; npm run build; cd ..
+python packaging/fetch_llama.py b11139
+python packaging/make_icon.py
+pyinstaller packaging/jarvis.spec --noconfirm --distpath build/dist --workpath build/work
+build\dist\Jarvis\Jarvis.exe --smoke-test      # boots, checks, shuts down; see logs\jarvis.log
+```
+
 ## Quickstart on a fresh machine
 
 Written for the machine this was built for: Windows 11, WSL2, and an 8–12GB NVIDIA card. On native

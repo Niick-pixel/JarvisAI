@@ -592,6 +592,8 @@ Apache-2.0) except the two separate-process services noted at the end.
 | `faster-whisper` | M5 | Streaming local STT that runs at `small`/int8 inside our VRAM budget. |
 | `piper-tts` | M5 | CPU-only streaming TTS; leaves the GPU for tokens. |
 | `apscheduler` | M6 | Cron-syntax jobs persisted into the same SQLite file, per the brief. |
+| `pywebview` | desktop | A native window over the same local server; on Windows it is Edge WebView2, so the shader draws as in a browser. `[desktop]` extra only. |
+| `pyinstaller` | desktop | Bundles the Python app into a folder with `Jarvis.exe`; build-time only. `[desktop]` extra only. Inno Setup (build machine only, never shipped as code) wraps that folder into `JarvisSetup.exe`. |
 
 ### 6.3 Dev / test
 
@@ -996,6 +998,38 @@ built.
    usable during them; the provider list reports "starting llama-server and loading the model"
    until it is serving, and the reason instead if it never does.
 6. **Off by default.** Starting processes on someone's machine is something to opt into.
+
+
+### The Windows desktop app, added after M6
+
+The brief asked for a local web app; the person using it wanted a program. The desktop build is the
+same server in its own window, not a second implementation of anything.
+
+1. **A window over the server, not a rewrite.** `server/desktop.py` runs the FastAPI app on a free
+   loopback port in a thread and opens pywebview on it. Closing the window takes the ordinary
+   shutdown path, which is what stops the llama-server the app started.
+2. **Two roots.** Resources that ship with the app come from the bundle; your data comes from
+   `%LOCALAPPDATA%\Jarvis`. In a checkout both are the working directory, so `make dev` did not
+   change. `JARVIS_HOME` points both data and config anywhere, which is also how the smoke test
+   runs isolated.
+3. **One folder, then an installer.** A one-file build would unpack several hundred MB of CUDA
+   runtime to a temp directory on every launch. PyInstaller builds a folder; Inno Setup wraps it
+   into a per-user `JarvisSetup.exe` with no admin prompt.
+4. **llama.cpp is bundled and autostart is on in the app.** In a checkout autostart stays off,
+   because starting processes is opt-in; downloading the build that bundles it is that opt-in. The
+   release is pinned, and the fetch script asks it which assets exist rather than guessing names.
+5. **The model download `/api/models/pull` promised since M1 finally exists,** because the app
+   has no `make models`. It streams to a `.part` file, resumes with Range requests, and renames only
+   after the sha256 matches the registry. It accepts catalogue keys, never URLs.
+6. **The smoke test is the verification, and it runs on Windows.** `Jarvis --smoke-test` fails on
+   the packaging defects the app would otherwise report politely forever (frontend missing,
+   migrations missing, the vector extension not loadable). In CI it also streams a real reply from
+   a 15M-parameter model through the bundled llama-server. That is how the first bundle's silent
+   loss of vector search was caught.
+
+**Found on the way:** current llama.cpp takes `--flash-attn on|off|auto` with a required value,
+and the bare flag the launcher appended made any recent server exit at startup. That affected
+`make dev` as much as the app. The launcher now reads the binary's `--help` to choose the spelling.
 
 
 ---
