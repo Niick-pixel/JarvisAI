@@ -5,6 +5,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import type { ModelOption } from "../api/types";
+import { useDownloads } from "../store/downloads";
 import { useLibrary } from "../store/library";
 import Button from "../ui/Button";
 import { SPRING } from "../ui/motion";
@@ -123,10 +124,18 @@ export default function ModelPicker() {
             <div className="my-1.5 h-px bg-white/8" />
             {models.length === 0 && (
               <p className="px-3 py-3 text-[11px] text-ink-faint">
-                No model is reachable. Start llama.cpp, Ollama or LM Studio, or run{" "}
-                <span className="font-mono">make models</span>.
+                No model is reachable. Download one below, or start llama.cpp, Ollama or LM Studio.
               </p>
             )}
+            <button
+              onClick={() => {
+                setOpen(false);
+                void useDownloads.getState().show();
+              }}
+              className="w-full rounded-xl border border-transparent px-3 py-2 text-left text-sm text-ink-muted hover:bg-white/6"
+            >
+              Download a model…
+            </button>
             {models.map((option) => (
               <Row
                 key={option.model.id}

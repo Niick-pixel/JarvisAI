@@ -17,12 +17,15 @@ import logging
 import os
 import shutil
 import signal
+import subprocess
+import sys
 import time
 from pathlib import Path
-from typing import IO
+from typing import IO, Any
 
 import httpx
 
+from server.db import repo
 from server.db.connection import Database
 from server.models.launch import LaunchStatus
 from server.providers import launch_args
@@ -71,7 +74,8 @@ class LlamaServer:
         model_path, ctx_len = self._resolve()
         if not model_path:
             return self._note(
-                f"no GGUF found in {self.settings.paths.models_dir} - run `make models` first"
+                f"no model yet - pick one to download (or run `make models`); models live in "
+                f"{self.settings.paths.models_dir}"
             )
 
         argv = [binary, *launch_args.command(self.settings, model_path, ctx_len)[1:]]
@@ -84,7 +88,21 @@ class LlamaServer:
             log_path=str(self.log_path),
             detail="starting llama-server and loading the model",
         )
-        return await self._spawn(argv, cfg.startup_timeout_s)
+        status = await self._spawn(argv, cfg.startup_timeout_s)
+        if status.started or not launch_args.cache_type_refused(status.detail):
+            return status
+        # A quantised KV cache needs the model's head size to be a multiple of the quant block
+        # (32 for q8_0). Most chat models use 64 or 128; some do not, and refusing to serve them
+        # at all is worse than spending more VRAM on their cache. Say which happened.
+        f16 = launch_args.with_cache_type(argv, "f16")
+        self.status = self.status.model_copy(update={"command": f16})
+        status = await self._spawn(f16, cfg.startup_timeout_s)
+        if status.started:
+            status = self._note(
+                f"{status.detail} (f16 KV cache: this model's head size does not fit "
+                f"{self.settings.hardware.kv_cache_dtype})"
+            )
+        return status
 
     def _resolve(self) -> tuple[str, int]:
         cfg = self.settings.providers.llamacpp
@@ -92,7 +110,11 @@ class LlamaServer:
             return cfg.model_path, cfg.ctx_len or launch_args.FALLBACK_CTX
         with self.db.session() as conn:
             models = launch_args.registered_models(conn, self.settings.paths.models_dir)
-        model, ctx = launch_args.choose(models, self.settings)
+            pinned = repo.settings.get(conn, repo.settings.SELECTED_MODEL)
+        # The model you picked - in the picker, or by downloading it - wins over the automatic
+        # choice, as long as it is a file that is actually here.
+        chosen = [m for m in models if m.id == pinned]
+        model, ctx = launch_args.choose(chosen or models, self.settings)
         if model is None:
             return "", 0
         return model.file_path or "", cfg.ctx_len or ctx
@@ -108,7 +130,7 @@ class LlamaServer:
                 *argv,
                 stdout=self._log,
                 stderr=asyncio.subprocess.STDOUT,
-                start_new_session=True,
+                **_detached(),
             )
         except OSError as exc:
             self._close_log()
@@ -138,6 +160,12 @@ class LlamaServer:
         await self.stop()
         return self._note(f"llama-server did not answer within {timeout:.0f}s: {self._tail()}")
 
+    async def restart(self) -> LaunchStatus:
+        """Serve whatever `_resolve` now picks. Used after a download, so the new model is live
+        without restarting the app. A server this process did not start is still left alone."""
+        await self.stop()
+        return await self.start()
+
     async def stop(self) -> None:
         """Only ever kills a process this object started. A server you ran yourself is yours."""
         process = self._process
@@ -145,13 +173,11 @@ class LlamaServer:
         if process is None or process.returncode is not None:
             self._close_log()
             return
-        with contextlib.suppress(ProcessLookupError):
-            os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+        _signal(process, force=False)
         try:
             await asyncio.wait_for(process.wait(), timeout=TERM_GRACE_S)
         except TimeoutError:
-            with contextlib.suppress(ProcessLookupError):
-                os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+            _signal(process, force=True)
             await process.wait()
         log.info("stopped llama-server pid=%s", process.pid)
         self._close_log()
@@ -175,6 +201,27 @@ class LlamaServer:
         if self._log is not None:
             self._log.close()
             self._log = None
+
+
+def _detached() -> dict[str, Any]:
+    """Keep terminal signals away from the model, so the app decides when it stops.
+
+    On Windows the same idea is a new process group, plus no console window: a desktop app that
+    flashes a black terminal every time the model starts looks broken even when it is not.
+    """
+    if sys.platform == "win32":
+        flags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW
+        return {"creationflags": flags}
+    return {"start_new_session": True}
+
+
+def _signal(process: asyncio.subprocess.Process, *, force: bool) -> None:
+    with contextlib.suppress(ProcessLookupError):
+        if sys.platform == "win32":
+            # llama-server spawns no children, so terminating the one process is the whole job.
+            process.kill() if force else process.terminate()
+        else:
+            os.killpg(os.getpgid(process.pid), signal.SIGKILL if force else signal.SIGTERM)
 
 
 async def healthy(base_url: str) -> bool:

@@ -17,3 +17,9 @@ web/tsconfig.tsbuildinfo
 /models/
 /memory/
 /services/
+
+# Desktop packaging output, and the llama.cpp binaries CI downloads into the bundle.
+build/
+packaging/llama/
+packaging/jarvis.ico
+packaging/jarvis-256.png

@@ -7,7 +7,11 @@ function of the settings, the database and the card - it starts nothing.
 
 from __future__ import annotations
 
+import functools
+import shutil
 import sqlite3
+import subprocess
+import sys
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -109,8 +113,64 @@ def command(settings: Settings, model_path: str, ctx_len: int) -> list[str]:
     ]
     if gpus:
         argv += ["-ngl", "999"]
-        if kv != "f16":
-            # A quantised V cache needs flash attention in every recent build; without this the
-            # server exits at startup with a message most people read as "quantisation is broken".
-            argv.append("--flash-attn")
+    if kv != "f16":
+        argv += flash_attn_args(cfg.binary)
     return argv + list(cfg.extra_args)
+
+
+@functools.cache
+def flash_attn_args(binary: str) -> list[str]:
+    """A quantised V cache needs flash attention, and llama.cpp has spelled that two ways.
+
+    Older builds take a bare `--flash-attn`. Current builds take `--flash-attn on|off|auto`,
+    default `auto` - so the bare flag, appended last, makes the server exit at startup with
+    "expected value". The binary's own `--help` says which it is; asking is cheaper than guessing
+    and wrong in half the installs.
+    """
+    resolved = shutil.which(binary) or binary
+    try:
+        # No console window on Windows: a windowed app must not flash a terminal to ask a question.
+        flags = 0
+        if sys.platform == "win32":
+            flags = subprocess.CREATE_NO_WINDOW
+        result = subprocess.run(
+            [resolved, "--help"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
+            creationflags=flags,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return []
+    help_text = result.stdout + result.stderr
+    if "on|off|auto" in help_text:
+        return []  # auto already enables it whenever the backend can
+    return ["--flash-attn"] if "--flash-attn" in help_text else []
+
+
+CACHE_TYPE_REFUSAL = "does not divide n_embd_head_k"
+"""llama.cpp's words when a quantised KV cache's block size does not fit the model's head size."""
+
+
+def cache_type_refused(detail: str) -> bool:
+    return CACHE_TYPE_REFUSAL in detail
+
+
+def with_cache_type(argv: list[str], cache_type: str) -> list[str]:
+    """The same command with both KV cache types replaced - and no flash-attn flag, which an f16
+    cache does not need and older builds only accept alongside a quantised one."""
+    out: list[str] = []
+    skip = False
+    for index, arg in enumerate(argv):
+        if skip:
+            skip = False
+            continue
+        if arg in ("--cache-type-k", "--cache-type-v"):
+            out += [arg, cache_type]
+            skip = True
+        elif arg == "--flash-attn" and (index + 1 == len(argv) or argv[index + 1].startswith("-")):
+            continue
+        else:
+            out.append(arg)
+    return out

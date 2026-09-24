@@ -14,10 +14,12 @@ import CouncilPanel from "./council/CouncilPanel";
 import SourcesPanel from "./knowledge/SourcesPanel";
 import CaptureToast from "./memory/CaptureToast";
 import MemoryPage from "./memory/MemoryPage";
+import GetModel from "./models/GetModel";
 import Background from "./scene/Background";
 import EdgeGlow from "./scene/EdgeGlow";
 import { useSession } from "./store/session";
 import { useAgents } from "./store/agents";
+import { useDownloads } from "./store/downloads";
 import { useVoice } from "./store/voice";
 import VoiceNotice from "./voice/VoiceNotice";
 import { useVisual } from "./store/visual";
@@ -26,6 +28,7 @@ export default function App() {
   const bootstrap = useSession((s) => s.bootstrap);
   const refreshVoice = useVoice((s) => s.refresh);
   const watchAgents = useAgents((s) => s.watch);
+  const checkFirstRun = useDownloads((s) => s.checkFirstRun);
   const preset = useVisual((s) => s.preset);
   const performanceMode = useVisual((s) => s.performanceMode);
   const setPreset = useVisual((s) => s.setPreset);
@@ -40,9 +43,11 @@ export default function App() {
     void bootstrap().catch(() => undefined);
     // Asked once, at boot: the answer decides whether the mic button explains itself or works.
     void refreshVoice().catch(() => undefined);
+    // A fresh desktop install has llama.cpp but no model yet: offer one instead of an empty chat.
+    void checkFirstRun().catch(() => undefined);
     // Jobs fire while you are elsewhere; this is what makes an approval appear without a reload.
     return watchAgents();
-  }, [bootstrap, refreshVoice, watchAgents]);
+  }, [bootstrap, refreshVoice, watchAgents, checkFirstRun]);
 
   return (
     <>
@@ -89,6 +94,7 @@ export default function App() {
         </AnimatePresence>
       </div>
       <CaptureToast />
+      <GetModel />
     </>
   );
 }

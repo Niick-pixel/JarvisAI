@@ -19,6 +19,8 @@ sys.path.insert(0, str(ROOT))
 
 from server.hardware import catalog as catalog_mod  # noqa: E402
 from server.hardware import probe  # noqa: E402
+from server.hardware.registry_files import register as register_row  # noqa: E402
+from server.hardware.registry_files import resolve_file  # noqa: E402
 from server.models.hardware import ModelRecommendation  # noqa: E402
 from server.settings import load_settings  # noqa: E402
 
@@ -29,24 +31,6 @@ STATUS_LABEL = {
     "needs_offload": "too big",
     "unavailable": "n/a",
 }
-
-
-def resolve_file(entry: dict[str, Any]) -> tuple[str | None, int | None, str | None]:
-    """Ask the registry for the real filename, byte size and hash. Offline is not fatal."""
-    try:
-        from fnmatch import fnmatch
-
-        from huggingface_hub import HfApi
-
-        info = HfApi().model_info(entry["hf_repo"], files_metadata=True)
-        matches = [s for s in info.siblings if fnmatch(s.rfilename, entry["file_glob"])]
-        if not matches:
-            return None, None, None
-        best = min(matches, key=lambda s: s.size or 0)
-        sha = getattr(best, "lfs", None)
-        return best.rfilename, best.size, getattr(sha, "sha256", None)
-    except Exception:  # noqa: BLE001 - offline, rate limited, or the repo moved
-        return None, None, None
 
 
 def print_table(rows: list[tuple[ModelRecommendation, str | None, int | None]]) -> None:
@@ -91,30 +75,6 @@ def download(entry: dict[str, Any], filename: str, size: int | None, models_dir:
     print(f"\nDownloading {filename} into {models_dir} ...")
     path = hf_hub_download(repo_id=entry["hf_repo"], filename=filename, local_dir=str(models_dir))
     return Path(path)
-
-
-def register(path: Path, entry: dict[str, Any], sha256: str | None, ctx_len: int) -> None:
-    """Record the file so the app can show it, and so a rerun can verify the exact weights."""
-    from server.db.connection import Database
-
-    settings = load_settings()
-    db = Database(settings.paths.db_path)
-    with db.session() as conn:
-        conn.execute(
-            "INSERT OR REPLACE INTO models (id, provider, display_name, file_path, sha256, quant,"
-            " size_bytes, ctx_len_max, supports_logprobs, supports_prefix, last_seen_at)"
-            " VALUES (?,?,?,?,?,?,?,?,1,1,strftime('%s','now')*1000)",
-            (
-                f"llamacpp:{path.name}",
-                "llamacpp",
-                entry["display_name"],
-                str(path),
-                sha256 or "",
-                entry.get("quant"),
-                path.stat().st_size,
-                ctx_len,
-            ),
-        )
 
 
 def next_steps(path: Path, ctx_len: int) -> None:
@@ -187,7 +147,10 @@ def main() -> int:
             return 0
 
     path = download(entry, filename, size, settings.paths.models_dir)
-    register(path, entry, sha256, rec.recommended_ctx_len)
+    from server.db.connection import Database
+
+    with Database(settings.paths.db_path).session() as conn:
+        register_row(conn, path, entry, sha256, rec.recommended_ctx_len)
     next_steps(path, rec.recommended_ctx_len)
     return 0
 

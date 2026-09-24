@@ -17,7 +17,9 @@ from pydantic_settings import (
     TomlConfigSettingsSource,
 )
 
-CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.toml"
+from server import paths
+
+CONFIG_PATH = paths.config_path()
 
 
 class BindRefused(RuntimeError):
@@ -31,11 +33,13 @@ class ServerConfig(BaseModel):
 
 
 class PathsConfig(BaseModel):
-    data_dir: Path = Path("./data")
-    models_dir: Path = Path("./models")
-    vault_dir: Path = Path("./vault")
+    # Factories rather than literals: in a checkout these are ./data and friends, as always; in the
+    # packaged app they live under %LOCALAPPDATA%\Jarvis, never beside the executable.
+    data_dir: Path = Field(default_factory=lambda: paths.user_path("data"))
+    models_dir: Path = Field(default_factory=lambda: paths.user_path("models"))
+    vault_dir: Path = Field(default_factory=lambda: paths.user_path("vault"))
     """Where exported conversations land. Point it at an Obsidian vault and they are just notes."""
-    memory_dir: Path = Path("./memory")
+    memory_dir: Path = Field(default_factory=lambda: paths.user_path("memory"))
     """Plain Markdown, in its own git repo. The files are the truth (BRIEF.md 4.7)."""
 
     @property
@@ -46,11 +50,12 @@ class PathsConfig(BaseModel):
 class LlamaCppConfig(BaseModel):
     enabled: bool = True
     base_url: str = "http://127.0.0.1:8081"
-    autostart: bool = False
-    """Start llama-server with the app. Off by default: starting processes on someone's machine is
-    something to opt into. A server already listening on `base_url` is never restarted."""
-    binary: str = "llama-server"
-    """Resolved on PATH unless it is an absolute path."""
+    autostart: bool = Field(default_factory=lambda: paths.bundled_llama_server() is not None)
+    """Start llama-server with the app. Off in a checkout, because starting processes on someone's
+    machine is something to opt into; on in the desktop app, because you chose the download that
+    bundles it. A server already listening on `base_url` is never restarted either way."""
+    binary: str = Field(default_factory=lambda: str(paths.bundled_llama_server() or "llama-server"))
+    """Resolved on PATH unless it is an absolute path. The desktop app points at its own copy."""
     model_path: str = ""
     """Empty means the largest registered model this card can actually hold."""
     ctx_len: int = 0
@@ -135,7 +140,7 @@ class MemoryConfig(BaseModel):
 
 
 class AgentsConfig(BaseModel):
-    workspace: Path = Path("./workspace")
+    workspace: Path = Field(default_factory=lambda: paths.user_path("workspace"))
     """The default writable root for a job that does not name its own. Created on first write."""
     max_steps: int = 6
     """How many generate-then-call rounds one job run may take before it has to conclude."""

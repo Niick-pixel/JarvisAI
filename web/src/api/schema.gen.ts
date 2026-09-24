@@ -450,12 +450,37 @@ export interface paths {
         };
         /**
          * Catalog
-         * @description The same ranking `make models` prints, so the UI and the CLI cannot disagree.
+         * @description The same ranking `make models` prints, with real sizes and what is already on disk.
          */
         get: operations["catalog_api_hardware_catalog_get"];
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hardware/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download Progress */
+        get: operations["download_progress_api_hardware_download_get"];
+        put?: never;
+        /**
+         * Start Download
+         * @description Fetch one model from the catalogue, then serve it. Only catalogue keys are accepted.
+         */
+        post: operations["start_download_api_hardware_download_post"];
+        /**
+         * Cancel Download
+         * @description Stop it. The partial file stays, so starting again resumes instead of starting over.
+         */
+        delete: operations["cancel_download_api_hardware_download_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1601,6 +1626,61 @@ export interface components {
              * @enum {string}
              */
             type: "done";
+        };
+        /**
+         * DownloadProgress
+         * @description One model download. There is only ever one: a card holds one model, and two multi-GB
+         *     downloads racing each other finish later than either would have alone.
+         */
+        DownloadProgress: {
+            /**
+             * Bytes Done
+             * @default 0
+             */
+            bytes_done: number;
+            /** Bytes Total */
+            bytes_total?: number | null;
+            /**
+             * Detail
+             * @default
+             */
+            detail: string;
+            /**
+             * Display Name
+             * @default
+             */
+            display_name: string;
+            /**
+             * Filename
+             * @default
+             */
+            filename: string;
+            /**
+             * Key
+             * @default
+             */
+            key: string;
+            /**
+             * Path
+             * @default
+             */
+            path: string;
+            /**
+             * Resumed From
+             * @default 0
+             */
+            resumed_from: number;
+            /**
+             * State
+             * @default idle
+             * @enum {string}
+             */
+            state: "idle" | "resolving" | "downloading" | "verifying" | "done" | "failed" | "cancelled";
+        };
+        /** DownloadRequest */
+        DownloadRequest: {
+            /** Key */
+            key: string;
         };
         /** EngineStatus */
         EngineStatus: {
@@ -3912,6 +3992,79 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModelRecommendation"][];
+                };
+            };
+        };
+    };
+    download_progress_api_hardware_download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadProgress"];
+                };
+            };
+        };
+    };
+    start_download_api_hardware_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DownloadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadProgress"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_download_api_hardware_download_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadProgress"];
                 };
             };
         };
