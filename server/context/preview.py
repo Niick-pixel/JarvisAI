@@ -6,7 +6,8 @@ Split out of chat/run.py, which owns turning a request into rows and tokens; thi
 
 from __future__ import annotations
 
-from server.chat.run import _resolve_ctx_len, resolve_model_id
+from server.chat.budget import resolve_ctx_len
+from server.chat.run import resolve_model_id
 from server.context.assembler import assemble
 from server.db import repo
 from server.db.connection import Database
@@ -46,7 +47,7 @@ async def assemble_preview(
             path=path,
             provider=provider,
             model_id=model.id,
-            ctx_len=_resolve_ctx_len(request, model, settings),
+            ctx_len=resolve_ctx_len(request, model, settings),
             max_gen_tokens=max_gen_tokens,
             prefs=repo.blocks.for_conversation(conn, conversation_id),
         )

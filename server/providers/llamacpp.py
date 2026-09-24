@@ -15,6 +15,7 @@ import httpx
 from server.models.params import SamplingParams
 from server.models.provider import Capabilities, ModelInfo, ProviderInfo, ProviderKind
 from server.models.stream import Alternative
+from server.providers import names
 from server.providers.base import (
     PromptMessage,
     ProviderError,
@@ -85,12 +86,15 @@ class LlamaCppProvider:
         path = str(props.get("model_path") or "")
         gen = props.get("default_generation_settings") or {}
         ctx = int(gen.get("n_ctx") or props.get("n_ctx") or 4096)
-        display = path.rsplit("/", 1)[-1] or "loaded model"
+        filename = names.basename(path) or "loaded model"
         return [
             ModelInfo(
-                id=f"llamacpp:{display}",
+                # The bare filename, on every OS: this is what the downloader pins and the
+                # launcher matches, and on Windows it used to be the whole path, so they never met.
+                id=f"llamacpp:{filename}",
                 provider="llamacpp",
-                display_name=display,
+                display_name=names.friendly(filename) if path else "Local model",
+                quant=names.quant_of(filename),
                 ctx_len_max=ctx,
                 file_path=path or None,
                 supports_logprobs=True,
@@ -107,9 +111,17 @@ class LlamaCppProvider:
         except Exception:  # noqa: BLE001 - caller falls back to an estimate and labels it
             return None
 
-    async def build_prompt(self, messages: list[PromptMessage]) -> str:
-        """Prefer the model's own chat template; fall back to ChatML and say we did."""
-        payload = {"messages": [m.model_dump() for m in messages]}
+    async def build_prompt(
+        self, messages: list[PromptMessage], thinking: bool | None = None
+    ) -> str:
+        """Prefer the model's own chat template; fall back to ChatML and say we did.
+
+        `thinking` reaches the template as `enable_thinking`, which is how Qwen3-style models are
+        told to answer directly. Templates without the variable ignore it.
+        """
+        payload: dict[str, Any] = {"messages": [m.model_dump() for m in messages]}
+        if thinking is not None:
+            payload["chat_template_kwargs"] = {"enable_thinking": thinking}
         try:
             async with self._client() as client:
                 resp = await client.post("/apply-template", json=payload, timeout=15.0)
@@ -132,7 +144,7 @@ class LlamaCppProvider:
         ctx_len: int,
         assistant_prefix: str | None = None,
     ) -> AsyncIterator[StreamItem]:
-        prompt = await self.build_prompt(messages)
+        prompt = await self.build_prompt(messages, params.thinking)
         if assistant_prefix:
             # Continuing the same prefix means llama.cpp reuses the KV cache for it.
             prompt += assistant_prefix

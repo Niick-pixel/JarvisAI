@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
+from server.chat import titles
 from server.chat.execute import execute
 from server.chat.run import PreparedRun
 from server.db import repo
@@ -32,9 +33,26 @@ async def run_then_capture(state: AppState, prepared: PreparedRun) -> MemoryBatc
     told, wrongly, that nothing was captured.
     """
     await execute(state.db, state.live, prepared)
+    await _refine_title(state, prepared)
     if not state.settings.memory.auto_extract:
         return MemoryBatch(batch_id="", entries=[])
     return await capture(state, prepared)
+
+
+async def _refine_title(state: AppState, prepared: PreparedRun) -> None:
+    with state.db.session() as conn:
+        conversation = repo.conversations.get(conn, prepared.conversation_id)
+        messages = repo.messages.list_for_conversation(conn, prepared.conversation_id)
+    first = next((m for m in messages if m.role == "user"), None)
+    if conversation is None or first is None or conversation.title != titles.instant(first.content):
+        return
+    await titles.refine(
+        state.db,
+        prepared.provider,
+        conversation_id=prepared.conversation_id,
+        model_id=prepared.model.id,
+        message=first.content,
+    )
 
 
 def register(state: AppState, prepared: PreparedRun) -> asyncio.Task[MemoryBatch]:

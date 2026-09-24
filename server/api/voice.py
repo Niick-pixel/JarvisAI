@@ -7,7 +7,7 @@ from fastapi.responses import StreamingResponse
 
 from server.deps import State
 from server.errors import SovereignError
-from server.models.voice import SpeakRequest, Transcript, VoiceStatus
+from server.models.voice import SpeakRequest, Transcript, VoicePackProgress, VoiceStatus
 from server.voice import capability, stt, tts
 from server.voice.capability import VoiceUnavailable
 
@@ -25,6 +25,26 @@ WAV_RESPONSES: dict[int | str, dict[str, object]] = {
 def status(state: State) -> VoiceStatus:
     """Which half of voice works, on what device, and the exact command that fixes the rest."""
     return capability.status(state.settings, stt_device=stt.loaded_device())
+
+
+@router.get("/pack")
+async def pack_progress(state: State) -> VoicePackProgress:
+    assert state.voice_pack is not None
+    return state.voice_pack.progress
+
+
+@router.post("/pack")
+async def pack_start(state: State) -> VoicePackProgress:
+    """Fetch the Whisper model and Piper voice the settings name - nothing else, and only now."""
+    assert state.voice_pack is not None
+    return state.voice_pack.start()
+
+
+@router.delete("/pack")
+async def pack_cancel(state: State) -> VoicePackProgress:
+    assert state.voice_pack is not None
+    state.voice_pack.cancel()
+    return state.voice_pack.progress
 
 
 @router.post("/transcribe")

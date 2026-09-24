@@ -28,15 +28,17 @@ check before a file counts as installed. When the download finishes the model is
   browser instead and says why in `logs\jarvis.log`.
 - **The GPU build of llama.cpp** is CUDA 12, which needs an NVIDIA driver from 2023 or later. On a
   machine without one it runs on the CPU, slowly, rather than refusing.
-- **Voice is not in the app yet.** Its engines are an optional install that the bundle leaves out
-  to stay small; the app says so where the mic button would work.
+- **Voice is built in.** The engines ship in the app; the speech models do not. Settings > Voice
+  (or the first time you press *Talk*) offers **Get voice**, a one-time download of about half a
+  gigabyte: Whisper to listen, Piper to speak, both on this PC.
+- **Looks.** Light by default, dark in Settings > Appearance, or *Auto* to follow Windows.
 
 Building it yourself happens on Windows, because PyInstaller does not cross-compile. The
 `windows-app` workflow does exactly that on every pull request and attaches both
 `JarvisSetup.exe` and a portable zip to the run:
 
 ```powershell
-pip install -e ".[desktop]"; cd web; npm ci; npm run build; cd ..
+pip install -e ".[desktop,voice]"; cd web; npm ci; npm run build; cd ..
 python packaging/fetch_llama.py b11139
 python packaging/make_icon.py
 pyinstaller packaging/jarvis.spec --noconfirm --distpath build/dist --workpath build/work
@@ -138,13 +140,13 @@ llama-server's own error rather than a connection refusal. Its output is in `dat
 make dev        # backend on 127.0.0.1:8080, frontend on 127.0.0.1:5173
 ```
 
-Open <http://127.0.0.1:5173>. The status bar names the backend it found; if none is reachable it
-says so rather than failing on your first message.
+Open <http://127.0.0.1:5173>. The model name at the top is the backend it found; if none is
+reachable, the model menu says so and offers a download rather than failing on your first message.
 
 ### Before downloading several gigabytes
 
 The development stand-in speaks llama.cpp's protocol and generates deterministic nonsense, which is
-enough to walk the whole interface — branching, the Context Inspector, the HUD, agents:
+enough to walk the whole interface — branching, the Context Inspector, thinking, agents:
 
 ```bash
 .venv/bin/python scripts/dev_stub_server.py --port 8081   # after `make install`
@@ -211,9 +213,9 @@ actually working:
   the model file's hash. Rerun reproduces it byte for byte; rerun with different params gives you a
   sibling and a word-level diff. That is the closest thing to a controlled experiment a chat UI has
   offered.
-- **The Sovereign HUD.** Live VRAM, GPU load, tokens/sec, and a lifetime counter with the API spend
-  avoided — printed alongside the rate it assumes, so it is an argument you can check rather than a
-  number to believe.
+- **The Sovereign HUD.** Settings > This PC: live VRAM, GPU load, tokens/sec, and a lifetime counter
+  with the API spend avoided — printed alongside the rate it assumes, so it is an argument you can
+  check rather than a number to believe.
 - **Memory as files you own.** Facts live as plain Markdown in `./memory/`, in a git repo that
   auto-commits every change — so "diff history" is real history. They are captured automatically
   after a turn and reported immediately: a toast names each fact and one click removes exactly that
@@ -290,7 +292,8 @@ make voice    # download the speech models (optional; nothing else ever fetches 
 
 `make check` enforces the rules that are easy to claim and hard to keep: TypeScript types must be
 regenerated from the Pydantic models, no source file may exceed 250 lines, body text must clear
-4.5:1 against the brightest frame the shader can produce, and the built bundle must not reference
+4.5:1 in both themes on every surface, including over the glow at its brightest, and the built
+bundle must not reference
 any external origin.
 
 Tests cover exactly three things — the conversation DAG, the context assembler's token accounting,

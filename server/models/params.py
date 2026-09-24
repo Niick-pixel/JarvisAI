@@ -18,6 +18,9 @@ class SamplingParams(BaseModel):
     max_tokens: int = Field(default=2048, ge=1)
     n_probs: int = Field(default=5, ge=0, le=10)
     """How many alternatives to request per token. 0 disables the x-ray for this run."""
+    thinking: bool | None = None
+    """Ask a reasoning model to think first (True), answer directly (False), or leave it to the
+    model (None). Recorded with the run, because it changes what the same seed produces."""
 
     def resolved(self) -> SamplingParams:
         """Replace a -1 seed with a real one so the run row records what actually happened."""

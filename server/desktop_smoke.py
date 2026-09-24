@@ -4,7 +4,9 @@ It checks the things a packaging mistake breaks while the app keeps politely rep
 the frontend bundled, the migrations found, the vector extension loadable. With
 JARVIS_SMOKE_CHAT=1 it goes further: waits for the bundled llama-server to load a real model and
 streams one reply through the whole pipeline, which is the only way to know the Windows launcher
-works on Windows.
+works on Windows. With JARVIS_SMOKE_VOICE=1 it downloads the voice pack the way the Settings
+button does, has Piper say a sentence and Whisper transcribe it back, which proves both engines
+survived the packaging.
 """
 
 from __future__ import annotations
@@ -12,6 +14,7 @@ from __future__ import annotations
 import json
 import os
 import time
+import urllib.error
 import urllib.request
 from collections.abc import Callable
 from threading import Thread
@@ -20,15 +23,22 @@ from typing import Any
 from server import paths
 
 MODEL_WAIT_S = 240.0
+VOICE_WAIT_S = 600.0
+SPOKEN = "Hello from Jarvis."
 
 
-def _request(url: str, body: dict[str, Any] | None = None, timeout: float = 5) -> bytes:
-    data = json.dumps(body).encode() if body is not None else None
+def _request(
+    url: str,
+    body: dict[str, Any] | bytes | None = None,
+    timeout: float = 5,
+    content_type: str = "application/json",
+) -> bytes:
+    data = body if isinstance(body, bytes) else json.dumps(body).encode() if body else None
     request = urllib.request.Request(
         url,
         data=data,
-        headers={"Content-Type": "application/json"},
-        method="POST" if data else "GET",
+        headers={"Content-Type": content_type},
+        method="POST" if data is not None else "GET",
     )
     with urllib.request.urlopen(request, timeout=timeout) as response:
         return bytes(response.read())
@@ -71,6 +81,51 @@ def _chat(url: str) -> tuple[int, str]:
     return tokens, "" if tokens else f"no tokens; stream began {raw[:200]!r}"
 
 
+def _voice(url: str) -> tuple[str, str]:
+    """(what Whisper heard Piper say, why not)."""
+    try:
+        _request(f"{url}/api/voice/pack", b"", timeout=30)
+    except OSError as exc:
+        return "", f"voice pack would not start: {exc}"
+    deadline = time.monotonic() + VOICE_WAIT_S
+    progress: dict[str, Any] = {}
+    while time.monotonic() < deadline:
+        progress = _json(f"{url}/api/voice/pack") or {}
+        if progress.get("state") not in ("downloading", "verifying"):
+            break
+        time.sleep(2)
+    if progress.get("state") != "done":
+        return "", f"voice pack did not finish: {progress}"
+    try:
+        wav = _request(f"{url}/api/voice/speak", {"text": SPOKEN}, timeout=120)
+        heard = json.loads(
+            _request(f"{url}/api/voice/transcribe", wav, timeout=180, content_type="audio/wav")
+        ).get("text", "")
+    except urllib.error.HTTPError as exc:
+        # The body is the app's own sentence about what is missing; the status code alone is not.
+        body = exc.read().decode(errors="replace")[:400]
+        status = _json(f"{url}/api/voice/status")
+        return "", f"speak/transcribe failed: {exc.code} {body} | voice status: {status}"
+    except (OSError, ValueError) as exc:
+        return "", f"speak/transcribe failed: {exc}"
+    ok = "hello" in heard.lower()
+    return heard, "" if ok else f"Whisper heard {heard!r}, not {SPOKEN!r}"
+
+
+def _bridge_problems() -> list[str]:
+    """pywebview recurses into every public non-callable attribute of the JS API object. One that
+    reached the Window froze the app on its first real launch, and CI never opens a window - so
+    the rule is checked here instead: nothing public on the bridge but its methods."""
+    from server.desktop_bridge import Bridge
+
+    bridge = Bridge()
+    bridge._attach(object())  # noqa: SLF001
+    public = [name for name in dir(bridge) if not name.startswith("_")]
+    return [
+        f"desktop bridge exposes {name}" for name in public if not callable(getattr(bridge, name))
+    ]
+
+
 def smoke(url: str, stop: Callable[[], None], thread: Thread) -> int:
     try:
         frontend = _request(f"{url}/").decode(errors="replace")
@@ -86,16 +141,22 @@ def smoke(url: str, stop: Callable[[], None], thread: Thread) -> int:
             ("migrations missing", not health.get("migrations_applied")),
         )
         if failed
-    ]
+    ] + _bridge_problems()
     tokens = 0
     if os.environ.get("JARVIS_SMOKE_CHAT") == "1":
         tokens, why = _chat(url)
+        if why:
+            problems.append(why)
+    heard = ""
+    if os.environ.get("JARVIS_SMOKE_VOICE") == "1":
+        heard, why = _voice(url)
         if why:
             problems.append(why)
     report = {
         "health": health,
         "launch": _json(f"{url}/api/providers/launch"),
         "tokens_streamed": tokens,
+        "heard": heard,
         "user_root": str(paths.user_root().resolve()),
         "problems": problems,
     }

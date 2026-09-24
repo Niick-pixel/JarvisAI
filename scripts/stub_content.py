@@ -105,6 +105,51 @@ def _agent_reply(prompt: str) -> list[str]:
     return blocks
 
 
+SAMPLE_MARKDOWN = """Here is what a formatted answer looks like, from the development stand-in.
+
+**Three things to check:**
+
+1. Headings, **bold** and `inline code` render as text, not as symbols.
+2. Lists keep their numbers and indentation.
+3. Code blocks get their own surface:
+
+```python
+def greet(name: str) -> str:
+    return f"Hello, {name}"
+```
+
+| Setting | Value |
+| --- | --- |
+| Context | 32K |
+| Thinking | On |
+
+None of this is a real answer - the stand-in generates nothing."""
+
+
+def reply_pieces(prompt: str, rng: random.Random) -> list[str]:
+    """Qwen3's shape: think first unless the template pre-filled an empty thought, then answer.
+
+    Asking for "markdown" returns a formatted sample so the renderer can be checked; anything else
+    is shuffled words, which is what keeps this stand-in obviously not a model.
+    """
+    thinking = prompt.endswith("<|assistant|>\n")
+    last_user = prompt.rsplit("<|user|>\n", 1)[-1].split("\n<|", 1)[0].lower()
+    pieces: list[str] = []
+    if thinking:
+        thought = (
+            "The stand-in is thinking out loud here, the way a reasoning model does. "
+            "None of this belongs in the answer, in history, or in memory."
+        )
+        pieces += ["<think>\n"] + [w + " " for w in thought.split()] + ["\n</think>\n\n"]
+    if "markdown" in last_user:
+        pieces += [piece + " " for piece in SAMPLE_MARKDOWN.split(" ")]
+    else:
+        words = list(WORDS)
+        rng.shuffle(words)
+        pieces += [w + " " for w in words]
+    return pieces
+
+
 def shuffled_words(rng: random.Random) -> list[str]:
     words = list(WORDS)
     rng.shuffle(words)

@@ -16,3 +16,9 @@ export const messageVariants: Variants = {
 export const listVariants: Variants = {
   visible: { transition: { staggerChildren: 0.025 } },
 };
+
+/** Google's bounce: a little overshoot on things that arrive, never on things that leave. */
+export const BOUNCE: Transition = { type: "spring", stiffness: 520, damping: 24, mass: 0.8 };
+
+/** For large surfaces - sheets, the sidebar - where overshoot would read as wobble. */
+export const GLIDE: Transition = { type: "spring", stiffness: 340, damping: 36, mass: 1 };

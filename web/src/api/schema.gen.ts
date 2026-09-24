@@ -1100,6 +1100,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/voice/pack": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pack Progress */
+        get: operations["pack_progress_api_voice_pack_get"];
+        put?: never;
+        /**
+         * Pack Start
+         * @description Fetch the Whisper model and Piper voice the settings name - nothing else, and only now.
+         */
+        post: operations["pack_start_api_voice_pack_post"];
+        /** Pack Cancel */
+        delete: operations["pack_cancel_api_voice_pack_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/voice/speak": {
         parameters: {
             query?: never;
@@ -1696,6 +1718,11 @@ export interface components {
              * @default
              */
             device: string;
+            /**
+             * Downloadable
+             * @default false
+             */
+            downloadable: boolean;
             /** Engine */
             engine: string;
             /**
@@ -2712,6 +2739,8 @@ export interface components {
              * @default 0.8
              */
             temperature: number;
+            /** Thinking */
+            thinking?: boolean | null;
             /**
              * Top K
              * @default 40
@@ -2979,6 +3008,38 @@ export interface components {
              */
             type: "verdict";
             verdict: components["schemas"]["CouncilVerdict"];
+        };
+        /**
+         * VoicePackProgress
+         * @description The voice pack download: the Whisper model that listens and the Piper voice that speaks.
+         */
+        VoicePackProgress: {
+            /**
+             * Bytes Done
+             * @default 0
+             */
+            bytes_done: number;
+            /**
+             * Bytes Total
+             * @default 0
+             */
+            bytes_total: number;
+            /**
+             * Detail
+             * @default
+             */
+            detail: string;
+            /**
+             * File
+             * @default
+             */
+            file: string;
+            /**
+             * State
+             * @default idle
+             * @enum {string}
+             */
+            state: "idle" | "downloading" | "verifying" | "done" | "failed" | "cancelled";
         };
         /** VoiceStatus */
         VoiceStatus: {
@@ -5087,6 +5148,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pack_progress_api_voice_pack_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoicePackProgress"];
+                };
+            };
+        };
+    };
+    pack_start_api_voice_pack_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoicePackProgress"];
+                };
+            };
+        };
+    };
+    pack_cancel_api_voice_pack_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoicePackProgress"];
                 };
             };
         };

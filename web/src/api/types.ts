@@ -71,6 +71,7 @@ export type CouncilEvent =
   | S["VerdictEvent"]
   | S["CouncilDoneEvent"];
 export type VoiceStatus = S["VoiceStatus"];
+export type VoicePackProgress = S["VoicePackProgress"];
 export type EngineStatus = S["EngineStatus"];
 export type Transcript = S["Transcript"];
 export type SpeakRequest = S["SpeakRequest"];

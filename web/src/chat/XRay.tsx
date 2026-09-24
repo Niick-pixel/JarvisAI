@@ -54,7 +54,7 @@ export default function XRay({
         <span key={token.idx} className="relative">
           {nudgeAt.has(token.idx) && (
             <span
-              className="mx-0.5 rounded bg-amber-400/25 px-1 text-[10px] uppercase tracking-wide text-amber-100"
+              className="mx-0.5 rounded-md bg-glow-c/40 px-1 text-[11px] text-ink"
               title={nudgeAt.get(token.idx)}
             >
               nudge
@@ -63,7 +63,7 @@ export default function XRay({
           <button
             onClick={() => setOpenIdx(openIdx === token.idx ? null : token.idx)}
             style={{ background: tint(token.logprob) }}
-            className="rounded-[3px] text-left hover:outline hover:outline-1 hover:outline-white/40"
+            className="rounded-[3px] text-left hover:outline hover:outline-1 hover:outline-ink/30"
             title={
               token.logprob == null
                 ? undefined

@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 import re
 
+from server.chat import thinking
 from server.models.council import CouncilVerdict, Ranking
 from server.models.params import SamplingParams
 from server.providers.base import ModelProvider, PromptMessage, Token
@@ -84,7 +85,7 @@ async def judge(
         rubric=rubric or DEFAULT_RUBRIC,
         answers=render_answers(answers),
     )
-    params = SamplingParams(seed=3, temperature=0.2, max_tokens=600, n_probs=0)
+    params = SamplingParams(seed=3, temperature=0.2, max_tokens=600, n_probs=0, thinking=False)
     chunks: list[str] = []
     try:
         async for item in provider.stream(
@@ -99,6 +100,6 @@ async def judge(
         log.warning("council: judging failed: %s", exc)
         return CouncilVerdict(judge_model_id=model_id)
 
-    verdict = parse("".join(chunks), [label for label, _ in answers])
+    verdict = parse(thinking.strip_all("".join(chunks)), [label for label, _ in answers])
     verdict.judge_model_id = model_id
     return verdict

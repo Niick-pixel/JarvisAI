@@ -133,6 +133,9 @@ class OpenAICompatProvider:
         if self.accepts_extra_sampling:
             body["top_k"] = params.top_k
             body["repeat_penalty"] = params.repeat_penalty
+            if params.thinking is not None:
+                # llama-server's OpenAI surface and LM Studio honour this; others ignore it.
+                body["chat_template_kwargs"] = {"enable_thinking": params.thinking}
         return body
 
     async def stream(

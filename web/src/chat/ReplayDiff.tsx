@@ -18,14 +18,14 @@ export default function ReplayDiff({
   );
 
   if (!original) {
-    return <p className="text-[11px] text-ink-faint">The message this replayed is not loaded.</p>;
+    return <p className="text-[12px] text-ink-faint">The message this replayed is not loaded.</p>;
   }
   const changed = parts.some((part) => part.added || part.removed);
 
   return (
-    <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-      <p className="mb-2 text-[10px] uppercase tracking-wide text-ink-faint">
-        {changed ? "differences from the original" : "byte-identical to the original"}
+    <div className="rounded-2xl border border-ink/[0.08] bg-code p-4">
+      <p className="mb-2 text-[12px] font-medium text-ink-faint">
+        {changed ? "Differences from the original" : "Identical to the original, byte for byte"}
       </p>
       <p className="whitespace-pre-wrap text-[13px] leading-relaxed">
         {parts.map((part, index) => (
@@ -33,9 +33,9 @@ export default function ReplayDiff({
             key={index}
             className={
               part.added
-                ? "bg-emerald-400/20 text-emerald-100"
+                ? "bg-success/15 text-success"
                 : part.removed
-                  ? "bg-rose-400/20 text-rose-100 line-through"
+                  ? "bg-danger/10 text-danger line-through"
                   : "text-ink-muted"
             }
           >

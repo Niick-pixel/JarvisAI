@@ -6,13 +6,11 @@
 // than a second rendering of it.
 import type { AgreementCell } from "../api/types";
 
-const HUE = 190;
-
 /** Cosine runs -1..1. The colour scale covers 0..1 and clamps below that; the printed number is
  *  never clamped, because the cell should show what was measured, not what the scale can paint. */
 function shade(similarity: number): string {
   const value = Math.max(0, Math.min(1, similarity));
-  return `hsl(${HUE} 70% 52% / ${(0.06 + 0.5 * value).toFixed(3)})`;
+  return `rgb(var(--c-accent) / ${(0.06 + 0.5 * value).toFixed(3)})`;
 }
 
 export default function AgreementMatrix({
@@ -33,10 +31,10 @@ export default function AgreementMatrix({
 
   return (
     <figure className="m-0">
-      <figcaption className="mb-2 text-[11px] text-ink-faint">
-        Agreement between answers · {detail}
+      <figcaption className="mb-2 text-[13px] font-medium text-ink-muted">
+        How much the answers agree · {detail}
       </figcaption>
-      <table className="border-separate border-spacing-[2px] text-[11px]">
+      <table className="border-separate border-spacing-[3px] text-[12px]">
         <thead>
           <tr>
             <th className="w-6" aria-label="answer" />
@@ -65,7 +63,7 @@ export default function AgreementMatrix({
                         : `${row} vs ${column}: cosine similarity ${value.toFixed(3)}`
                     }
                     style={{ background: self ? "transparent" : shade(value) }}
-                    className={`h-9 w-10 rounded text-center font-mono ${
+                    className={`h-10 w-12 rounded-lg text-center font-mono ${
                       self ? "text-ink-faint" : "text-ink"
                     }`}
                   >
@@ -77,7 +75,7 @@ export default function AgreementMatrix({
           ))}
         </tbody>
       </table>
-      <p className="mt-2 max-w-sm text-[10px] leading-snug text-ink-faint">
+      <p className="mt-2 max-w-sm text-[12px] leading-snug text-ink-faint">
         Cosine similarity of the answers' embeddings. Values run −1 to 1; the colour scale covers 0
         to 1 and anything below reads as the palest cell, but the number is what was measured.
         Close agreement is weak evidence — models share training data and failure modes. A split is

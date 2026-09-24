@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from importlib.util import find_spec
 from pathlib import Path
 
+from server import paths
 from server.hardware import probe
 from server.models.voice import EngineStatus, VoiceStatus
 from server.settings import Settings
@@ -36,7 +37,8 @@ ACTIVATION_OVERHEAD_MB = 200
 """Encoder activations and the CT2 workspace. Measured range is 150-250MB at these sizes."""
 
 INSTALL_FIX = "make voice-install"
-DOWNLOAD_FIX = "make voice"
+# In the desktop app the same download is a button; in a checkout it is a command.
+DOWNLOAD_FIX = "Get the voice pack in Settings." if paths.frozen() else "make voice"
 
 
 class VoiceUnavailable(RuntimeError):
@@ -124,9 +126,10 @@ def stt_status(settings: Settings, *, actual_device: str = "") -> EngineStatus:
     if not (plan.model_dir / "model.bin").is_file():
         return status.model_copy(
             update={
-                "reason": f"No Whisper model at {plan.model_dir}. Nothing is downloaded until "
-                "you ask for it.",
+                "reason": "The speech recognition model isn't downloaded yet. Nothing is "
+                "downloaded until you ask for it.",
                 "fix": DOWNLOAD_FIX,
+                "downloadable": True,
             }
         )
     return status.model_copy(update={"available": True})
@@ -155,12 +158,19 @@ def tts_status(settings: Settings) -> EngineStatus:
             }
         )
     if not onnx.is_file():
-        return status.model_copy(update={"reason": f"No voice at {onnx}.", "fix": DOWNLOAD_FIX})
+        return status.model_copy(
+            update={
+                "reason": "The speaking voice isn't downloaded yet.",
+                "fix": DOWNLOAD_FIX,
+                "downloadable": True,
+            }
+        )
     if not config.is_file():
         return status.model_copy(
             update={
                 "reason": f"{onnx.name} is present but {config.name} is missing; Piper needs both.",
                 "fix": DOWNLOAD_FIX,
+                "downloadable": True,
             }
         )
     return status.model_copy(update={"available": True})

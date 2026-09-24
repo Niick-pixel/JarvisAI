@@ -1,16 +1,21 @@
-// The inline `< 2/4 >` switcher. Every edit and every rerun leaves a sibling here, so this is
+// The inline `‹ 2/4 ›` switcher. Every edit and every rerun leaves a sibling here, so this is
 // how you get back to a version you moved away from - nothing is ever gone.
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect } from "react";
 import { useGraph } from "../store/graph";
+import { useSession } from "../store/session";
+import { IconButton } from "../ui/controls";
 
 export default function SiblingNav({ messageId }: { messageId: string }) {
   const siblings = useGraph((s) => s.siblings[messageId]);
   const loadSiblings = useGraph((s) => s.loadSiblings);
   const switchTo = useGraph((s) => s.switchTo);
 
+  // Every new message may be a new sibling of this one (a retry, an edit), so look again.
+  const count = useSession((s) => s.messages.length);
   useEffect(() => {
-    if (!siblings) void loadSiblings([messageId]).catch(() => undefined);
-  }, [messageId, siblings, loadSiblings]);
+    void loadSiblings([messageId]).catch(() => undefined);
+  }, [messageId, count, loadSiblings]);
 
   if (!siblings || siblings.ids.length < 2) return null;
 
@@ -20,16 +25,12 @@ export default function SiblingNav({ messageId }: { messageId: string }) {
   };
 
   return (
-    <span className="inline-flex items-center gap-1 rounded-lg bg-white/6 px-1.5 py-0.5 font-mono text-[10px] text-ink-faint">
-      <button onClick={() => go(-1)} className="px-1 hover:text-ink" title="Previous version">
-        ‹
-      </button>
-      <span>
+    <span className="mr-1 inline-flex items-center text-[13px] tabular-nums text-ink-faint">
+      <IconButton icon={ChevronLeft} label="Previous version" size={28} onClick={() => go(-1)} />
+      <span className="px-0.5">
         {siblings.index + 1}/{siblings.ids.length}
       </span>
-      <button onClick={() => go(1)} className="px-1 hover:text-ink" title="Next version">
-        ›
-      </button>
+      <IconButton icon={ChevronRight} label="Next version" size={28} onClick={() => go(1)} />
     </span>
   );
 }

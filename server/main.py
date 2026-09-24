@@ -45,6 +45,7 @@ from server.knowledge.watcher import Watcher
 from server.providers.launcher import LlamaServer
 from server.providers.registry import ProviderRegistry
 from server.settings import Settings, load_settings
+from server.voice.pack import VoicePack
 
 WEB_DIST = paths.resource("web", "dist")
 
@@ -83,6 +84,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         approvals=approvals,
         llama=LlamaServer(settings, db),
         downloader=Downloader(db, settings.paths.models_dir),
+        voice_pack=VoicePack(settings),
     )
 
     @asynccontextmanager

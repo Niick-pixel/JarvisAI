@@ -101,6 +101,7 @@ def _recorded_params(
         repeat_penalty=row["repeat_penalty"],
         max_tokens=request.params.max_tokens,
         n_probs=request.params.n_probs,
+        thinking=None if row["thinking"] is None else bool(row["thinking"]),
     )
     overrides = {k: getattr(request.params, k) for k in request.params.model_fields_set}
     return recorded.model_copy(update=overrides)

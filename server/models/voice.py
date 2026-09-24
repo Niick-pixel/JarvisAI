@@ -28,6 +28,8 @@ class EngineStatus(BaseModel):
     """Plain English, present tense, no jargon: why this engine is unavailable right now."""
     fix: str = ""
     """The one command that changes the answer. Empty when there is nothing you can run."""
+    downloadable: bool = False
+    """True when only the weights are missing, so the in-app voice pack download fixes it."""
 
 
 class VoiceStatus(BaseModel):
@@ -51,3 +53,16 @@ class SpeakRequest(BaseModel):
     text: str
     voice: str | None = None
     """One of `VoiceStatus.voices`. None uses the configured default."""
+
+
+VoicePackState = Literal["idle", "downloading", "verifying", "done", "failed", "cancelled"]
+
+
+class VoicePackProgress(BaseModel):
+    """The voice pack download: the Whisper model that listens and the Piper voice that speaks."""
+
+    state: VoicePackState = "idle"
+    file: str = ""
+    bytes_done: int = 0
+    bytes_total: int = 0
+    detail: str = ""

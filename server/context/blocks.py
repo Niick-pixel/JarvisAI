@@ -87,13 +87,14 @@ def web(result: SearchResult, tokens: int, ord: int) -> ContextBlock:
     )
 
 
-def history(message: Message, tokens: int, ord: int) -> ContextBlock:
+def history(message: Message, tokens: int, ord: int, *, content: str | None = None) -> ContextBlock:
+    text = message.content if content is None else content
     return ContextBlock(
         id=new_id("blk"),
         ord=ord,
         kind="history",
-        label=f"{message.role}: {preview(message.content)}",
-        content=message.content,
+        label=f"{message.role}: {preview(text)}",
+        content=text,
         token_count=tokens,
         source_ref=message.id,
     )

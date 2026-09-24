@@ -33,6 +33,11 @@ export class DriveSignal {
     return this.value;
   }
 
+  /** The raw level of the current source, before smoothing - what voice mode listens for silence on. */
+  raw(): number {
+    return this.target;
+  }
+
   reset(): void {
     this.value = 0;
     this.target = 0;

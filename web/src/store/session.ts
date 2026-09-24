@@ -3,9 +3,11 @@
 import { create } from "zustand";
 import { api } from "../api/client";
 import { startChatStream, type ChatRequestBody } from "../api/stream";
-import type { ContextAssembly, Conversation, ErrorBody, Message, Remedy } from "../api/types";
+import type { ContextAssembly, Conversation, ErrorBody, Message, Remedy, SamplingParams } from "../api/types";
+import { useAppearance } from "../design/theme";
+import { useLibrary } from "./library";
 import { useMemory } from "./memory";
-import { useVisual } from "./visual";
+import { thinkingParam, useUi } from "./ui";
 
 export type VisualState = "idle" | "listening" | "thinking" | "streaming" | "error";
 
@@ -22,7 +24,12 @@ interface SessionState {
   error: ErrorBody | null;
   tps: number;
 
+  runStartedAt: number;
+  /** How long each answer spent thinking, measured live. Old answers simply do not have one. */
+  thoughtMs: Record<string, number>;
+
   bootstrap: () => Promise<void>;
+  newChat: () => void;
   refreshTree: () => Promise<void>;
   openConversation: (id: string) => Promise<void>;
   lastPrompt: string | null;
@@ -31,6 +38,7 @@ interface SessionState {
   send: (content: string, ctxLen?: number | null) => Promise<void>;
   continueFrom: (messageId: string) => Promise<void>;
   rerun: (messageId: string) => Promise<void>;
+  regenerate: (messageId: string) => Promise<void>;
   runStream: (body: ChatRequestBody) => Promise<void>;
   applyRemedy: (remedy: Remedy) => Promise<void>;
   setVisual: (visual: VisualState) => void;
@@ -52,17 +60,28 @@ export const useSession = create<SessionState>((set, get) => ({
   tps: 0,
   lastPrompt: null,
   research: false,
+  runStartedAt: 0,
+  thoughtMs: {},
 
   setResearch: (research: boolean) => set({ research }),
 
+  // The app opens on a fresh chat, the way every assistant does. The conversation row is only
+  // written when you actually say something, so opening the app never litters the sidebar.
   bootstrap: async () => {
-    const existing = await api.listConversations();
-    const conversation = existing[0] ?? (await api.createConversation("New conversation"));
-    const tree = await api.tree(conversation.id);
+    get().newChat();
+  },
+
+  newChat: () => {
+    if (get().runId) return;
     set({
-      conversation: tree.conversation,
-      messages: tree.messages,
-      activePath: tree.active_path,
+      conversation: null,
+      messages: [],
+      activePath: [],
+      assembly: null,
+      streamingText: "",
+      streamingId: null,
+      error: null,
+      visual: "idle",
     });
   },
 
@@ -92,14 +111,20 @@ export const useSession = create<SessionState>((set, get) => ({
   },
 
   send: async (content: string, ctxLen: number | null = null) => {
-    const conversation = get().conversation;
-    if (!conversation || get().runId) return;
+    if (get().runId) return;
+    let conversation = get().conversation;
+    if (!conversation) {
+      // The server gives it a real title from the first message; this placeholder never shows.
+      conversation = await api.createConversation("New conversation");
+      set({ conversation });
+    }
     set({ lastPrompt: content });
     await get().runStream({
       conversation_id: conversation.id,
       content,
       ctx_len: ctxLen,
       research: get().research,
+      params: { thinking: thinkingParam(useUi.getState().think) } as SamplingParams,
     });
   },
 
@@ -117,8 +142,17 @@ export const useSession = create<SessionState>((set, get) => ({
     await get().runStream({ conversation_id: conversation.id, rerun_of: messageId });
   },
 
+  /** A fresh answer to the same question, with a new seed, kept beside the old one. */
+  regenerate: async (messageId: string) => {
+    const conversation = get().conversation;
+    const parent = get().messages.find((m) => m.id === messageId)?.parent_id;
+    if (!conversation || !parent || get().runId) return;
+    const params = { thinking: thinkingParam(useUi.getState().think) } as SamplingParams;
+    await get().runStream({ conversation_id: conversation.id, parent_id: parent, params });
+  },
+
   runStream: async (body) => {
-    set({ visual: "thinking", error: null, streamingText: "", assembly: null });
+    set({ visual: "thinking", error: null, streamingText: "", assembly: null, runStartedAt: Date.now() });
     await startChatStream(
       body,
       {
@@ -134,12 +168,19 @@ export const useSession = create<SessionState>((set, get) => ({
               void get()
                 .refreshTree()
                 .catch(() => undefined);
+              // The first message gave the chat a title; show it in the sidebar straight away.
+              void useLibrary.getState().refresh().catch(() => undefined);
               break;
             case "token":
-              set((s) => ({
-                streamingText: s.streamingText + event.text,
-                tokenTick: s.tokenTick + 1,
-              }));
+              set((s) => {
+                const streamingText = s.streamingText + event.text;
+                const id = s.streamingId;
+                const thoughtMs =
+                  id && !(id in s.thoughtMs) && streamingText.includes("</think>")
+                    ? { ...s.thoughtMs, [id]: Date.now() - s.runStartedAt }
+                    : s.thoughtMs;
+                return { streamingText, thoughtMs, tokenTick: s.tokenTick + 1 };
+              });
               break;
             case "usage":
               set({ tps: event.tps });
@@ -156,10 +197,12 @@ export const useSession = create<SessionState>((set, get) => ({
           await get().refreshTree().catch(() => undefined);
           const finished = get().streamingId;
           if (finished) {
+            // Capture also refines the chat's title, so the sidebar is refreshed once it is done.
             void useMemory
               .getState()
               .awaitCapture(finished)
-              .catch(() => undefined);
+              .catch(() => undefined)
+              .finally(() => void useLibrary.getState().refresh().catch(() => undefined));
           }
           set((s) => ({
             runId: null,
@@ -183,7 +226,7 @@ export const useSession = create<SessionState>((set, get) => ({
     set({ error: null, visual: "idle" });
     switch (remedy.action) {
       case "enable_performance_mode":
-        useVisual.getState().setPerformanceMode(true);
+        useAppearance.getState().setReduceEffects(true);
         return;
       case "reduce_context": {
         const ctxLen = Number(remedy.params?.ctx_len ?? 0) || null;
