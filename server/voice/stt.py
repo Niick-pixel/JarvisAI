@@ -92,7 +92,7 @@ def decode(audio: bytes, rate: int = SAMPLE_RATE) -> Any:
     import av
     import numpy as np
 
-    chunks = []
+    chunks: list[Any] = []
     with av.open(io.BytesIO(audio), mode="r") as container:
         resampler = av.AudioResampler(format="s16", layout="mono", rate=rate)
         for frame in container.decode(audio=0):
