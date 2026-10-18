@@ -88,3 +88,4 @@ export type AuditEntry = S["AuditEntry"];
 export type ExportResult = S["ExportResult"];
 export type DownloadProgress = S["DownloadProgress"];
 export type LaunchStatus = S["LaunchStatus"];
+export type UpdateStatus = S["UpdateStatus"];

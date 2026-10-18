@@ -16,7 +16,6 @@ Three things a packaged Windows app gets wrong unless told:
 from __future__ import annotations
 
 import argparse
-import contextlib
 import json
 import logging
 import os
@@ -29,8 +28,9 @@ from pathlib import Path
 from typing import Any
 
 from server import paths
+from server.desktop_window import open_window, window_test
+from server.updates.install import QUIT_HOOK
 
-TITLE = "Jarvis"
 READY_TIMEOUT_S = 60.0
 LOCK_NAME = "desktop.lock"
 
@@ -42,13 +42,18 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="start the server, check it answers, print what it reports, shut down, exit",
     )
+    parser.add_argument(
+        "--window-test",
+        action="store_true",
+        help="start the server, open the real window, check the page rendered, close, exit",
+    )
     args = parser.parse_args(argv)
 
     log_file = _route_output()
-    if not args.smoke_test:
+    if not (args.smoke_test or args.window_test):
         existing = _running_instance()
         if existing:
-            return _open_window(existing, server=None, log_file=log_file)
+            return open_window(existing, on_closed=None, log_file=log_file, quit_hook=QUIT_HOOK)
 
     port = _free_port()
     server, thread = _start_server(port)
@@ -62,10 +67,17 @@ def main(argv: list[str] | None = None) -> int:
         from server.desktop_smoke import smoke
 
         return smoke(url, lambda: _stop(server, thread), thread)
+    if args.window_test:
+        try:
+            return window_test(url)
+        finally:
+            _stop(server, thread)
 
     _write_lock(port)
     try:
-        return _open_window(url, server=(server, thread), log_file=log_file)
+        return open_window(
+            url, on_closed=lambda: _stop(server, thread), log_file=log_file, quit_hook=QUIT_HOOK
+        )
     finally:
         _clear_lock()
 
@@ -132,51 +144,6 @@ def _stop(server: Any, thread: threading.Thread) -> None:
     """The ordinary shutdown path, so the lifespan stops llama-server and the scheduler."""
     server.should_exit = True
     thread.join(timeout=30)
-
-
-def _open_window(url: str, *, server: tuple[Any, threading.Thread] | None, log_file: Path) -> int:
-    try:
-        import webview
-    except ImportError:
-        logging.error("pywebview is not installed; opening the default browser instead")
-        return _browser_fallback(url, server)
-    from server.desktop_bridge import Bridge
-
-    bridge = Bridge()
-    window = webview.create_window(
-        TITLE,
-        url,
-        width=1400,
-        height=900,
-        min_size=(900, 600),
-        js_api=bridge,
-        # Answers are meant to be selected and copied; pywebview disables that by default.
-        text_select=True,
-        # The light theme's page colour, so the window never flashes white-then-grey on open.
-        background_color="#F8F9FB",
-    )
-    bridge._attach(window)  # noqa: SLF001 - private so pywebview does not expose it
-    if window is None:
-        logging.error("pywebview returned no window; opening the default browser instead")
-        return _browser_fallback(url, server)
-    if server is not None:
-        window.events.closed += lambda: _stop(*server)
-    try:
-        webview.start()
-    except Exception:  # noqa: BLE001 - no WebView2 runtime, no GUI backend: say so, degrade
-        logging.exception("could not open a native window; opening the default browser instead")
-        return _browser_fallback(url, server)
-    return 0
-
-
-def _browser_fallback(url: str, server: tuple[Any, threading.Thread] | None) -> int:
-    import webbrowser
-
-    webbrowser.open(url)
-    if server is not None:
-        with contextlib.suppress(KeyboardInterrupt):
-            server[1].join()
-    return 0
 
 
 def _lock_path() -> Path:

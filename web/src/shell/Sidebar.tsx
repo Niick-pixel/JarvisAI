@@ -16,6 +16,7 @@ import { type SheetName, useUi } from "../store/ui";
 import { IconButton, Tip } from "../ui/controls";
 import Menu from "../ui/Menu";
 import { GLIDE } from "../ui/motion";
+import UpdateRow from "./UpdateRow";
 
 function bucket(ms: number): string {
   const days = Math.floor((Date.now() - ms) / 86_400_000);
@@ -203,6 +204,7 @@ export default function Sidebar() {
       </div>
 
       <div className="space-y-0.5 pt-2">
+        <UpdateRow open={open} />
         <NavRow icon={Brain} label="Memory" open={open} active={sheet === "memory"} onClick={place("memory")} />
         <NavRow icon={Library} label="Knowledge" open={open} active={sheet === "knowledge"} onClick={place("knowledge")} />
         <NavRow icon={Bot} label="Agents" open={open} active={sheet === "agents"} badge={waiting} onClick={place("agents")} />

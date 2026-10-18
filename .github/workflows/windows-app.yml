@@ -9,11 +9,15 @@ name: windows-app
 on:
   push:
     branches: [main]
+    # A tag like v0.2.0 is a release: the same build, then published where the app's updater
+    # looks for it (server/updates/updater.py).
+    tags: ["v*"]
   pull_request:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  # write only so a tag build can publish its release; branch and PR builds never do.
+  contents: write
 
 env:
   LLAMA_TAG: b11139
@@ -27,6 +31,14 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+
+      - name: Stamp the version from the tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart("v")
+          Set-Content server/version.py "`"`"`"Stamped from the release tag by CI.`"`"`"`n`nVERSION = `"$version`"`n"
+          "APP_VERSION=$version" >> $env:GITHUB_ENV
 
       - uses: actions/setup-python@v5
         with:
@@ -62,6 +74,17 @@ jobs:
       - name: Build Jarvis.exe
         run: pyinstaller packaging/jarvis.spec --noconfirm --distpath build/dist --workpath build/work
 
+      # The smoke test never opens a window, so it passed while every user got a browser tab
+      # instead of the app. This opens the real window on the real page and checks React drew.
+      - name: Window test the packaged app
+        shell: pwsh
+        run: |
+          $env:JARVIS_HOME = (New-Item -ItemType Directory -Force window-home).FullName
+          $env:JARVIS_PROVIDERS__LLAMACPP__AUTOSTART = "false"
+          $p = Start-Process -FilePath build\dist\Jarvis\Jarvis.exe -ArgumentList "--window-test" -Wait -PassThru
+          Get-Content window-home\logs\jarvis.log | Select-String -Pattern "window test|ERROR|Traceback" -Context 0,12
+          if ($p.ExitCode -ne 0) { throw "the window did not open and render (exit code $($p.ExitCode))" }
+
       - name: Fetch a tiny model for the smoke test
         run: |
           New-Item -ItemType Directory -Force smoke-home/models | Out-Null
@@ -87,10 +110,16 @@ jobs:
           if (Test-Path smoke-home\data\llama-server.log) { Write-Host "--- llama-server.log (tail) ---"; Get-Content smoke-home\data\llama-server.log -Tail 25 }
           if ($p.ExitCode -ne 0) { throw "smoke test failed with exit code $($p.ExitCode)" }
 
+      - name: Fetch the WebView2 bootstrapper
+        run: Invoke-WebRequest "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile packaging\MicrosoftEdgeWebview2Setup.exe
+
       - name: Build the installer
+        shell: pwsh
         run: |
           choco install innosetup --no-progress -y
-          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" packaging\jarvis.iss
+          $version = if ($env:APP_VERSION) { $env:APP_VERSION } else { "0.1.0" }
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=$version" packaging\jarvis.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed" }
 
       - name: Zip the portable folder
         run: Compress-Archive -Path build\dist\Jarvis -DestinationPath build\Jarvis-portable.zip
@@ -114,3 +143,25 @@ jobs:
           if-no-files-found: error
           retention-days: 30
           compression-level: 0
+
+      # The update feed. latest.json names the installer and its sha256; the app downloads the
+      # installer, checks it against that hash, and only then offers "Restart to update".
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $installer = "build/installer/JarvisSetup.exe"
+          $notes = git tag -l --format="%(contents)" "${{ github.ref_name }}"
+          if (-not $notes) { $notes = "Jarvis $env:APP_VERSION" }
+          @{
+            version = $env:APP_VERSION
+            notes = ($notes -join "`n").Trim()
+            installer = @{
+              url = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/JarvisSetup.exe"
+              sha256 = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLower()
+              size = (Get-Item $installer).Length
+            }
+          } | ConvertTo-Json -Depth 3 | Set-Content -Encoding utf8NoBOM build/latest.json
+          gh release create "${{ github.ref_name }}" $installer build/latest.json build/Jarvis-portable.zip --title "Jarvis $env:APP_VERSION" --notes ($notes -join "`n")

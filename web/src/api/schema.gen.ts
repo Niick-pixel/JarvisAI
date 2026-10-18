@@ -1100,6 +1100,97 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/updates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_api_updates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/updates/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check
+         * @description Ask GitHub for the newest release now, whether or not automatic updates are on.
+         */
+        post: operations["check_api_updates_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/updates/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Download */
+        post: operations["download_api_updates_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/updates/install": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Install
+         * @description Runs the verified installer silently and closes the window; it reopens on the new version.
+         */
+        post: operations["install_api_updates_install_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/updates/prefs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Prefs */
+        put: operations["prefs_api_updates_prefs_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/voice/pack": {
         parameters: {
             query?: never;
@@ -2968,6 +3059,62 @@ export interface components {
             language_probability: number;
             /** Text */
             text: string;
+        };
+        /** UpdatePrefs */
+        UpdatePrefs: {
+            /** Auto */
+            auto: boolean;
+        };
+        /** UpdateStatus */
+        UpdateStatus: {
+            /**
+             * Auto
+             * @default true
+             */
+            auto: boolean;
+            /**
+             * Bytes Done
+             * @default 0
+             */
+            bytes_done: number;
+            /**
+             * Bytes Total
+             * @default 0
+             */
+            bytes_total: number;
+            /**
+             * Can Install
+             * @default false
+             */
+            can_install: boolean;
+            /**
+             * Checked At
+             * @default
+             */
+            checked_at: string;
+            /** Current */
+            current: string;
+            /**
+             * Detail
+             * @default
+             */
+            detail: string;
+            /**
+             * Latest
+             * @default
+             */
+            latest: string;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            /**
+             * State
+             * @default idle
+             * @enum {string}
+             */
+            state: "idle" | "checking" | "up_to_date" | "available" | "downloading" | "ready" | "installing" | "failed";
         };
         /** UsageEvent */
         UsageEvent: {
@@ -5139,6 +5286,119 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    status_api_updates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateStatus"];
+                };
+            };
+        };
+    };
+    check_api_updates_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateStatus"];
+                };
+            };
+        };
+    };
+    download_api_updates_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateStatus"];
+                };
+            };
+        };
+    };
+    install_api_updates_install_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateStatus"];
+                };
+            };
+        };
+    };
+    prefs_api_updates_prefs_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePrefs"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateStatus"];
                 };
             };
             /** @description Validation Error */

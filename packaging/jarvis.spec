@@ -39,6 +39,22 @@ hiddenimports = (
     + ["webview"]
 )
 
+# The window. pywebview chooses its backend with a by-name import at runtime, which PyInstaller
+# cannot see, so without these the .exe had no backend, could not open a window, and fell back
+# to the browser on every launch. On Windows that backend is WinForms hosting Edge WebView2,
+# reached through pythonnet - whose runtime DLL and loader are data files, hence collect_all.
+if WINDOWS:
+    hiddenimports += [
+        "webview.platforms.winforms",
+        "webview.platforms.edgechromium",
+        "clr",
+    ]
+    for package in ("webview", "pythonnet", "clr_loader"):
+        pkg_datas, pkg_binaries, pkg_hidden = collect_all(package)
+        datas += pkg_datas
+        binaries += pkg_binaries
+        hiddenimports += pkg_hidden
+
 # Voice: the engines ship in the app, the weights do not (Settings > Voice fetches them). Each of
 # these carries native libraries or data files beside its code - CTranslate2's DLLs, ONNX Runtime,
 # PyAV's FFmpeg, Piper's espeak-ng phoneme data - which only collect_all brings along.
