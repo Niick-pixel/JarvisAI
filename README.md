@@ -177,6 +177,37 @@ actually working:
 | Private web search and research mode | `make searxng`, then `search.base_url = "http://127.0.0.1:8888"` | a background service |
 | Voice in and out | `make voice-install` then `make voice` | ~440MB VRAM for STT; TTS is CPU-only |
 | Scheduled agents | create a job in the Agents panel; give it a workspace only if it needs to write | approvals you have to answer |
+| Futures forecasts (ES, NQ) | `pip install -e ".[forecast]"`, then Forecast > Get Kronos | ~100MB download, CPU only |
+
+## Forecasting ES and NQ
+
+**Forecast** in the sidebar forecasts five-minute ES and NQ bars with
+[Kronos](https://github.com/shiyu-coder/Kronos), an open model trained on candlesticks. It runs on
+the processor, not the GPU, so it never competes with the chat model.
+
+1. **Export from NinjaTrader 8.** Go to Tools > Historical Data > Export, pick the contract
+   (`ES 03-25`), choose Data type *Last* and *Minute*, set a few weeks of dates, and export. The
+   one-minute bars are rolled up into five-minute bars on import.
+2. **Import the `.txt`** in Forecast. You don't have to say which time zone the file is in: CME
+   pauses trading every day at 16:00 Chicago time, and Jarvis finds that pause in the data. It
+   also works out whether the file stamps a bar with its start or end time. The sheet shows what
+   it decided.
+3. **Add every contract you have.** Jarvis joins them into one series, switching contracts on the
+   first session the new one trades more volume. It shifts the older prices by the gap at the
+   switch, so the series has no fake jumps.
+4. **Forecast** 30 minutes to 4 hours ahead. Kronos samples 16 possible futures. The chart shows
+   their median as candles, the faint individual paths, and the band that 80% of them stayed
+   inside. The forecast also gives the share of paths that ended higher, and the move in points,
+   ticks and dollars per contract.
+5. **Track record** before you trust any of it. It hides stretches of your own history from the
+   model, forecasts them, and compares against what really happened and against simply assuming
+   the price doesn't move.
+
+Agents can use it too. The `forecast` tool lets a scheduled job forecast ES and NQ every morning
+and write up what it sees.
+
+Not covered yet: exchange holidays and early closes. A forecast that runs into one shows bars for a
+session that won't trade. None of this is trading advice.
 
 ## Your home, through Home Assistant
 

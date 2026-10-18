@@ -42,6 +42,13 @@ def _home(name: str) -> Runner:
     return run
 
 
+async def _forecast(ctx: ToolContext, args: dict[str, Any]) -> ToolResult:
+    # Imported here: the forecast package reaches back into tools for ToolResult.
+    from server.forecast.tool import forecast
+
+    return await forecast(ctx, args)
+
+
 def _path(args: dict[str, Any]) -> str:
     return str(args.get("path", ""))
 
@@ -111,6 +118,16 @@ TOOLS: dict[str, Tool] = {
             f"{args.get('entity_id', '')}: {args.get('action', '')} "
             f"{args.get('value', '') or ''}".strip()
         ),
+    ),
+    "forecast": Tool(
+        name="forecast",
+        summary="Forecast ES or NQ from imported 5-minute data with Kronos. horizon is in bars.",
+        side_effect=False,
+        target_kind="none",
+        args=("symbol", "horizon"),
+        example='{"tool": "forecast", "args": {"symbol": "ES", "horizon": 12}}',
+        run=_forecast,
+        target=lambda args: f"{args.get('symbol', '')} forecast",
     ),
     "http_get": Tool(
         name="http_get",

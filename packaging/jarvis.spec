@@ -58,7 +58,21 @@ if WINDOWS:
 # Voice: the engines ship in the app, the weights do not (Settings > Voice fetches them). Each of
 # these carries native libraries or data files beside its code - CTranslate2's DLLs, ONNX Runtime,
 # PyAV's FFmpeg, Piper's espeak-ng phoneme data - which only collect_all brings along.
-for package in ("faster_whisper", "ctranslate2", "onnxruntime", "av", "tokenizers", "piper"):
+# Forecasting: what the vendored Kronos imports, and the IANA time zone database, which Windows
+# does not have and zoneinfo needs for America/Chicago. PyTorch itself (the CPU build - on
+# Windows that is what PyPI ships) is found through server.forecast.kronos and bundled by the
+# torch hook in pyinstaller-hooks-contrib, which knows its DLLs better than collect_all does.
+for package in (
+    "faster_whisper",
+    "ctranslate2",
+    "onnxruntime",
+    "av",
+    "tokenizers",
+    "piper",
+    "einops",
+    "safetensors",
+    "tzdata",
+):
     pkg_datas, pkg_binaries, pkg_hidden = collect_all(package)
     datas += pkg_datas
     binaries += pkg_binaries
@@ -70,7 +84,7 @@ a = Analysis(  # noqa: F821
     binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
-    excludes=["tkinter", "matplotlib", "torch", "IPython"],
+    excludes=["tkinter", "matplotlib", "IPython"],
     noarchive=False,
 )
 pyz = PYZ(a.pure)  # noqa: F821

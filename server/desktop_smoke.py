@@ -6,7 +6,8 @@ JARVIS_SMOKE_CHAT=1 it goes further: waits for the bundled llama-server to load 
 streams one reply through the whole pipeline, which is the only way to know the Windows launcher
 works on Windows. With JARVIS_SMOKE_VOICE=1 it downloads the voice pack the way the Settings
 button does, has Piper say a sentence and Whisper transcribe it back, which proves both engines
-survived the packaging.
+survived the packaging. With JARVIS_SMOKE_FORECAST=1 it fetches Kronos and forecasts a sample
+export, which proves PyTorch did too.
 """
 
 from __future__ import annotations
@@ -152,11 +153,19 @@ def smoke(url: str, stop: Callable[[], None], thread: Thread) -> int:
         heard, why = _voice(url)
         if why:
             problems.append(why)
+    forecast = ""
+    if os.environ.get("JARVIS_SMOKE_FORECAST") == "1":
+        from server import forecast_smoke
+
+        forecast, why = forecast_smoke.forecast(url, _request, _json)
+        if why:
+            problems.append(why)
     report = {
         "health": health,
         "launch": _json(f"{url}/api/providers/launch"),
         "tokens_streamed": tokens,
         "heard": heard,
+        "forecast": forecast,
         "user_root": str(paths.user_root().resolve()),
         "problems": problems,
     }

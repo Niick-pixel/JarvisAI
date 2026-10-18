@@ -21,6 +21,7 @@ from server.api import (
     context,
     conversations,
     council,
+    forecast,
     hardware,
     home,
     hud,
@@ -40,6 +41,9 @@ from server.db.connection import Database
 from server.db.migrate import migrate
 from server.deps import AppState, State
 from server.errors import SovereignError, handle_sovereign_error
+from server.forecast import engine as forecast_engine
+from server.forecast.jobs import ForecastJobs
+from server.forecast.pack import ForecastPack
 from server.hardware.downloader import Downloader
 from server.home.hub import Hub
 from server.knowledge import retrieval
@@ -91,6 +95,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         downloader=Downloader(db, settings.paths.models_dir),
         voice_pack=VoicePack(settings),
         home=Hub(settings.paths.data_dir),
+        forecasts=ForecastJobs(db, forecast_engine.shared(settings)),
+        forecast_pack=ForecastPack(settings),
         updater=Updater(settings),
     )
 
@@ -157,6 +163,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         tools.router,
         tools.audit_router,
         home.router,
+        forecast.router,
         updates.router,
     ):
         app.include_router(router)

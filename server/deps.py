@@ -11,6 +11,8 @@ from fastapi import Depends, Request
 from server.agents.approvals import Approvals
 from server.chat.live import LiveRuns
 from server.db.connection import Database
+from server.forecast.jobs import ForecastJobs
+from server.forecast.pack import ForecastPack
 from server.hardware.downloader import Downloader
 from server.home.hub import Hub
 from server.knowledge.indexer import Indexer
@@ -44,6 +46,9 @@ class AppState:
     """The voice pack download, when you ask for one from Settings or voice mode."""
     home: Hub | None = None
     """The Home Assistant connection, saved or not."""
+    forecasts: ForecastJobs | None = None
+    """The one forecast or backtest that may be running, and its last result."""
+    forecast_pack: ForecastPack | None = None
     updater: Updater | None = None
     """New versions: found, fetched and verified here, installed when you say so."""
     llama: LlamaServer | None = None
