@@ -14,6 +14,7 @@ from server.db.connection import Database
 from server.forecast.jobs import ForecastJobs
 from server.forecast.pack import ForecastPack
 from server.hardware.downloader import Downloader
+from server.home.hub import Hub
 from server.knowledge.indexer import Indexer
 from server.knowledge.watcher import Watcher
 from server.models.memory import MemoryBatch
@@ -43,6 +44,8 @@ class AppState:
     """The one model download that may be in flight. Created with the app."""
     voice_pack: VoicePack | None = None
     """The voice pack download, when you ask for one from Settings or voice mode."""
+    home: Hub | None = None
+    """The Home Assistant connection, saved or not."""
     forecasts: ForecastJobs | None = None
     """The one forecast or backtest that may be running, and its last result."""
     forecast_pack: ForecastPack | None = None

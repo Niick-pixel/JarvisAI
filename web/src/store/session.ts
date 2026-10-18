@@ -2,16 +2,16 @@
 // the server owns the truth, this holds what is on screen.
 import { create } from "zustand";
 import { api } from "../api/client";
+import { homeApi } from "../api/home";
 import { startChatStream, type ChatRequestBody } from "../api/stream";
 import type { ContextAssembly, Conversation, ErrorBody, Message, Remedy, SamplingParams } from "../api/types";
 import { useAppearance } from "../design/theme";
-import { useLibrary } from "./library";
-import { useMemory } from "./memory";
+import { streamHandlers } from "./streamHandlers";
 import { thinkingParam, useUi } from "./ui";
 
 export type VisualState = "idle" | "listening" | "thinking" | "streaming" | "error";
 
-interface SessionState {
+export interface SessionState {
   conversation: Conversation | null;
   messages: Message[];
   activePath: string[];
@@ -36,6 +36,8 @@ interface SessionState {
   research: boolean;
   setResearch: (value: boolean) => void;
   send: (content: string, ctxLen?: number | null) => Promise<void>;
+  /** The last reply Home Assistant gave in this chat, so voice mode can read it out. */
+  homeReply: { at: number; text: string } | null;
   continueFrom: (messageId: string) => Promise<void>;
   rerun: (messageId: string) => Promise<void>;
   regenerate: (messageId: string) => Promise<void>;
@@ -62,6 +64,7 @@ export const useSession = create<SessionState>((set, get) => ({
   research: false,
   runStartedAt: 0,
   thoughtMs: {},
+  homeReply: null,
 
   setResearch: (research: boolean) => set({ research }),
 
@@ -119,6 +122,14 @@ export const useSession = create<SessionState>((set, get) => ({
       set({ conversation });
     }
     set({ lastPrompt: content });
+    // Home Assistant's own matcher gets the first look: "turn off the kitchen lights" is done by
+    // it and written into this chat, anything else falls through to the model untouched.
+    const home = await homeApi.assist(content, conversation.id).catch(() => null);
+    if (home?.handled) {
+      await get().refreshTree();
+      set({ homeReply: { at: Date.now(), text: home.reply } });
+      return;
+    }
     await get().runStream({
       conversation_id: conversation.id,
       content,
@@ -153,66 +164,7 @@ export const useSession = create<SessionState>((set, get) => ({
 
   runStream: async (body) => {
     set({ visual: "thinking", error: null, streamingText: "", assembly: null, runStartedAt: Date.now() });
-    await startChatStream(
-      body,
-      {
-        onEvent: (event) => {
-          switch (event.type) {
-            case "assembly":
-              set({ assembly: event.assembly });
-              break;
-            case "run":
-              set({ runId: event.run_id, streamingId: event.message_id, visual: "streaming" });
-              // The user turn and the assistant row both exist on the server by now. Pull them
-              // rather than inventing local ids, so what is on screen is what is on disk.
-              void get()
-                .refreshTree()
-                .catch(() => undefined);
-              // The first message gave the chat a title; show it in the sidebar straight away.
-              void useLibrary.getState().refresh().catch(() => undefined);
-              break;
-            case "token":
-              set((s) => {
-                const streamingText = s.streamingText + event.text;
-                const id = s.streamingId;
-                const thoughtMs =
-                  id && !(id in s.thoughtMs) && streamingText.includes("</think>")
-                    ? { ...s.thoughtMs, [id]: Date.now() - s.runStartedAt }
-                    : s.thoughtMs;
-                return { streamingText, thoughtMs, tokenTick: s.tokenTick + 1 };
-              });
-              break;
-            case "usage":
-              set({ tps: event.tps });
-              break;
-            case "error":
-              set({ error: event.error, visual: "error" });
-              break;
-            case "done":
-              break;
-          }
-        },
-        onFailure: (error) => set({ error, visual: "error" }),
-        onClose: async () => {
-          await get().refreshTree().catch(() => undefined);
-          const finished = get().streamingId;
-          if (finished) {
-            // Capture also refines the chat's title, so the sidebar is refreshed once it is done.
-            void useMemory
-              .getState()
-              .awaitCapture(finished)
-              .catch(() => undefined)
-              .finally(() => void useLibrary.getState().refresh().catch(() => undefined));
-          }
-          set((s) => ({
-            runId: null,
-            streamingId: null,
-            streamingText: "",
-            visual: s.visual === "error" ? "error" : "idle",
-          }));
-        },
-      },
-    );
+    await startChatStream(body, streamHandlers(get, set));
   },
 
   stop: async () => {

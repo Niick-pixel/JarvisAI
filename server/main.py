@@ -23,6 +23,7 @@ from server.api import (
     council,
     forecast,
     hardware,
+    home,
     hud,
     knowledge,
     memory,
@@ -44,6 +45,7 @@ from server.forecast import engine as forecast_engine
 from server.forecast.jobs import ForecastJobs
 from server.forecast.pack import ForecastPack
 from server.hardware.downloader import Downloader
+from server.home.hub import Hub
 from server.knowledge import retrieval
 from server.knowledge.indexer import Indexer
 from server.knowledge.watcher import Watcher
@@ -92,6 +94,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         llama=LlamaServer(settings, db),
         downloader=Downloader(db, settings.paths.models_dir),
         voice_pack=VoicePack(settings),
+        home=Hub(settings.paths.data_dir),
         forecasts=ForecastJobs(db, forecast_engine.shared(settings)),
         forecast_pack=ForecastPack(settings),
         updater=Updater(settings),
@@ -159,6 +162,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         agents.router,
         tools.router,
         tools.audit_router,
+        home.router,
         forecast.router,
         updates.router,
     ):

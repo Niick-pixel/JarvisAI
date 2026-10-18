@@ -31,6 +31,17 @@ class Tool:
     """What this call would touch, worked out before it runs, for the approval card and the log."""
 
 
+def _home(name: str) -> Runner:
+    async def run(ctx: ToolContext, args: dict[str, Any]) -> ToolResult:
+        # Imported here: the home package reaches back into tools for ToolResult.
+        from server.home import tools
+
+        result: ToolResult = await getattr(tools, name)(ctx, args)
+        return result
+
+    return run
+
+
 async def _forecast(ctx: ToolContext, args: dict[str, Any]) -> ToolResult:
     # Imported here: the forecast package reaches back into tools for ToolResult.
     from server.forecast.tool import forecast
@@ -82,6 +93,31 @@ TOOLS: dict[str, Tool] = {
         example='{"tool": "run_shell", "args": {"command": "git log --oneline -20"}}',
         run=builtin.run_shell,
         target=lambda args: str(args.get("command", "")),
+    ),
+    "home_devices": Tool(
+        name="home_devices",
+        summary="List Home Assistant devices by room with their current state.",
+        side_effect=False,
+        target_kind="none",
+        args=(),
+        example='{"tool": "home_devices", "args": {}}',
+        run=_home("home_devices"),
+        target=lambda args: "home assistant",
+    ),
+    "home_control": Tool(
+        name="home_control",
+        summary="Control one Home Assistant device. action: on, off, toggle, brightness, "
+        "temperature, open, close, lock, unlock, play_pause, volume, activate, start, return, "
+        "press. value: 0-100, or degrees for temperature.",
+        side_effect=True,
+        target_kind="none",
+        args=("entity_id", "action", "value"),
+        example='{"tool": "home_control", "args": {"entity_id": "light.kitchen", "action": "off"}}',
+        run=_home("home_control"),
+        target=lambda args: (
+            f"{args.get('entity_id', '')}: {args.get('action', '')} "
+            f"{args.get('value', '') or ''}".strip()
+        ),
     ),
     "forecast": Tool(
         name="forecast",

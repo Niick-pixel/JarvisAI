@@ -1,5 +1,6 @@
 // Renders whichever sheet is open - only ever one.
 import { AnimatePresence } from "framer-motion";
+import HomeSheet from "../home/HomeSheet";
 import ForecastSheet from "../forecast/ForecastSheet";
 import AgentsSheet from "../sheets/AgentsSheet";
 import CouncilSheet from "../sheets/CouncilSheet";
@@ -14,6 +15,7 @@ const SHEETS: Record<SheetName, () => JSX.Element> = {
   agents: AgentsSheet,
   settings: SettingsSheet,
   council: CouncilSheet,
+  home: HomeSheet,
   forecast: ForecastSheet,
 };
 

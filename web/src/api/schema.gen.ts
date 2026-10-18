@@ -647,6 +647,117 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/home/action": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Act
+         * @description Do one thing, then return every device, so the tile shows what really happened.
+         */
+        post: operations["act_api_home_action_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/home/assist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Assist
+         * @description Offer a message to Home Assistant's own local sentence matcher. If it recognises a home
+         *     command it carries it out, and the exchange is written into the chat like any other turn;
+         *     if not, nothing is written and the message goes to the model as usual.
+         */
+        post: operations["assist_api_home_assist_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/home/connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Connect */
+        put: operations["connect_api_home_connection_put"];
+        post?: never;
+        /** Disconnect */
+        delete: operations["disconnect_api_home_connection_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/home/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Devices */
+        get: operations["devices_api_home_devices_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/home/prefs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Prefs */
+        put: operations["prefs_api_home_prefs_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/home/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_api_home_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hud/counters": {
         parameters: {
             query?: never;
@@ -1491,6 +1602,25 @@ export interface components {
              */
             type: "assembly";
         };
+        /** AssistRequest */
+        AssistRequest: {
+            /** Conversation Id */
+            conversation_id?: string | null;
+            /** Text */
+            text: string;
+        };
+        /** AssistResult */
+        AssistResult: {
+            /** Conversation Id */
+            conversation_id?: string | null;
+            /** Handled */
+            handled: boolean;
+            /**
+             * Reply
+             * @default
+             */
+            reply: string;
+        };
         /** AuditEntry */
         AuditEntry: {
             /** Actor */
@@ -1942,6 +2072,44 @@ export interface components {
              */
             grant: boolean;
         };
+        /** Device */
+        Device: {
+            /** Actions */
+            actions: ("on" | "off" | "toggle" | "brightness" | "temperature" | "open" | "close" | "stop" | "lock" | "unlock" | "play_pause" | "volume" | "activate" | "start" | "return" | "press")[];
+            /** Area */
+            area: string;
+            /** Available */
+            available: boolean;
+            /** Current */
+            current?: number | null;
+            /**
+             * Detail
+             * @default
+             */
+            detail: string;
+            /** Domain */
+            domain: string;
+            /** Entity Id */
+            entity_id: string;
+            /**
+             * Kind
+             * @default
+             */
+            kind: string;
+            /** Level */
+            level?: number | null;
+            /** Name */
+            name: string;
+            /** State */
+            state: string;
+            /** Target */
+            target?: number | null;
+            /**
+             * Unit
+             * @default
+             */
+            unit: string;
+        };
         /** DoneEvent */
         DoneEvent: {
             /** Message Id */
@@ -2333,6 +2501,65 @@ export interface components {
             /** Status */
             status: string;
             /** Version */
+            version: string;
+        };
+        /** HomeActionRequest */
+        HomeActionRequest: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "on" | "off" | "toggle" | "brightness" | "temperature" | "open" | "close" | "stop" | "lock" | "unlock" | "play_pause" | "volume" | "activate" | "start" | "return" | "press";
+            /** Entity Id */
+            entity_id: string;
+            /** Value */
+            value?: number | null;
+        };
+        /** HomeConnection */
+        HomeConnection: {
+            /** Token */
+            token: string;
+            /** Url */
+            url: string;
+        };
+        /** HomePrefs */
+        HomePrefs: {
+            /** Route Chat */
+            route_chat: boolean;
+        };
+        /** HomeStatus */
+        HomeStatus: {
+            /** Configured */
+            configured: boolean;
+            /**
+             * Connected
+             * @default false
+             */
+            connected: boolean;
+            /**
+             * Error
+             * @default
+             */
+            error: string;
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+            /**
+             * Route Chat
+             * @default true
+             */
+            route_chat: boolean;
+            /**
+             * Url
+             * @default
+             */
+            url: string;
+            /**
+             * Version
+             * @default
+             */
             version: string;
         };
         /** HostInfo */
@@ -4925,6 +5152,198 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Health"];
+                };
+            };
+        };
+    };
+    act_api_home_action_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HomeActionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Device"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assist_api_home_assist_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    connect_api_home_connection_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HomeConnection"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disconnect_api_home_connection_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeStatus"];
+                };
+            };
+        };
+    };
+    devices_api_home_devices_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Device"][];
+                };
+            };
+        };
+    };
+    prefs_api_home_prefs_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HomePrefs"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    status_api_home_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeStatus"];
                 };
             };
         };
