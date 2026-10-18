@@ -166,6 +166,32 @@ actually working:
 | Voice in and out | `make voice-install` then `make voice` | ~440MB VRAM for STT; TTS is CPU-only |
 | Scheduled agents | create a job in the Agents panel; give it a workspace only if it needs to write | approvals you have to answer |
 
+## Your home, through Home Assistant
+
+**Home** in the sidebar shows every device [Home Assistant](https://www.home-assistant.io/) knows,
+grouped by room, as tiles you tap. Lights get a dimmer, speakers a volume slider and thermostats
+their set point. Doors, motion and room temperatures are shown but never controlled.
+Home Assistant is what lets one app reach Hue, Tuya/Smart Life, Nest, Ring, Matter, Zigbee and
+thousands of other device types. Jarvis talks to it directly on your own network.
+
+1. **Run Home Assistant.** Use Home Assistant OS on a Raspberry Pi, a mini PC or a virtual machine,
+   or the Docker container. Add your devices there.
+2. **Create a token.** In Home Assistant, open your profile, then Security > Long-lived access
+   tokens > Create token.
+3. **Connect.** In Jarvis, open Home and enter the address (`homeassistant.local:8123`) and the
+   token. The token is checked before it is saved, and it is stored only on this PC, in
+   `data/home.json`.
+
+**Commands in chat and voice.** Type or say "turn off the kitchen lights" anywhere in Jarvis.
+Every message first goes to Home Assistant's *built-in* sentence matcher, chosen explicitly by
+name. That is never your Home Assistant's default voice agent, which could be a cloud model. If it
+recognises a home command, it carries it out and the reply appears in the chat; in voice mode it is
+spoken. Anything else goes to the language model as before. You can switch this off at the bottom
+of Home.
+
+**Agents** get `home_devices`, which reads freely, and `home_control`, which asks for approval on
+every call. A scheduled job can check the doors at night, but it can't unlock one without asking you.
+
 ## When it does not work
 
 - **`nvidia-smi` prints nothing inside WSL.** The driver belongs on Windows. A Linux driver inside

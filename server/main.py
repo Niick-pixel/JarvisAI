@@ -22,6 +22,7 @@ from server.api import (
     conversations,
     council,
     hardware,
+    home,
     hud,
     knowledge,
     memory,
@@ -39,6 +40,7 @@ from server.db.migrate import migrate
 from server.deps import AppState, State
 from server.errors import SovereignError, handle_sovereign_error
 from server.hardware.downloader import Downloader
+from server.home.hub import Hub
 from server.knowledge import retrieval
 from server.knowledge.indexer import Indexer
 from server.knowledge.watcher import Watcher
@@ -85,6 +87,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         llama=LlamaServer(settings, db),
         downloader=Downloader(db, settings.paths.models_dir),
         voice_pack=VoicePack(settings),
+        home=Hub(settings.paths.data_dir),
     )
 
     @asynccontextmanager
@@ -146,6 +149,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         agents.router,
         tools.router,
         tools.audit_router,
+        home.router,
     ):
         app.include_router(router)
 

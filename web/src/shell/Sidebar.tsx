@@ -3,7 +3,7 @@
 // Collapses to a strip of icons; nothing in it ever opens beside something else.
 import { AnimatePresence, motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
-import { Bot, Brain, Download, Ellipsis, Library, PanelLeft, Search, Settings, SquarePen, Trash2 } from "lucide-react";
+import { Bot, Brain, Download, Ellipsis, House, Library, PanelLeft, Search, Settings, SquarePen, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
 import type { Conversation } from "../api/types";
@@ -203,6 +203,7 @@ export default function Sidebar() {
       </div>
 
       <div className="space-y-0.5 pt-2">
+        <NavRow icon={House} label="Home" open={open} active={sheet === "home"} onClick={place("home")} />
         <NavRow icon={Brain} label="Memory" open={open} active={sheet === "memory"} onClick={place("memory")} />
         <NavRow icon={Library} label="Knowledge" open={open} active={sheet === "knowledge"} onClick={place("knowledge")} />
         <NavRow icon={Bot} label="Agents" open={open} active={sheet === "agents"} badge={waiting} onClick={place("agents")} />

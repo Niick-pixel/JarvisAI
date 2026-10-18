@@ -68,6 +68,9 @@ export function useVoiceLoop(paused: boolean) {
         offset.current = next;
         enqueue(parts);
       }
+      if (s.homeReply && s.homeReply !== prev.homeReply) {
+        enqueue(sentences(s.homeReply.text, 0, true).parts);
+      }
       if (prev.runId && !s.runId) {
         const { answer } = split(prev.streamingText);
         const { parts } = sentences(answer, offset.current, true);

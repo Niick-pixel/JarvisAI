@@ -88,3 +88,7 @@ export type AuditEntry = S["AuditEntry"];
 export type ExportResult = S["ExportResult"];
 export type DownloadProgress = S["DownloadProgress"];
 export type LaunchStatus = S["LaunchStatus"];
+export type HomeStatus = S["HomeStatus"];
+export type Device = S["Device"];
+export type HomeAction = S["HomeActionRequest"]["action"];
+export type AssistResult = S["AssistResult"];
