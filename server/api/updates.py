@@ -9,6 +9,9 @@ from server.models.updates import UpdatePrefs, UpdateStatus
 
 router = APIRouter(prefix="/api/updates", tags=["updates"])
 
+# download and install start background work, so they are async: a plain `def` route runs in a
+# worker thread, which has no event loop to start a task on.
+
 
 @router.get("")
 def status(state: State) -> UpdateStatus:
@@ -24,13 +27,13 @@ async def check(state: State) -> UpdateStatus:
 
 
 @router.post("/download")
-def download(state: State) -> UpdateStatus:
+async def download(state: State) -> UpdateStatus:
     assert state.updater is not None
     return state.updater.download()
 
 
 @router.post("/install")
-def install(state: State) -> UpdateStatus:
+async def install(state: State) -> UpdateStatus:
     """Runs the verified installer silently and closes the window; it reopens on the new version."""
     assert state.updater is not None
     return state.updater.install()
