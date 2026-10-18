@@ -92,3 +92,4 @@ export type HomeStatus = S["HomeStatus"];
 export type Device = S["Device"];
 export type HomeAction = S["HomeActionRequest"]["action"];
 export type AssistResult = S["AssistResult"];
+export type UpdateStatus = S["UpdateStatus"];

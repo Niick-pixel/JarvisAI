@@ -24,8 +24,14 @@ check before a file counts as installed. When the download finishes the model is
 - **Where things live.** The program installs to `%LOCALAPPDATA%\Programs\Jarvis`; your data
   (conversations, memory, models, logs, `config.toml`) goes to `%LOCALAPPDATA%\Jarvis`, which the
   uninstaller leaves alone.
-- **The window** is Edge WebView2, which Windows 11 includes. Without it the app opens your default
-  browser instead and says why in `logs\jarvis.log`.
+- **The window** is its own, drawn by Edge WebView2. Windows 11 includes it, and the installer adds
+  it on a Windows 10 machine that lacks it. If the window still cannot open, Jarvis says why in a
+  dialog and offers your browser instead. It no longer switches to the browser without telling you.
+- **Updates arrive by themselves.** Once a day the app asks GitHub whether a newer release exists.
+  If one does, it downloads the installer in the background, checks it against the sha256 the
+  release published, and shows **Restart to update** in the sidebar. One click closes Jarvis,
+  installs the new version silently and reopens it. Settings > Updates turns this off or checks
+  now. The check is one request for a public file, `latest.json`, and sends nothing about you.
 - **The GPU build of llama.cpp** is CUDA 12, which needs an NVIDIA driver from 2023 or later. On a
   machine without one it runs on the CPU, slowly, rather than refusing.
 - **Voice is built in.** The engines ship in the app; the speech models do not. Settings > Voice
@@ -43,7 +49,13 @@ python packaging/fetch_llama.py b11139
 python packaging/make_icon.py
 pyinstaller packaging/jarvis.spec --noconfirm --distpath build/dist --workpath build/work
 build\dist\Jarvis\Jarvis.exe --smoke-test      # boots, checks, shuts down; see logs\jarvis.log
+build\dist\Jarvis\Jarvis.exe --window-test     # opens the real window, checks the page drew
 ```
+
+**Releasing an update.** Push a tag: `git tag -a v0.2.0 -m "What changed" && git push origin v0.2.0`.
+The same workflow then stamps `0.2.0` into the build and publishes a GitHub release with
+`JarvisSetup.exe`, the portable zip and `latest.json`. Every installed copy finds it within a day.
+The tag message becomes the release notes.
 
 ## Quickstart on a fresh machine
 
@@ -328,6 +340,7 @@ and the streaming interrupt/resume path — because those are where a bug is sil
 ## Privacy and safety
 
 Everything binds `127.0.0.1`. A non-loopback bind without an auth token is a startup failure, not a
-warning, and the registry refuses to talk to a non-loopback inference port. There is no telemetry,
-and `make check` verifies the built frontend contains no external origins. Retrieved text is wrapped
+warning, and the registry refuses to talk to a non-loopback inference port. There is no telemetry.
+The installed app's one outbound request is the daily update check described above, which you can
+switch off. `make check` verifies the built frontend contains no external origins. Retrieved text is wrapped
 as data with its provenance and never treated as instructions.

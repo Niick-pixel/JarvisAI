@@ -30,6 +30,7 @@ from server.api import (
     models_api,
     search,
     tools,
+    updates,
     voice,
     xray,
 )
@@ -47,6 +48,8 @@ from server.knowledge.watcher import Watcher
 from server.providers.launcher import LlamaServer
 from server.providers.registry import ProviderRegistry
 from server.settings import Settings, load_settings
+from server.updates.updater import Updater
+from server.version import VERSION
 from server.voice.pack import VoicePack
 
 WEB_DIST = paths.resource("web", "dist")
@@ -88,6 +91,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         downloader=Downloader(db, settings.paths.models_dir),
         voice_pack=VoicePack(settings),
         home=Hub(settings.paths.data_dir),
+        updater=Updater(settings),
     )
 
     @asynccontextmanager
@@ -104,16 +108,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         # launcher runs in the background and the provider list reports what it is doing.
         assert state.llama is not None
         launching = asyncio.create_task(state.llama.start())
+        assert state.updater is not None
+        checking = asyncio.create_task(state.updater.run_forever())
         try:
             yield
         finally:
             state.scheduler.shutdown()
             launching.cancel()
+            checking.cancel()
             await state.llama.stop()
 
     app = FastAPI(
         title="Jarvis",
-        version="0.1.0",
+        version=VERSION,
         summary="A local-first AI workspace",
         lifespan=lifespan,
     )
@@ -125,7 +132,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def health(state: State) -> Health:
         return Health(
             status="ok",
-            version="0.1.0",
+            version=VERSION,
             migrations_applied=list(app.state.migrations),
             sqlite_vec=state.db.vec_available,
             sqlite_vec_error=state.db.vec_error,
@@ -150,6 +157,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         tools.router,
         tools.audit_router,
         home.router,
+        updates.router,
     ):
         app.include_router(router)
 
