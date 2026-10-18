@@ -21,6 +21,9 @@ class SamplingParams(BaseModel):
     thinking: bool | None = None
     """Ask a reasoning model to think first (True), answer directly (False), or leave it to the
     model (None). Recorded with the run, because it changes what the same seed produces."""
+    min_thinking_tokens: int = Field(default=0, ge=0)
+    """Heavy thinking: when the model tries to stop reasoning before this many tokens, it is told
+    to keep going (budget forcing, server/providers/forcing.py). 0 lets it stop when it likes."""
 
     def resolved(self) -> SamplingParams:
         """Replace a -1 seed with a real one so the run row records what actually happened."""

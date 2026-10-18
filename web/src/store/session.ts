@@ -7,7 +7,7 @@ import { startChatStream, type ChatRequestBody } from "../api/stream";
 import type { ContextAssembly, Conversation, ErrorBody, Message, Remedy, SamplingParams } from "../api/types";
 import { useAppearance } from "../design/theme";
 import { streamHandlers } from "./streamHandlers";
-import { thinkingParam, useUi } from "./ui";
+import { thinkingParams, useUi } from "./ui";
 
 export type VisualState = "idle" | "listening" | "thinking" | "streaming" | "error";
 
@@ -135,7 +135,7 @@ export const useSession = create<SessionState>((set, get) => ({
       content,
       ctx_len: ctxLen,
       research: get().research,
-      params: { thinking: thinkingParam(useUi.getState().think) } as SamplingParams,
+      params: thinkingParams(useUi.getState().think) as SamplingParams,
     });
   },
 
@@ -158,7 +158,7 @@ export const useSession = create<SessionState>((set, get) => ({
     const conversation = get().conversation;
     const parent = get().messages.find((m) => m.id === messageId)?.parent_id;
     if (!conversation || !parent || get().runId) return;
-    const params = { thinking: thinkingParam(useUi.getState().think) } as SamplingParams;
+    const params = thinkingParams(useUi.getState().think) as SamplingParams;
     await get().runStream({ conversation_id: conversation.id, parent_id: parent, params });
   },
 

@@ -24,7 +24,9 @@ body {
   background: rgb(var(--c-accent) / 0.22);
 }
 
-:focus-visible {
+/* The keyboard-focus ring is for buttons and links. A text field shows focus with its caret, and a
+   ring around the box you are typing in reads as a stray blue line. */
+:focus-visible:not(input):not(textarea) {
   outline: 2px solid rgb(var(--c-accent) / 0.55);
   outline-offset: 2px;
   border-radius: 10px;

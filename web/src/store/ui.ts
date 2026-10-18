@@ -5,7 +5,7 @@ import { create } from "zustand";
 export type SheetName = "memory" | "knowledge" | "agents" | "settings" | "council" | "forecast" | "home";
 
 /** "auto" lets the model decide; "on"/"off" ask a reasoning model to think first or not. */
-export type ThinkMode = "auto" | "on" | "off";
+export type ThinkMode = "auto" | "on" | "off" | "heavy";
 
 const KEY = "jarvis.ui";
 
@@ -66,9 +66,13 @@ export const useUi = create<UiState>((set, get) => ({
   },
 }));
 
-/** What the think toggle sends: null leaves it to the model and its template. */
-export function thinkingParam(think: ThinkMode): boolean | null {
-  return think === "auto" ? null : think === "on";
+/** Heavy: the least it may think before answering, and room for that thinking plus the answer. */
+export const HEAVY = { min_thinking_tokens: 2500, max_tokens: 8192 };
+
+/** What the think setting sends. `thinking: null` leaves it to the model and its template. */
+export function thinkingParams(think: ThinkMode): { thinking: boolean | null; min_thinking_tokens?: number; max_tokens?: number } {
+  if (think === "heavy") return { thinking: true, ...HEAVY };
+  return { thinking: think === "auto" ? null : think === "on" };
 }
 
 function persist(state: Stored): void {
