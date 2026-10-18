@@ -12,6 +12,7 @@ import { useVoice } from "../store/voice";
 import { Button, FIELD, Row, Segmented, Switch } from "../ui/controls";
 import VoicePack from "../voice/VoicePack";
 import Machine from "./Machine";
+import Updates from "./Updates";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -99,6 +100,10 @@ export default function SettingsSheet() {
 
       <Section title="This PC">
         <Machine />
+      </Section>
+
+      <Section title="Updates">
+        <Updates />
       </Section>
 
       <Section title="Advanced">
