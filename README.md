@@ -55,7 +55,8 @@ build\dist\Jarvis\Jarvis.exe --window-test     # opens the real window, checks t
 **Releasing an update.** Push a tag: `git tag -a v0.2.0 -m "What changed" && git push origin v0.2.0`.
 The same workflow then stamps `0.2.0` into the build and publishes a GitHub release with
 `JarvisSetup.exe`, the portable zip and `latest.json`. Every installed copy finds it within a day.
-The tag message becomes the release notes.
+The tag message becomes the release notes. Or, without git: Actions > windows-app > Run workflow,
+with a version in *release* (and notes if you like); it builds, creates the tag and publishes.
 
 ## Quickstart on a fresh machine
 
