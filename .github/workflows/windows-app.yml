@@ -13,10 +13,21 @@ on:
     # looks for it (server/updates/updater.py).
     tags: ["v*"]
   pull_request:
+  # Run by hand from the Actions tab. With a version, it is a release too: the workflow creates
+  # the tag itself, for when tags cannot be pushed from where the release is being cut.
   workflow_dispatch:
+    inputs:
+      release:
+        description: "Version to publish, e.g. 0.2.0. Leave empty to only build and test."
+        required: false
+        default: ""
+      notes:
+        description: "Release notes (used when publishing from here)."
+        required: false
+        default: ""
 
 permissions:
-  # write only so a tag build can publish its release; branch and PR builds never do.
+  # write only so a release build can publish; branch and PR builds never do.
   contents: write
 
 env:
@@ -33,10 +44,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Stamp the version from the tag
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release != '')
         shell: pwsh
         run: |
-          $version = "${{ github.ref_name }}".TrimStart("v")
+          $version = if ("${{ inputs.release }}") { "${{ inputs.release }}".TrimStart("v") } else { "${{ github.ref_name }}".TrimStart("v") }
           Set-Content server/version.py "`"`"`"Stamped from the release tag by CI.`"`"`"`n`nVERSION = `"$version`"`n"
           "APP_VERSION=$version" >> $env:GITHUB_ENV
 
@@ -150,21 +161,25 @@ jobs:
       # The update feed. latest.json names the installer and its sha256; the app downloads the
       # installer, checks it against that hash, and only then offers "Restart to update".
       - name: Publish the release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release != '')
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
+          NOTES: ${{ inputs.notes }}
         run: |
           $installer = "build/installer/JarvisSetup.exe"
-          $notes = git tag -l --format="%(contents)" "${{ github.ref_name }}"
-          if (-not $notes) { $notes = "Jarvis $env:APP_VERSION" }
+          $tag = "v$env:APP_VERSION"
+          $notes = if ($env:NOTES) { $env:NOTES } else { (git tag -l --format="%(contents)" $tag) -join "`n" }
+          if (-not $notes.Trim()) { $notes = "Jarvis $env:APP_VERSION" }
           @{
             version = $env:APP_VERSION
-            notes = ($notes -join "`n").Trim()
+            notes = $notes.Trim()
             installer = @{
-              url = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/JarvisSetup.exe"
+              url = "https://github.com/${{ github.repository }}/releases/download/$tag/JarvisSetup.exe"
               sha256 = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLower()
               size = (Get-Item $installer).Length
             }
           } | ConvertTo-Json -Depth 3 | Set-Content -Encoding utf8NoBOM build/latest.json
-          gh release create "${{ github.ref_name }}" $installer build/latest.json build/Jarvis-portable.zip --title "Jarvis $env:APP_VERSION" --notes ($notes -join "`n")
+          # From a tag push the tag exists; from the Actions tab, --target creates it on this commit.
+          gh release create $tag $installer build/latest.json build/Jarvis-portable.zip --title "Jarvis $env:APP_VERSION" --notes $notes --target $env:GITHUB_SHA
+          if ($LASTEXITCODE -ne 0) { throw "gh release create failed" }
