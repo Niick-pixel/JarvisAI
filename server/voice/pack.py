@@ -72,7 +72,7 @@ def plan(settings: Settings) -> list[tuple[str, Path, bool]]:
     return files
 
 
-async def _size(client: httpx.AsyncClient, url: str) -> int:
+async def remote_size(client: httpx.AsyncClient, url: str) -> int:
     response = await client.head(url, follow_redirects=False)
     if response.status_code == 404:
         return 0
@@ -109,7 +109,7 @@ class VoicePack:
         try:
             files = plan(self.settings)
             async with httpx.AsyncClient(timeout=30.0) as client:
-                sizes = [await _size(client, url) for url, _, _ in files]
+                sizes = [await remote_size(client, url) for url, _, _ in files]
             self._update(bytes_total=sum(sizes), detail="")
             base = 0
             for (url, target, required), size in zip(files, sizes, strict=True):

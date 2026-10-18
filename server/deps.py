@@ -11,6 +11,8 @@ from fastapi import Depends, Request
 from server.agents.approvals import Approvals
 from server.chat.live import LiveRuns
 from server.db.connection import Database
+from server.forecast.jobs import ForecastJobs
+from server.forecast.pack import ForecastPack
 from server.hardware.downloader import Downloader
 from server.knowledge.indexer import Indexer
 from server.knowledge.watcher import Watcher
@@ -40,6 +42,9 @@ class AppState:
     """The one model download that may be in flight. Created with the app."""
     voice_pack: VoicePack | None = None
     """The voice pack download, when you ask for one from Settings or voice mode."""
+    forecasts: ForecastJobs | None = None
+    """The one forecast or backtest that may be running, and its last result."""
+    forecast_pack: ForecastPack | None = None
     llama: LlamaServer | None = None
     """The llama-server this process started, if it started one. None when autostart is off."""
     extractions: dict[str, asyncio.Task[MemoryBatch]] = field(default_factory=dict)
