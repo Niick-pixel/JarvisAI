@@ -18,6 +18,8 @@ from server.settings import Settings
 from server.voice import capability
 from server.voice.capability import VoiceUnavailable
 
+SAMPLE_RATE = 16000
+
 
 @dataclass
 class Engine:
@@ -80,10 +82,30 @@ async def engine(settings: Settings) -> Engine:
         return _engine
 
 
+def decode(audio: bytes, rate: int = SAMPLE_RATE) -> Any:
+    """Any clip PyAV can read, as 16kHz mono float32 - what Whisper takes.
+
+    Done here rather than by handing faster-whisper the bytes: its decoder passes PyAV an argument
+    newer PyAV releases removed, and that combination broke transcription in the packaged app.
+    This is the same decode, owned by us, against PyAV's stable API.
+    """
+    import av
+    import numpy as np
+
+    chunks = []
+    with av.open(io.BytesIO(audio), mode="r") as container:
+        resampler = av.AudioResampler(format="s16", layout="mono", rate=rate)
+        for frame in container.decode(audio=0):
+            chunks.extend(out.to_ndarray() for out in resampler.resample(frame))
+        chunks.extend(out.to_ndarray() for out in resampler.resample(None))
+    pcm = np.concatenate(chunks, axis=1).reshape(-1) if chunks else np.zeros(0, np.int16)
+    return pcm.astype(np.float32) / 32768.0
+
+
 def _run(engine: Engine, audio: bytes, language: str) -> Transcript:
     started = time.perf_counter()
     segments, info = engine.model.transcribe(
-        io.BytesIO(audio),
+        decode(audio),
         language=language or None,
         beam_size=5,
         vad_filter=True,
