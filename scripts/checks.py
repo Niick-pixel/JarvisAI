@@ -23,6 +23,8 @@ SOURCE_GLOBS = [
     "web/src/**/*.vert",
 ]
 EXEMPT = {"web/src/api/schema.gen.ts"}  # generated, and never read by a human
+# Vendored third-party code, kept verbatim so upstream fixes apply with a plain copy.
+EXEMPT_DIRS = ("server/forecast/kronos/",)
 
 EXTERNAL_URL = re.compile(rb"https?://(?!127\.0\.0\.1|localhost)[a-z0-9.-]+", re.I)
 # Documentation hosts that appear only inside library error strings ("see https://react.dev/...").
@@ -60,7 +62,7 @@ def check_file_lengths() -> list[str]:
     for pattern in SOURCE_GLOBS:
         for path in ROOT.glob(pattern):
             rel = path.relative_to(ROOT).as_posix()
-            if rel in EXEMPT:
+            if rel in EXEMPT or rel.startswith(EXEMPT_DIRS):
                 continue
             count = len(path.read_text().splitlines())
             if count > MAX_LINES:

@@ -404,6 +404,150 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/forecast/backtest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Backtest */
+        post: operations["backtest_api_forecast_backtest_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/forecast/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import File
+         * @description The export itself as the request body, its name in the query: the name is where the
+         *     market and contract month come from (`ES 03-25.Last.txt`).
+         */
+        post: operations["import_file_api_forecast_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/forecast/job": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Job */
+        get: operations["job_api_forecast_job_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/forecast/pack": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pack Progress */
+        get: operations["pack_progress_api_forecast_pack_get"];
+        put?: never;
+        /**
+         * Pack Start
+         * @description Fetch the Kronos model and its tokenizer from Hugging Face - only now, only these.
+         */
+        post: operations["pack_start_api_forecast_pack_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/forecast/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run */
+        post: operations["run_api_forecast_run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/forecast/series": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Series */
+        get: operations["series_api_forecast_series_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/forecast/series/{symbol}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Clear */
+        delete: operations["clear_api_forecast_series__symbol__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/forecast/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_api_forecast_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hardware": {
         parameters: {
             query?: never;
@@ -1385,6 +1529,61 @@ export interface components {
             /** Tool */
             tool: string;
         };
+        /** BacktestRequest */
+        BacktestRequest: {
+            /**
+             * Horizon
+             * @default 12
+             */
+            horizon: number;
+            /** Symbol */
+            symbol: string;
+            /**
+             * Windows
+             * @default 12
+             */
+            windows: number;
+        };
+        /** BacktestResult */
+        BacktestResult: {
+            /** Coverage */
+            coverage: number;
+            /** Elapsed Ms */
+            elapsed_ms: number;
+            /** Hit Rate */
+            hit_rate: number;
+            /** Horizon */
+            horizon: number;
+            /** Mae Model */
+            mae_model: number;
+            /** Mae Naive */
+            mae_naive: number;
+            /** Model */
+            model: string;
+            /** Rows */
+            rows: components["schemas"]["BacktestRow"][];
+            /** Skill */
+            skill: number;
+            /** Symbol */
+            symbol: string;
+            /** Windows */
+            windows: number;
+        };
+        /** BacktestRow */
+        BacktestRow: {
+            /** Actual */
+            actual: number;
+            /** Last */
+            last: number;
+            /** Median */
+            median: number;
+            /** P10 */
+            p10: number;
+            /** P90 */
+            p90: number;
+            /** T */
+            t: number;
+        };
         /** BlockPref */
         BlockPref: {
             /**
@@ -1401,6 +1600,24 @@ export interface components {
             pinned: boolean;
             /** Source Ref */
             source_ref: string;
+        };
+        /** Candle */
+        Candle: {
+            /** C */
+            c: number;
+            /** H */
+            h: number;
+            /** L */
+            l: number;
+            /** O */
+            o: number;
+            /** T */
+            t: number;
+            /**
+             * V
+             * @default 0
+             */
+            v: number;
         };
         /** Capabilities */
         Capabilities: {
@@ -1915,6 +2132,142 @@ export interface components {
             /** Token Idx */
             token_idx: number;
         };
+        /** ForecastJob */
+        ForecastJob: {
+            backtest?: components["schemas"]["BacktestResult"] | null;
+            /**
+             * Detail
+             * @default
+             */
+            detail: string;
+            forecast?: components["schemas"]["ForecastResult"] | null;
+            /**
+             * Kind
+             * @default forecast
+             * @enum {string}
+             */
+            kind: "forecast" | "backtest";
+            /**
+             * State
+             * @default idle
+             * @enum {string}
+             */
+            state: "idle" | "loading" | "running" | "done" | "failed";
+            /**
+             * Step
+             * @default 0
+             */
+            step: number;
+            /**
+             * Symbol
+             * @default
+             */
+            symbol: string;
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+        };
+        /** ForecastRequest */
+        ForecastRequest: {
+            /**
+             * Horizon
+             * @default 12
+             */
+            horizon: number;
+            /** Symbol */
+            symbol: string;
+        };
+        /** ForecastResult */
+        ForecastResult: {
+            /** Elapsed Ms */
+            elapsed_ms: number;
+            /** History */
+            history: components["schemas"]["Candle"][];
+            /** Horizon */
+            horizon: number;
+            /** Last Close */
+            last_close: number;
+            /** Last T */
+            last_t: number;
+            /** Made At */
+            made_at: number;
+            /** Median Move */
+            median_move: number;
+            /** Model */
+            model: string;
+            /**
+             * Notes
+             * @default []
+             */
+            notes: string[];
+            /** Paths */
+            paths: number[][];
+            /** Prob Up */
+            prob_up: number;
+            /** Steps */
+            steps: components["schemas"]["ForecastStep"][];
+            /**
+             * Summary
+             * @default
+             */
+            summary: string;
+            /** Symbol */
+            symbol: string;
+            /** Tick Size */
+            tick_size: number;
+            /** Tick Value */
+            tick_value: number;
+        };
+        /** ForecastStatus */
+        ForecastStatus: {
+            /**
+             * Device
+             * @default cpu
+             */
+            device: string;
+            /** Expected Path */
+            expected_path: string;
+            /**
+             * Fix
+             * @default
+             */
+            fix: string;
+            /** Model */
+            model: string;
+            /**
+             * Reason
+             * @default
+             */
+            reason: string;
+            /** Runtime */
+            runtime: boolean;
+            /**
+             * Threads
+             * @default 0
+             */
+            threads: number;
+            /** Weights */
+            weights: boolean;
+        };
+        /** ForecastStep */
+        ForecastStep: {
+            /** C */
+            c: number;
+            /** H */
+            h: number;
+            /** L */
+            l: number;
+            /** O */
+            o: number;
+            /** P10 */
+            p10: number;
+            /** P90 */
+            p90: number;
+            /** T */
+            t: number;
+        };
         /** ForgetResult */
         ForgetResult: {
             /** Forgotten */
@@ -2014,6 +2367,39 @@ export interface components {
              * @default 0
              */
             tokens_per_second: number;
+        };
+        /** ImportResult */
+        ImportResult: {
+            /** Bars */
+            bars: number;
+            /** Contract */
+            contract: string;
+            /** Filename */
+            filename: string;
+            /** First */
+            first: number;
+            /** Last */
+            last: number;
+            /**
+             * Notes
+             * @default []
+             */
+            notes: string[];
+            /** Rows */
+            rows: number;
+            /** Source Minutes */
+            source_minutes: number;
+            /**
+             * Stamps
+             * @enum {string}
+             */
+            stamps: "bar end" | "bar start";
+            /** Symbol */
+            symbol: string;
+            /** Zone */
+            zone: string;
+            /** Zone Assumed */
+            zone_assumed: boolean;
         };
         /** InboxItem */
         InboxItem: {
@@ -2886,6 +3272,23 @@ export interface components {
         SelectedModel: {
             /** Model Id */
             model_id?: string | null;
+        };
+        /** SeriesInfo */
+        SeriesInfo: {
+            /** Bars */
+            bars: number;
+            /** Contracts */
+            contracts: string[];
+            /** First */
+            first: number;
+            /** Last */
+            last: number;
+            /** Symbol */
+            symbol: string;
+            /** Zone */
+            zone: string;
+            /** Zone Assumed */
+            zone_assumed: boolean;
         };
         /**
          * SiblingSet
@@ -4128,6 +4531,235 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ScoreboardRow"][];
+                };
+            };
+        };
+    };
+    backtest_api_forecast_backtest_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BacktestRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForecastJob"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_file_api_forecast_import_post: {
+        parameters: {
+            query: {
+                filename: string;
+                symbol?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    job_api_forecast_job_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForecastJob"];
+                };
+            };
+        };
+    };
+    pack_progress_api_forecast_pack_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoicePackProgress"];
+                };
+            };
+        };
+    };
+    pack_start_api_forecast_pack_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoicePackProgress"];
+                };
+            };
+        };
+    };
+    run_api_forecast_run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForecastRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForecastJob"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    series_api_forecast_series_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesInfo"][];
+                };
+            };
+        };
+    };
+    clear_api_forecast_series__symbol__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                symbol: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeriesInfo"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    status_api_forecast_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForecastStatus"];
                 };
             };
         };

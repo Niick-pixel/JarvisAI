@@ -23,6 +23,8 @@ dependencies = [
     # M6 (PLAN.md 6.2): cron for ambient agents. Its schedule is rebuilt from our own table,
     # so no SQLAlchemy job store comes with it.
     "apscheduler>=3.10",
+    # Exchange time zones (America/Chicago for CME). Windows has no IANA database of its own.
+    "tzdata>=2024.1",
 ]
 
 [project.optional-dependencies]
@@ -33,6 +35,16 @@ voice = [
     "piper-tts>=1.2",
 ]
 # The Windows desktop build (PLAN.md 7a): a native window, and the bundler that makes the .exe.
+# Futures forecasting with Kronos (server/forecast). PyTorch runs it on the CPU; the weights are
+# fetched from inside the app, like voice. pandas, einops, safetensors and tqdm are what the
+# vendored Kronos code imports.
+forecast = [
+    "torch>=2.2",
+    "pandas>=2.2",
+    "einops>=0.8",
+    "safetensors>=0.4",
+    "tqdm>=4.66",
+]
 desktop = [
     "pywebview>=5.3",
     "pyinstaller>=6.10",
@@ -47,6 +59,8 @@ dev = [
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+# Third-party code kept verbatim so upstream fixes apply with a copy (see its __init__.py).
+extend-exclude = ["server/forecast/kronos"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
@@ -60,6 +74,11 @@ python_version = "3.12"
 packages = ["server"]
 ignore_missing_imports = true
 disallow_untyped_defs = true
+exclude = ["server/forecast/kronos/"]
+
+[[tool.mypy.overrides]]
+module = ["server.forecast.kronos.*"]
+follow_imports = "skip"
 
 [build-system]
 requires = ["hatchling"]
