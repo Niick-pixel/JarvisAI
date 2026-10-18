@@ -96,3 +96,4 @@ export type Candle = S["Candle"];
 export type ForecastStep = S["ForecastStep"];
 export type SeriesInfo = S["SeriesInfo"];
 export type ImportResult = S["ImportResult"];
+export type UpdateStatus = S["UpdateStatus"];

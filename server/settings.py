@@ -171,6 +171,12 @@ class VisualConfig(BaseModel):
     performance_mode: Literal["auto", "on", "off"] = "auto"
 
 
+class UpdatesConfig(BaseModel):
+    feed_url: str = "https://github.com/Niick-pixel/jarvisai/releases/latest/download/latest.json"
+    """The newest release's manifest. Point it at your own fork's releases to ship your own."""
+    check_interval_hours: float = 24.0
+
+
 class HardwareConfig(BaseModel):
     # Chromium's GPU process and the Windows compositor live on the same card as the model.
     # Reserving for them up front is what keeps the preflight check honest (PLAN.md 1.1).
@@ -197,6 +203,7 @@ class Settings(BaseSettings):
     voice: VoiceConfig = Field(default_factory=VoiceConfig)
     agents: AgentsConfig = Field(default_factory=AgentsConfig)
     forecast: ForecastConfig = Field(default_factory=ForecastConfig)
+    updates: UpdatesConfig = Field(default_factory=UpdatesConfig)
     openai_api_key: str = ""
 
     @classmethod

@@ -20,6 +20,7 @@ from server.models.memory import MemoryBatch
 from server.providers.launcher import LlamaServer
 from server.providers.registry import ProviderRegistry
 from server.settings import Settings
+from server.updates.updater import Updater
 from server.voice.pack import VoicePack
 
 if TYPE_CHECKING:  # the scheduler imports the loop, which imports this module
@@ -45,6 +46,8 @@ class AppState:
     forecasts: ForecastJobs | None = None
     """The one forecast or backtest that may be running, and its last result."""
     forecast_pack: ForecastPack | None = None
+    updater: Updater | None = None
+    """New versions: found, fetched and verified here, installed when you say so."""
     llama: LlamaServer | None = None
     """The llama-server this process started, if it started one. None when autostart is off."""
     extractions: dict[str, asyncio.Task[MemoryBatch]] = field(default_factory=dict)
