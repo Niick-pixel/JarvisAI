@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from server.chat.agentic import DEFAULT_TOOLS
 from server.db import repo
 from server.deps import State
-from server.errors import NotFound
+from server.errors import NotFound, SovereignError
 from server.models.params import SamplingParams
 from server.models.tools import PendingCall
 
@@ -22,6 +22,8 @@ class AgentTurnRequest(BaseModel):
     """None means every tool chat may use (DEFAULT_TOOLS)."""
     model_id: str | None = None
     params: SamplingParams = SamplingParams()
+    project: str | None = None
+    """Code mode: an existing folder the tools read, write and run commands in."""
 
 
 class AgentTurnStarted(BaseModel):
@@ -45,9 +47,12 @@ def tools() -> list[str]:
 @router.post("")
 async def start(body: AgentTurnRequest, state: State) -> AgentTurnStarted:
     assert state.chat_agents is not None
-    run_id = await state.chat_agents.start(
-        body.conversation_id, body.content, body.tools, body.model_id, body.params
-    )
+    try:
+        run_id = await state.chat_agents.start(
+            body.conversation_id, body.content, body.tools, body.model_id, body.params, body.project
+        )
+    except ValueError as exc:
+        raise SovereignError("invalid_request", str(exc)) from exc
     return AgentTurnStarted(run_id=run_id)
 
 

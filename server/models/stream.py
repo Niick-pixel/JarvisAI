@@ -109,6 +109,8 @@ class ChatRequest(BaseModel):
     params: SamplingParams = SamplingParams()
     ctx_len: int | None = None
     tools: list[str] = []
+    project: str | None = None
+    """Code mode: the project folder the tools work in. Reads, writes and commands happen there."""
     """Agent mode: tools the model may call in this turn. Set by the chat agent driver."""
     attachments: list[str] = []
     """Images sent with this message (ids from /api/attachments), for a model that can see."""

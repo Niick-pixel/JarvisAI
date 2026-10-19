@@ -2,7 +2,7 @@
 // one place so there is only ever one sheet on screen - never two panels fighting for the side.
 import { create } from "zustand";
 
-export type SheetName = "memory" | "knowledge" | "agents" | "settings" | "council" | "forecast" | "home" | "files";
+export type SheetName = "memory" | "knowledge" | "agents" | "settings" | "council" | "forecast" | "home" | "files" | "images" | "code";
 
 /** "auto" lets the model decide; "on"/"off" ask a reasoning model to think first or not. */
 export type ThinkMode = "auto" | "on" | "off" | "heavy";

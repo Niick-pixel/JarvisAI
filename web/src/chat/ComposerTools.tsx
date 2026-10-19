@@ -1,9 +1,10 @@
 // The left side of the composer: "+" for the bigger tools, and how hard to think.
-import { BookOpen, BrainCircuit, Camera, Globe, ImagePlus, Lightbulb, Palette, Plus, ScreenShare, Users, Wrench, X, Zap } from "lucide-react";
+import { BookOpen, BrainCircuit, Camera, SquareTerminal, Globe, ImagePlus, Lightbulb, Palette, Plus, ScreenShare, Users, Wrench, X, Zap } from "lucide-react";
 import { useRef } from "react";
 import { useAttachments } from "../store/attachments";
 import { useImages } from "../store/images";
 import { useScreenShare } from "../store/screenShare";
+import { folderName, useCode } from "../store/code";
 import { useSession } from "../store/session";
 import { type ThinkMode, useUi } from "../store/ui";
 import { IconButton } from "../ui/controls";
@@ -57,6 +58,8 @@ export default function ComposerTools() {
   const picker = useRef<HTMLInputElement>(null);
   const imageMode = useImages((s) => s.mode);
   const sharing = useScreenShare((s) => s.on);
+  const codeOn = useCode((s) => s.on);
+  const project = useCode((s) => s.project);
   const setImageMode = useImages((s) => s.setMode);
 
   return (
@@ -156,6 +159,7 @@ export default function ComposerTools() {
       />
       {research && <Chip label="Research" icon={Globe} active onClear={() => setResearch(false)} />}
       {tools && <Chip label="Tools" icon={Wrench} active onClear={() => setTools(false)} />}
+      {codeOn && <Chip label={`Code · ${folderName(project)}`} icon={SquareTerminal} active onClear={() => useCode.getState().stop()} />}
       {imageMode && <Chip label="Image" icon={Palette} active onClear={() => setImageMode(false)} />}
     </div>
   );

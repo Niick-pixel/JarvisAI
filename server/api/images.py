@@ -13,7 +13,13 @@ from server.deps import State
 from server.errors import NotFound, SovereignError
 from server.imagegen.engine import ImageError
 from server.models.conversation import ConversationUpdate
-from server.models.images import Generated, GenerateRequest, ImageStatus, InstallRequest
+from server.models.images import (
+    GalleryItem,
+    Generated,
+    GenerateRequest,
+    ImageStatus,
+    InstallRequest,
+)
 
 router = APIRouter(prefix="/api/images", tags=["images"])
 CHOSEN = "image_model"
@@ -86,3 +92,20 @@ async def generate(body: GenerateRequest, state: State) -> Generated:
         attachment=linked,
         seconds=round(time.monotonic() - started, 1),
     )
+
+
+@router.get("/gallery")
+def gallery(state: State, limit: int = 120) -> list[GalleryItem]:
+    """Every picture made here, newest first, with the description that made it."""
+    with state.db.session() as conn:
+        rows = conn.execute(
+            "SELECT a.id AS attachment_id, a.conversation_id AS conversation_id,"
+            " COALESCE(u.content, '') AS prompt, a.created_at AS created_at"
+            " FROM attachments a"
+            " LEFT JOIN messages m ON m.id = a.message_id"
+            " LEFT JOIN messages u ON u.id = m.parent_id"
+            " WHERE a.source = 'generated' AND a.conversation_id IS NOT NULL"
+            " ORDER BY a.created_at DESC LIMIT ?",
+            (max(1, min(limit, 500)),),
+        )
+        return [GalleryItem(**dict(r)) for r in rows]

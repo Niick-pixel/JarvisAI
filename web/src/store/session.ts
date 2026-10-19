@@ -9,6 +9,7 @@ import type { ContextAssembly, Conversation, ErrorBody, Message, Remedy, Samplin
 import { useAppearance } from "../design/theme";
 import { useAttachments } from "./attachments";
 import { useScreenShare } from "./screenShare";
+import { useCode } from "./code";
 import { useChatAgent } from "./chatAgent";
 import { useImages } from "./images";
 import { useLibrary } from "./library";
@@ -86,6 +87,7 @@ export const useSession = create<SessionState>((set, get) => ({
   },
 
   newChat: () => {
+    useCode.setState({ on: false });
     if (get().runId) return;
     set({
       conversation: null,
@@ -160,7 +162,7 @@ export const useSession = create<SessionState>((set, get) => ({
     // Sharing your screen: what is on it right now goes with this message.
     await useScreenShare.getState().attachNow();
     const attachments = useAttachments.getState().take();
-    if (get().tools && attachments.length === 0) {
+    if ((get().tools || useCode.getState().on) && attachments.length === 0) {
       await useChatAgent.getState().start(conversation.id, content, params);
       return;
     }

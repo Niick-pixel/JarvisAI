@@ -3,10 +3,15 @@ import { request } from "./client";
 import type { AgentTurn, AgentTurnStarted, SamplingParams } from "./types";
 
 export const chatAgentApi = {
-  start: (conversation_id: string, content: string, params: SamplingParams) =>
+  start: (
+    conversation_id: string,
+    content: string,
+    params: SamplingParams,
+    code?: { project: string; model_id: string | null },
+  ) =>
     request<AgentTurnStarted>("/api/chat/agent", {
       method: "POST",
-      body: JSON.stringify({ conversation_id, content, params }),
+      body: JSON.stringify({ conversation_id, content, params, ...code }),
     }),
   stop: (runId: string) => request<AgentTurnStarted>(`/api/chat/agent/${runId}/stop`, { method: "POST" }),
   turn: (runId: string) => request<AgentTurn>(`/api/chat/agent/${runId}`),
