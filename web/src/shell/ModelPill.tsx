@@ -1,6 +1,6 @@
 // The model switcher, at the top of the chat the way Gemini shows "2.5 Flash ⌄". Names are the
 // friendly ones the server derives from the file; the arithmetic behind "fits" lives in Settings.
-import { ChevronDown, Download, Sparkles } from "lucide-react";
+import { ChevronDown, Download, Route, Sparkles } from "lucide-react";
 import { useEffect } from "react";
 import type { ModelOption } from "../api/types";
 import { useDownloads } from "../store/downloads";
@@ -13,6 +13,9 @@ const FIT: Record<ModelOption["status"], string> = {
   needs_offload: "Will run slowly on this PC",
   unavailable: "Unknown fit",
 };
+
+/** Matches server/chat/routing.py SMART: "choose per message", stored like a pinned model. */
+export const SMART = "smart";
 
 function detail(option: ModelOption): string {
   const parts = [option.remote ? "Remote" : FIT[option.status]];
@@ -34,8 +37,9 @@ export default function ModelPill() {
   }, [refreshModels, empty]);
 
   const auto = models.find((m) => m.recommended);
+  const smart = selectedModelId === SMART;
   const current = models.find((m) => m.model.id === selectedModelId) ?? auto;
-  const label = current?.model.display_name ?? "No model";
+  const label = smart && !empty ? "Smart" : (current?.model.display_name ?? "No model");
 
   const items: MenuItem[] = [
     {
@@ -45,6 +49,14 @@ export default function ModelPill() {
       icon: Sparkles,
       checked: !selectedModelId,
       onSelect: () => void selectModel(null),
+    },
+    {
+      key: SMART,
+      label: "Smart",
+      detail: "Picks a model for each message - code, reasoning, quick questions - and says why",
+      icon: Route,
+      checked: smart,
+      onSelect: () => void selectModel(SMART),
     },
     ...models.map((option) => ({
       key: option.model.id,

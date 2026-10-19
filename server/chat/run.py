@@ -9,13 +9,12 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-from server.chat import budget, titles
+from server.chat import budget, routing, titles
 from server.chat.steering import resolve_steering
 from server.context.assembler import assemble, to_prompt_messages
 from server.db import repo
 from server.db.connection import Database
 from server.errors import NotFound, SovereignError
-from server.hardware import probe, selection
 from server.ids import now_ms
 from server.knowledge import memory_index, research, retrieval
 from server.models.context import ContextAssembly
@@ -43,35 +42,6 @@ class PreparedRun:
     """Set when continuing an edited assistant turn: generation resumes from this text."""
 
 
-async def resolve_model_id(
-    db: Database, registry: ProviderRegistry, settings: Settings, requested: str | None
-) -> str | None:
-    """Which model to use, in order: what the request asked for, what you pinned, what fits.
-
-    A pinned model that is no longer reachable - you closed LM Studio, llama.cpp is serving
-    something else - silently falls back to the automatic choice rather than failing the request.
-    Switching backends should not mean editing settings.
-    """
-    if requested:
-        return requested
-
-    available = await registry.models()
-    with db.session() as conn:
-        pinned = repo.settings.get(conn, repo.settings.SELECTED_MODEL)
-    if pinned and any(m.id == pinned for m in available):
-        return str(pinned)
-
-    gpus, _ = probe.probe_gpus()
-    ranked = selection.rank(
-        available,
-        gpu=gpus[0] if gpus else None,
-        browser_reserve_mb=settings.hardware.browser_vram_reserve_mb,
-        kv_dtype=settings.hardware.kv_cache_dtype,
-    )
-    choice = selection.best(ranked)
-    return choice.model.id if choice else None
-
-
 async def prepare(
     db: Database,
     registry: ProviderRegistry,
@@ -80,8 +50,15 @@ async def prepare(
 ) -> PreparedRun:
     from server.graph import dag
 
-    model_id = await resolve_model_id(db, registry, settings, request.model_id)
-    provider, model = await registry.resolve(model_id)
+    chosen = await routing.route(
+        db,
+        registry,
+        settings,
+        request.model_id,
+        text=_question(db, request),
+        conversation_id=request.conversation_id,
+    )
+    provider, model = await registry.resolve(chosen.model_id)
     with db.session() as conn:
         conversation = repo.conversations.get(conn, request.conversation_id)
         if conversation is None:
@@ -169,6 +146,7 @@ async def prepare(
             status="streaming",
             edited_from_id=steering.source_id,
             forked_reason=steering.reason,
+            route_note=chosen.note or None,
         )
         run_id = repo.runs.create(
             conn,
@@ -198,6 +176,17 @@ async def prepare(
         ctx_len=ctx_len,
         assistant_prefix=prefix,
     )
+
+
+def _question(db: Database, request: ChatRequest) -> str:
+    """What Smart mode reads to choose a model: your message, or the one being re-answered."""
+    if request.content is not None:
+        return request.content
+    if not request.parent_id:
+        return ""
+    with db.session() as conn:
+        parent = repo.messages.get(conn, request.parent_id)
+    return parent.content if parent and parent.role == "user" else ""
 
 
 def tool_instructions(tools: list[str]) -> str:

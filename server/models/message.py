@@ -27,6 +27,8 @@ class Message(BaseModel):
     """Set when this node was forked from another; the original is never mutated."""
     forked_reason: ForkReason | None = None
     created_at: int
+    route_note: str | None = None
+    """Smart mode only: why this model answered, in one sentence."""
 
 
 class MessageCreate(BaseModel):

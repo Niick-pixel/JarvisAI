@@ -150,6 +150,8 @@ class ChatAgents:
         prepared = await runner.prepare(self.rt.db, self.rt.registry, self.rt.settings, body)
         self.rt.live.start(prepared.run_id, prepared.message_id, prepared.conversation_id)
         turn.live_run_id = prepared.run_id
+        # Smart mode chooses on your message; the steps after it stay with that choice.
+        turn.model_id = turn.model_id or prepared.model.id
         await generate(self.rt.db, self.rt.live, prepared)
         turn.live_run_id = ""
         with self.rt.db.session() as conn:
