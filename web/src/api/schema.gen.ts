@@ -1319,6 +1319,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/images/gallery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Gallery
+         * @description Every picture made here, newest first, with the description that made it.
+         */
+        get: operations["gallery_api_images_gallery_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/images/generate": {
         parameters: {
             query?: never;
@@ -2613,6 +2633,8 @@ export interface components {
              *     }
              */
             params: components["schemas"]["SamplingParams"];
+            /** Project */
+            project?: string | null;
             /** Tools */
             tools?: string[] | null;
         };
@@ -3050,6 +3072,8 @@ export interface components {
             params: components["schemas"]["SamplingParams"];
             /** Parent Id */
             parent_id?: string | null;
+            /** Project */
+            project?: string | null;
             /** Rerun Of */
             rerun_of?: string | null;
             /**
@@ -3777,6 +3801,20 @@ export interface components {
             forgotten: string;
             /** Remaining */
             remaining: number;
+        };
+        /**
+         * GalleryItem
+         * @description One picture you made: what you asked for, and the chat it lives in.
+         */
+        GalleryItem: {
+            /** Attachment Id */
+            attachment_id: string;
+            /** Conversation Id */
+            conversation_id: string;
+            /** Created At */
+            created_at: number;
+            /** Prompt */
+            prompt: string;
         };
         /** GenerateRequest */
         GenerateRequest: {
@@ -8199,6 +8237,37 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HudSample"];
                     "text/event-stream": unknown;
+                };
+            };
+        };
+    };
+    gallery_api_images_gallery_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GalleryItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

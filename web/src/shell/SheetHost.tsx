@@ -2,6 +2,8 @@
 import { AnimatePresence } from "framer-motion";
 import HomeSheet from "../home/HomeSheet";
 import FilesSheet from "../files/FilesSheet";
+import CodeSheet from "../sheets/CodeSheet";
+import ImagesSheet from "../sheets/ImagesSheet";
 import TradingSheet from "../trading/TradingSheet";
 import AgentsSheet from "../sheets/AgentsSheet";
 import CouncilSheet from "../sheets/CouncilSheet";
@@ -20,6 +22,8 @@ const SHEETS: Record<SheetName, () => JSX.Element> = {
   home: HomeSheet,
   forecast: TradingSheet,
   files: FilesSheet,
+  images: ImagesSheet,
+  code: CodeSheet,
 };
 
 export default function SheetHost() {

@@ -8,6 +8,7 @@ import type { PendingCall, SamplingParams } from "../api/types";
 import { useLibrary } from "./library";
 import { useSession } from "./session";
 import { streamHandlers } from "./streamHandlers";
+import { useCode } from "./code";
 
 interface ChatAgentState {
   /** The agent turn running in this chat, if any. */
@@ -30,7 +31,10 @@ export const useChatAgent = create<ChatAgentState>((set, get) => ({
     session.setState({ visual: "thinking", error: null, streamingText: "", assembly: null, runStartedAt: Date.now() });
     let runId: string;
     try {
-      runId = (await chatAgentApi.start(conversationId, content, params)).run_id;
+      // Code mode: the tools work in your project folder, with a coder model when there is one.
+      const code = useCode.getState();
+      const extra = code.on && code.project ? { project: code.project, model_id: code.coder() } : undefined;
+      runId = (await chatAgentApi.start(conversationId, content, params, extra)).run_id;
     } catch {
       session.setState({ visual: "idle" });
       return;

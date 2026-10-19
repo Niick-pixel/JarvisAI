@@ -46,3 +46,12 @@ class Generated(BaseModel):
     message_id: str
     attachment: Attachment
     seconds: float
+
+
+class GalleryItem(BaseModel):
+    """One picture you made: what you asked for, and the chat it lives in."""
+
+    attachment_id: str
+    conversation_id: str
+    prompt: str
+    created_at: int

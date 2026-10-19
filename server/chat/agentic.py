@@ -14,6 +14,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from server.agents import loop
 from server.chat import run as runner
@@ -55,6 +56,8 @@ class Turn:
     live_run_id: str = ""
     """The generation streaming right now, for the chat to attach to."""
     cancelled: bool = False
+    project: str = ""
+    """Code mode's project folder: the workspace for this turn instead of the chat's own."""
 
 
 class ChatAgents:
@@ -62,12 +65,12 @@ class ChatAgents:
         self.rt = rt
         self.turns: dict[str, Turn] = {}
 
-    def _job(self, tools: list[str]) -> Job:
+    def _job(self, tools: list[str], project: str = "") -> Job:
         with self.rt.db.session() as conn:
             repo.agents.ensure_chat_job(conn, DEFAULT_TOOLS)
             job = repo.agents.get_job(conn, CHAT_JOB_ID)
         assert job is not None
-        workspace = str(self.rt.settings.agents.workspace / "chat")
+        workspace = project or str(self.rt.settings.agents.workspace / "chat")
         return job.model_copy(update={"tools": tools, "workspace": workspace})
 
     async def start(
@@ -77,7 +80,14 @@ class ChatAgents:
         tools: list[str] | None,
         model_id: str | None,
         params: SamplingParams,
+        project: str | None = None,
     ) -> str:
+        folder = ""
+        if project:
+            path = Path(project).expanduser()
+            if not path.is_absolute() or not path.is_dir():
+                raise ValueError(f"{project} is not a folder on this PC.")
+            folder = str(path.resolve())
         # Account tools only once the account is connected: otherwise they are noise in the prompt.
         accounts = Accounts(self.rt.settings.paths.data_dir)
         prefixes = {"email_": "gmail", "github_": "github"}
@@ -87,10 +97,10 @@ class ChatAgents:
             if t in DEFAULT_TOOLS
             and all(not t.startswith(p) or accounts.get(n) for p, n in prefixes.items())
         ]
-        self._job(chosen)
+        self._job(chosen, folder)
         with self.rt.db.session() as conn:
             run_id = repo.agents.start_run(conn, CHAT_JOB_ID, conversation_id)
-        self.turns[run_id] = Turn(tools=chosen, model_id=model_id, params=params)
+        self.turns[run_id] = Turn(tools=chosen, model_id=model_id, params=params, project=folder)
         asyncio.get_running_loop().create_task(self._drive(run_id, content))
         return run_id
 
@@ -118,7 +128,7 @@ class ChatAgents:
 
     async def _loop(self, run_id: str, content: str | None) -> None:
         turn = self.turns[run_id]
-        job = self._job(turn.tools)
+        job = self._job(turn.tools, turn.project)
         first = content
         while True:
             if turn.cancelled:
@@ -162,6 +172,7 @@ class ChatAgents:
             model_id=turn.model_id,
             params=turn.params,
             tools=turn.tools,
+            project=turn.project or None,
         )
         prepared = await runner.prepare(self.rt.db, self.rt.registry, self.rt.settings, body)
         self.rt.live.start(prepared.run_id, prepared.message_id, prepared.conversation_id)

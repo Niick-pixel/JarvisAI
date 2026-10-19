@@ -3,7 +3,7 @@
 // Collapses to a strip of icons; nothing in it ever opens beside something else.
 import { AnimatePresence, motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
-import { Bot, Brain, CandlestickChart, Download, Ellipsis, FolderCode, House, Library, PanelLeft, Search, Settings, SquarePen, Trash2 } from "lucide-react";
+import { Bot, Brain, CandlestickChart, Download, Ellipsis, FolderCode, House, Library, PanelLeft, Search, Settings, SquarePen, Trash2, Image as ImageIcon, SquareTerminal } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
 import type { Conversation } from "../api/types";
@@ -18,6 +18,7 @@ import Menu from "../ui/Menu";
 import { GLIDE } from "../ui/motion";
 import { useNarrow } from "../ui/narrow";
 import UpdateRow from "./UpdateRow";
+import { useCode } from "../store/code";
 
 function bucket(ms: number): string {
   const days = Math.floor((Date.now() - ms) / 86_400_000);
@@ -119,6 +120,7 @@ export default function Sidebar() {
   const open = useUi((s) => s.sidebarOpen);
   const toggle = useUi((s) => s.toggleSidebar);
   const sheet = useUi((s) => s.sheet);
+  const codeOn = useCode((s) => s.on);
   const openSheet = useUi((s) => s.openSheet);
   const { conversations, refresh } = useLibrary();
   const newChat = useSession((s) => s.newChat);
@@ -205,6 +207,8 @@ export default function Sidebar() {
             }}
           />
         )}
+        <NavRow icon={ImageIcon} label="Images" open={wide} active={sheet === "images"} onClick={place("images")} />
+        <NavRow icon={SquareTerminal} label="Code" open={wide} active={sheet === "code" || codeOn} onClick={place("code")} />
       </div>
 
       <div className="scroll-quiet mt-4 min-h-0 flex-1 overflow-y-auto">
