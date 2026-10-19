@@ -78,6 +78,7 @@ from server.settings import Settings, load_settings
 from server.trading.copilot import Copilot
 from server.updates.updater import Updater
 from server.version import VERSION
+from server.voice.kokoro_pack import KokoroPack
 from server.voice.pack import VoicePack
 
 WEB_DIST = paths.resource("web", "dist")
@@ -118,6 +119,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         llama=LlamaServer(settings, db),
         downloader=Downloader(db, settings.paths.models_dir),
         voice_pack=VoicePack(settings),
+        kokoro_pack=KokoroPack(settings),
         home=Hub(settings.paths.data_dir),
         forecasts=ForecastJobs(db, forecast_engine.shared(settings)),
         forecast_pack=ForecastPack(settings),

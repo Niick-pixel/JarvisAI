@@ -23,6 +23,7 @@ from server.providers.launcher import LlamaServer
 from server.providers.registry import ProviderRegistry
 from server.settings import Settings
 from server.updates.updater import Updater
+from server.voice.kokoro_pack import KokoroPack
 from server.voice.pack import VoicePack
 
 if TYPE_CHECKING:  # the scheduler imports the loop, which imports this module
@@ -50,6 +51,8 @@ class AppState:
     downloader: Downloader | None = None
     """The one model download that may be in flight. Created with the app."""
     voice_pack: VoicePack | None = None
+    kokoro_pack: KokoroPack | None = None
+    """The natural voice's download, when you ask for it in Settings > Voice."""
     """The voice pack download, when you ask for one from Settings or voice mode."""
     home: Hub | None = None
     """The Home Assistant connection, saved or not."""

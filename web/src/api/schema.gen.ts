@@ -2449,6 +2449,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/voice/kokoro": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Kokoro Status */
+        get: operations["kokoro_status_api_voice_kokoro_get"];
+        /** Kokoro Choose */
+        put: operations["kokoro_choose_api_voice_kokoro_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/voice/kokoro/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Kokoro Download
+         * @description Fetch the natural voice (about 120 MB). Only when you press the button.
+         */
+        post: operations["kokoro_download_api_voice_kokoro_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/voice/kokoro/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Kokoro Preview
+         * @description A sentence in one voice, so you can hear it before choosing it.
+         */
+        get: operations["kokoro_preview_api_voice_kokoro_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/voice/pack": {
         parameters: {
             query?: never;
@@ -4385,6 +4443,27 @@ export interface components {
             trades: number;
             /** Win Rate */
             win_rate: number;
+        };
+        /** KokoroChoice */
+        KokoroChoice: {
+            /** Engine */
+            engine?: ("kokoro" | "piper") | null;
+            /** Voice */
+            voice?: string | null;
+        };
+        /** KokoroStatus */
+        KokoroStatus: {
+            download: components["schemas"]["VoicePackProgress"];
+            /** Engine */
+            engine: string;
+            /** In This Build */
+            in_this_build: boolean;
+            /** Installed */
+            installed: boolean;
+            /** Voice */
+            voice: string;
+            /** Voices */
+            voices: string[][];
         };
         /** LaunchStatus */
         LaunchStatus: {
@@ -10113,6 +10192,111 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpdateStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    kokoro_status_api_voice_kokoro_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KokoroStatus"];
+                };
+            };
+        };
+    };
+    kokoro_choose_api_voice_kokoro_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KokoroChoice"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KokoroStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    kokoro_download_api_voice_kokoro_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KokoroStatus"];
+                };
+            };
+        };
+    };
+    kokoro_preview_api_voice_kokoro_preview_get: {
+        parameters: {
+            query: {
+                voice: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A WAV stream, one PCM block per sentence. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                    "audio/wav": unknown;
                 };
             };
             /** @description Validation Error */

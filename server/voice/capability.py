@@ -136,6 +136,19 @@ def stt_status(settings: Settings, *, actual_device: str = "") -> EngineStatus:
 
 
 def tts_status(settings: Settings) -> EngineStatus:
+    from server.voice import kokoro
+
+    if kokoro.active(settings):
+        return EngineStatus(
+            role="tts",
+            engine="kokoro",
+            available=True,
+            model_id=kokoro.choice(settings)["voice"],
+            device="cpu",
+            compute_type="int8",
+            vram_estimate_mb=0,
+            expected_path=str(kokoro.folder(settings)),
+        )
     name = settings.voice.tts_voice
     onnx, config = voice_files(settings, name)
     status = EngineStatus(

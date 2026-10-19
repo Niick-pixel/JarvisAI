@@ -10,6 +10,7 @@ import { type ThinkMode, useUi } from "../store/ui";
 import { useVoice } from "../store/voice";
 import { Button, FIELD, Row, Segmented, Switch } from "../ui/controls";
 import VoicePack from "../voice/VoicePack";
+import KokoroSettings from "./KokoroSettings";
 import LocalModels from "./LocalModels";
 import WakeRow from "./WakeRow";
 
@@ -149,6 +150,7 @@ export function Voice() {
     <Group title="Voice">
       <Engine title="Dictation" engine={voice?.stt} />
       <Engine title="Reading aloud" engine={voice?.tts} />
+      <KokoroSettings />
       <WakeRow />
       <div className="flex justify-end py-3 empty:hidden">
         <VoicePack />

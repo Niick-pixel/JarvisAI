@@ -39,6 +39,8 @@ dependencies = [
 voice = [
     "faster-whisper>=1.1",
     "piper-tts>=1.2",
+    # The natural voice. Its espeak-ng comes in its own wheel (espeakng-loader).
+    "kokoro-onnx>=0.4",
 ]
 # The Windows desktop build (PLAN.md 7a): a native window, and the bundler that makes the .exe.
 # Futures forecasting with Kronos (server/forecast). PyTorch runs it on the CPU; the weights are
