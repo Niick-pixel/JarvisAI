@@ -19,6 +19,7 @@ from server.chat.execute import execute as generate
 from server.chat.live import LiveRuns
 from server.db import repo
 from server.db.connection import Database
+from server.files.workspace import Workspace
 from server.models.agents import Job
 from server.models.conversation import ConversationCreate
 from server.models.stream import ChatRequest
@@ -146,6 +147,8 @@ def context_for(rt: Runtime, job: Job) -> ToolContext:
     with rt.db.session() as conn:
         roots = [Path(r["path"]) for r in conn.execute("SELECT path FROM sources")]
     roots.append(rt.settings.paths.memory_dir)
+    # Folders you opened in Files are folders you meant Jarvis to read.
+    roots += [Path(r.path) for r in Workspace(rt.settings.paths.data_dir).roots()]
     workspace = job.workspace or str(rt.settings.agents.workspace / job.id)
     return ToolContext(sandbox=sandbox.build(roots, workspace), settings=rt.settings)
 

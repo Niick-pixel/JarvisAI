@@ -18,6 +18,7 @@ from server.agents.scheduler import JobScheduler
 from server.api import (
     agents,
     chat,
+    chat_agent,
     context,
     conversations,
     council,
@@ -37,6 +38,7 @@ from server.api import (
     voice,
     xray,
 )
+from server.chat.agentic import ChatAgents
 from server.chat.live import LiveRuns
 from server.db import repo
 from server.db.connection import Database
@@ -113,7 +115,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             # gone. Say so in the row rather than leaving it looking alive forever.
             for stale in repo.agents.stale_runs(conn):
                 repo.agents.set_status(conn, stale, "failed", error="the server restarted")
-        state.scheduler = JobScheduler(agent_loop.Runtime(db, registry, settings, live, approvals))
+        runtime = agent_loop.Runtime(db, registry, settings, live, approvals)
+        state.scheduler = JobScheduler(runtime)
+        state.chat_agents = ChatAgents(runtime)
         state.scheduler.start()
         # Loading a model takes tens of seconds, and the app must not be unreachable for them: the
         # launcher runs in the background and the provider list reports what it is doing.
@@ -172,6 +176,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         updates.router,
         files.router,
         local_models.router,
+        chat_agent.router,
     ):
         app.include_router(router)
 

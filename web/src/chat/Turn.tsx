@@ -17,6 +17,7 @@ import ReplayDiff from "./ReplayDiff";
 import SiblingNav from "./SiblingNav";
 import Thinking from "./Thinking";
 import { split } from "./reasoning";
+import { withoutCalls } from "./toolResults";
 import XRay from "./XRay";
 
 const arrive = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, transition: BOUNCE };
@@ -57,7 +58,8 @@ export function AssistantTurn({ message, streaming }: { message: Message; stream
   const [showDiff, setShowDiff] = useState(false);
 
   const raw = streaming ? liveText : message.content;
-  const { thinking, answer, open } = split(raw);
+  const { thinking, answer: said, open } = split(raw);
+  const answer = withoutCalls(said);
   const waiting = streaming && raw === "";
 
   return (

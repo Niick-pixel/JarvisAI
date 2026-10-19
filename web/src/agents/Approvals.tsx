@@ -5,11 +5,13 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ShieldCheck } from "lucide-react";
 import { useAgents } from "../store/agents";
+import { useChatAgent } from "../store/chatAgent";
 import { Button } from "../ui/controls";
 import { BOUNCE } from "../ui/motion";
 
 export default function Approvals() {
-  const pending = useAgents((s) => s.pending);
+  const chatRun = useChatAgent((s) => s.runId);
+  const pending = useAgents((s) => s.pending).filter((c) => !chatRun || c.job_run_id !== chatRun);
   const busy = useAgents((s) => s.busy);
   const decide = useAgents((s) => s.decide);
 

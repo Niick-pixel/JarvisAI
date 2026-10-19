@@ -8,6 +8,18 @@ import sqlite3
 from server.ids import new_id, now_ms
 from server.models.agents import InboxItem, Job, JobCreate, JobPatch, JobRun, JobRunStatus
 
+CHAT_JOB_ID = "job_chat"
+"""The hidden job every agent-mode chat turn runs under (server/chat/agentic.py). Never listed,
+never scheduled: it exists so chat tool calls live in the same tables as everyone else's."""
+
+
+def ensure_chat_job(conn: sqlite3.Connection, tools: list[str]) -> None:
+    conn.execute(
+        "INSERT OR IGNORE INTO jobs (id, name, cron, prompt, tools, workspace, enabled, created_at)"
+        " VALUES (?, 'Chat', '', '', ?, '', 0, ?)",
+        (CHAT_JOB_ID, json.dumps(tools), now_ms()),
+    )
+
 
 def _job(row: sqlite3.Row) -> Job:
     return Job(
@@ -50,7 +62,8 @@ def get_job(conn: sqlite3.Connection, job_id: str) -> Job | None:
 
 
 def list_jobs(conn: sqlite3.Connection) -> list[Job]:
-    return [_job(r) for r in conn.execute("SELECT * FROM jobs ORDER BY created_at DESC")]
+    rows = conn.execute("SELECT * FROM jobs WHERE id != ? ORDER BY created_at DESC", (CHAT_JOB_ID,))
+    return [_job(r) for r in rows]
 
 
 def patch_job(conn: sqlite3.Connection, job_id: str, body: JobPatch) -> Job | None:
@@ -137,7 +150,10 @@ def list_runs(conn: sqlite3.Connection, job_id: str | None = None, limit: int = 
             f"{RUN_SELECT} WHERE r.job_id = ? ORDER BY r.started_at DESC LIMIT ?", (job_id, limit)
         )
     else:
-        rows = conn.execute(f"{RUN_SELECT} ORDER BY r.started_at DESC LIMIT ?", (limit,))
+        rows = conn.execute(
+            f"{RUN_SELECT} WHERE r.job_id != ? ORDER BY r.started_at DESC LIMIT ?",
+            (CHAT_JOB_ID, limit),
+        )
     return [_run(r) for r in rows]
 
 

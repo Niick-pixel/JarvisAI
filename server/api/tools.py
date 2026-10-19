@@ -44,7 +44,13 @@ async def decide(call_id: str, body: Decision, state: State) -> PendingCall:
         decided = repo.tools.get(conn, call_id)
     if call.job_run_id:
         # Wake the parked run, or start a driver for it if the process restarted while it waited.
-        await loop.resume(_runtime(state), call.job_run_id)
+        # A chat turn's run goes back to the chat driver; it must never land in the Inbox.
+        with state.db.session() as conn:
+            run = repo.agents.get_run(conn, call.job_run_id)
+        if run and run.job_id == repo.agents.CHAT_JOB_ID and state.chat_agents is not None:
+            await state.chat_agents.resume(call.job_run_id)
+        else:
+            await loop.resume(_runtime(state), call.job_run_id)
         state.approvals.notify(call.job_run_id)
     assert decided is not None
     return decided

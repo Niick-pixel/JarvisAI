@@ -28,7 +28,7 @@ class Sandbox:
     """None means this job may not write at all, the default for a job with no workspace."""
 
     def resolve_read(self, raw: str) -> Path:
-        path = _real(raw)
+        path = _real(raw, self.cwd)
         if not any(_within(path, root) for root in self.read_roots):
             raise Denied(
                 f"{path} is outside this job's readable roots "
@@ -40,7 +40,7 @@ class Sandbox:
     def resolve_write(self, raw: str) -> Path:
         if self.write_root is None:
             raise Denied("This job has no workspace, so it cannot write anywhere.")
-        path = _real(raw)
+        path = _real(raw, self.write_root)
         if not _within(path, self.write_root):
             raise Denied(f"{path} is outside this job's workspace ({self.write_root}).")
         _refuse_secrets(path)
@@ -65,8 +65,13 @@ def build(read_roots: list[Path], workspace: str) -> Sandbox:
     return Sandbox(read_roots=roots, write_root=write_root)
 
 
-def _real(raw: str) -> Path:
-    return Path(raw).expanduser().resolve()
+def _real(raw: str, base: Path | None = None) -> Path:
+    """A relative path is relative to the sandbox (the workspace), never to wherever this process
+    happens to be running - which in the installed app is the program folder."""
+    path = Path(raw).expanduser()
+    if base is not None and not path.is_absolute():
+        path = base / path
+    return path.resolve()
 
 
 def _within(path: Path, root: Path) -> bool:
