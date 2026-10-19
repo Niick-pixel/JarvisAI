@@ -21,11 +21,13 @@ from server.api import (
     context,
     conversations,
     council,
+    files,
     forecast,
     hardware,
     home,
     hud,
     knowledge,
+    local_models,
     memory,
     messages,
     models_api,
@@ -41,6 +43,8 @@ from server.db.connection import Database
 from server.db.migrate import migrate
 from server.deps import AppState, State
 from server.errors import SovereignError, handle_sovereign_error
+from server.files.propose import Proposals
+from server.files.workspace import Workspace
 from server.forecast import engine as forecast_engine
 from server.forecast.jobs import ForecastJobs
 from server.forecast.pack import ForecastPack
@@ -98,6 +102,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         forecasts=ForecastJobs(db, forecast_engine.shared(settings)),
         forecast_pack=ForecastPack(settings),
         updater=Updater(settings),
+        files=Proposals(Workspace(settings.paths.data_dir), registry),
     )
 
     @asynccontextmanager
@@ -165,6 +170,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         home.router,
         forecast.router,
         updates.router,
+        files.router,
+        local_models.router,
     ):
         app.include_router(router)
 

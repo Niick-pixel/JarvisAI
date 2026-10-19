@@ -404,6 +404,189 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/files/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Folder */
+        get: operations["list_folder_api_files_list_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/files/proposals/{proposal_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Discard */
+        delete: operations["discard_api_files_proposals__proposal_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/files/proposals/{proposal_id}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply */
+        post: operations["apply_api_files_proposals__proposal_id__apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/files/propose": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Propose
+         * @description Ask the model for a change. Nothing is written until you apply the proposal.
+         */
+        post: operations["propose_api_files_propose_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/files/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read */
+        get: operations["read_api_files_read_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/files/roots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Roots */
+        get: operations["roots_api_files_roots_get"];
+        put?: never;
+        /** Add Root */
+        post: operations["add_root_api_files_roots_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/files/roots/{root_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Root
+         * @description Closes the folder in Files. Nothing on disk is touched.
+         */
+        delete: operations["remove_root_api_files_roots__root_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/files/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run
+         * @description Runs exactly the command you typed, in the folder, when you press Run.
+         */
+        post: operations["run_api_files_run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/files/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Undo */
+        post: operations["undo_api_files_undo_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/files/write": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Write
+         * @description Your own edit. Refused if the file changed on disk since you opened it.
+         */
+        put: operations["write_api_files_write_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/forecast/backtest": {
         parameters: {
             query?: never;
@@ -1139,6 +1322,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/models/local": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Library */
+        get: operations["library_api_models_local_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/models/local/{model_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete */
+        delete: operations["delete_api_models_local__model_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/models/local/{model_id}/use": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Use
+         * @description Serve this model now: pin it and restart the engine on it.
+         */
+        post: operations["use_api_models_local__model_id__use_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/models/options": {
         parameters: {
             query?: never;
@@ -1592,6 +1829,11 @@ export interface components {
              * @enum {string}
              */
             type: "answer_token";
+        };
+        /** ApplyRequest */
+        ApplyRequest: {
+            /** Hunks */
+            hunks?: number[] | null;
         };
         /** AssemblyEvent */
         AssemblyEvent: {
@@ -2233,6 +2475,20 @@ export interface components {
              */
             vram_estimate_mb: number;
         };
+        /** Entry */
+        Entry: {
+            /** Dir */
+            dir: boolean;
+            /** Name */
+            name: string;
+            /** Path */
+            path: string;
+            /**
+             * Size
+             * @default 0
+             */
+            size: number;
+        };
         /** ErrorBody */
         ErrorBody: {
             /**
@@ -2288,6 +2544,41 @@ export interface components {
             messages: number;
             /** Path */
             path: string;
+        };
+        /** FileContent */
+        FileContent: {
+            /**
+             * Can Undo
+             * @default false
+             */
+            can_undo: boolean;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "text" | "docx";
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /** Path */
+            path: string;
+            /** Root */
+            root: string;
+            /** Size */
+            size: number;
+            /** Text */
+            text: string;
+            /** Version */
+            version: string;
+        };
+        /** FileRef */
+        FileRef: {
+            /** Path */
+            path: string;
+            /** Root */
+            root: string;
         };
         /**
          * ForceToken
@@ -2596,6 +2887,27 @@ export interface components {
              */
             tokens_per_second: number;
         };
+        /** Hunk */
+        Hunk: {
+            /**
+             * After
+             * @default []
+             */
+            after: string[];
+            /**
+             * Before
+             * @default []
+             */
+            before: string[];
+            /** Index */
+            index: number;
+            /** New */
+            new: string[];
+            /** Old */
+            old: string[];
+            /** Old Start */
+            old_start: number;
+        };
         /** ImportResult */
         ImportResult: {
             /** Bars */
@@ -2840,6 +3152,43 @@ export interface components {
             runs_completed: number;
             /** Tokens Generated */
             tokens_generated: number;
+        };
+        /** LocalModel */
+        LocalModel: {
+            /**
+             * Deletable
+             * @default true
+             */
+            deletable: boolean;
+            /** Display Name */
+            display_name: string;
+            /** File Path */
+            file_path: string;
+            /** Id */
+            id: string;
+            /**
+             * Loaded
+             * @default false
+             */
+            loaded: boolean;
+            /**
+             * Pinned
+             * @default false
+             */
+            pinned: boolean;
+            /** Quant */
+            quant?: string | null;
+            /** Size Bytes */
+            size_bytes: number;
+        };
+        /** LocalModels */
+        LocalModels: {
+            /** Folder */
+            folder: string;
+            /** Models */
+            models: components["schemas"]["LocalModel"][];
+            /** Total Bytes */
+            total_bytes: number;
         };
         /**
          * MemoryBatch
@@ -3274,6 +3623,49 @@ export interface components {
             /** Parent Id */
             parent_id?: string | null;
         };
+        /** Proposal */
+        Proposal: {
+            /**
+             * Elapsed Ms
+             * @default 0
+             */
+            elapsed_ms: number;
+            /**
+             * Failed
+             * @default []
+             */
+            failed: string[];
+            /** Hunks */
+            hunks: components["schemas"]["Hunk"][];
+            /** Id */
+            id: string;
+            /**
+             * Model Id
+             * @default
+             */
+            model_id: string;
+            /** Path */
+            path: string;
+            /** Root */
+            root: string;
+            /** Summary */
+            summary: string;
+            /** Version */
+            version: string;
+        };
+        /** ProposeRequest */
+        ProposeRequest: {
+            /** Instruction */
+            instruction: string;
+            /** Model Id */
+            model_id?: string | null;
+            /** Path */
+            path: string;
+            /** Root */
+            root: string;
+            /** Thinking */
+            thinking?: boolean | null;
+        };
         /** ProviderInfo */
         ProviderInfo: {
             /** Base Url */
@@ -3398,6 +3790,20 @@ export interface components {
             /** Vector */
             vector: boolean;
         };
+        /** Root */
+        Root: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Path */
+            path: string;
+        };
+        /** RootCreate */
+        RootCreate: {
+            /** Path */
+            path: string;
+        };
         /** RunEvent */
         RunEvent: {
             /** Message Id */
@@ -3413,6 +3819,29 @@ export interface components {
              * @enum {string}
              */
             type: "run";
+        };
+        /** RunRequest */
+        RunRequest: {
+            /** Command */
+            command: string;
+            /** Root */
+            root: string;
+        };
+        /** RunResult */
+        RunResult: {
+            /** Command */
+            command: string;
+            /** Elapsed Ms */
+            elapsed_ms: number;
+            /** Exit Code */
+            exit_code: number;
+            /** Output */
+            output: string;
+            /**
+             * Timed Out
+             * @default false
+             */
+            timed_out: boolean;
         };
         /**
          * SamplingParams
@@ -3461,6 +3890,17 @@ export interface components {
              * @default 0.95
              */
             top_p: number;
+        };
+        /** SaveRequest */
+        SaveRequest: {
+            /** Path */
+            path: string;
+            /** Root */
+            root: string;
+            /** Text */
+            text: string;
+            /** Version */
+            version: string;
         };
         /** ScoreboardRow */
         ScoreboardRow: {
@@ -4768,6 +5208,354 @@ export interface operations {
             };
         };
     };
+    list_folder_api_files_list_get: {
+        parameters: {
+            query: {
+                root: string;
+                path?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Entry"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    discard_api_files_proposals__proposal_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                proposal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_api_files_proposals__proposal_id__apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                proposal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileContent"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    propose_api_files_propose_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProposeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Proposal"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_api_files_read_get: {
+        parameters: {
+            query: {
+                root: string;
+                path: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileContent"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    roots_api_files_roots_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Root"][];
+                };
+            };
+        };
+    };
+    add_root_api_files_roots_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RootCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Root"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_root_api_files_roots__root_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                root_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Root"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_api_files_run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    undo_api_files_undo_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileRef"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileContent"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    write_api_files_write_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileContent"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     backtest_api_forecast_backtest_post: {
         parameters: {
             query?: never;
@@ -6016,6 +6804,88 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModelInfo"][];
+                };
+            };
+        };
+    };
+    library_api_models_local_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalModels"];
+                };
+            };
+        };
+    };
+    delete_api_models_local__model_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalModels"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    use_api_models_local__model_id__use_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocalModels"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

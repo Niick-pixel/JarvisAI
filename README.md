@@ -210,6 +210,33 @@ and write up what it sees.
 Not covered yet: exchange holidays and early closes. A forecast that runs into one shows bars for a
 session that won't trade. None of this is trading advice.
 
+## Files: edit documents and code with Jarvis
+
+**Files** in the sidebar opens a folder, either a code project or a folder of documents.
+You get the folder's tree, the open file in an editor you can type in (Ctrl+S saves), and Jarvis
+alongside it.
+
+- **Ask for a change** ("make divide safe for zero", "tighten the intro paragraph"). Jarvis
+  answers with targeted search-and-replace edits rather than rewriting the whole file, so it works
+  on large files with small local models. Each change is shown as a diff with **Keep** or
+  **Skip**. Nothing is written until you press **Apply**, and only the changes you kept are
+  written.
+- **Safety.** A change is refused if the file changed on disk after Jarvis read it. Every write,
+  yours or Jarvis's, is backed up first, so **Undo last change** always works. Paths can't leave
+  the folder, and credential files (`.env`, keys) are never opened.
+- **Word documents** (`.docx`) open as one line per paragraph, with headings marked `#`. Saving
+  rewrites only the paragraphs you changed, and each keeps its formatting. Tables, images and
+  comments are left exactly as they were.
+- **Run** a command in the folder (`pytest`, `npm test`) and see its output. It runs only when you
+  press Run.
+
+## Models on this PC
+
+Settings › Models on this PC lists every model file, with its size and which one is serving.
+**Use** switches the engine to that model now. **Delete** removes the file and its record; if it
+was the model in use, the engine moves to the next best one. Only files inside the models folder
+can be deleted.
+
 ## Your home, through Home Assistant
 
 **Home** in the sidebar shows every device [Home Assistant](https://www.home-assistant.io/) knows,

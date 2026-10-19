@@ -11,6 +11,7 @@ from fastapi import Depends, Request
 from server.agents.approvals import Approvals
 from server.chat.live import LiveRuns
 from server.db.connection import Database
+from server.files.propose import Proposals
 from server.forecast.jobs import ForecastJobs
 from server.forecast.pack import ForecastPack
 from server.hardware.downloader import Downloader
@@ -51,6 +52,8 @@ class AppState:
     forecast_pack: ForecastPack | None = None
     updater: Updater | None = None
     """New versions: found, fetched and verified here, installed when you say so."""
+    files: Proposals | None = None
+    """Files: the folders you opened, and Jarvis's proposed edits waiting for your decision."""
     llama: LlamaServer | None = None
     """The llama-server this process started, if it started one. None when autostart is off."""
     extractions: dict[str, asyncio.Task[MemoryBatch]] = field(default_factory=dict)
