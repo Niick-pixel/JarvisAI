@@ -22,14 +22,14 @@ export default function AgentsSheet() {
   }, [refresh]);
 
   return (
-    <Sheet title="Agents" subtitle="Routines that work in the background. Anything that changes your files asks first.">
+    <Sheet title="Agents" subtitle="Workflows that run in the background on a schedule. Anything that changes something asks first.">
       <div className="mb-4">
         <Segmented
           id="agents"
           value={tab}
           onChange={setTab}
           options={[
-            { value: "routines", label: "Routines" },
+            { value: "routines", label: "Workflows" },
             { value: "inbox", label: unread ? `Inbox (${unread})` : "Inbox" },
             { value: "activity", label: "Activity" },
           ]}

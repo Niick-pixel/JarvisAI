@@ -1,9 +1,11 @@
-// The routines, with the last thing each one did. "Run now" uses the same code path the scheduler
-// does, so trying a routine is testing the routine.
+// The workflows, with how each one has been doing: the last runs as a strip, oldest to newest, and
+// the last thing it did. "Run now" uses the same code path the scheduler does, so trying a
+// workflow is testing the workflow.
 import { Bot, Pause, Play, Plus, Trash2, Zap } from "lucide-react";
-import { useState } from "react";
-import type { Job, JobRun } from "../api/types";
+import { useEffect, useState } from "react";
+import type { Job, JobRun, JobStats } from "../api/types";
 import { useAgents } from "../store/agents";
+import { useWorkflows } from "../store/workflows";
 import { Button, Empty, IconButton } from "../ui/controls";
 import JobForm, { describe } from "./JobForm";
 
@@ -20,19 +22,58 @@ function when(ms: number | null | undefined): string {
   return new Date(ms).toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" });
 }
 
+const DOT: Record<string, string> = {
+  done: "bg-success",
+  failed: "bg-danger",
+  waiting_approval: "bg-accent",
+  running: "bg-accent animate-pulse",
+  cancelled: "bg-ink/20",
+};
+
+function History({ stats }: { stats?: JobStats }) {
+  if (!stats || stats.runs === 0) return null;
+  const seconds = stats.avg_seconds ? ` · about ${Math.max(1, Math.round(stats.avg_seconds))}s a run` : "";
+  return (
+    <div className="mt-1.5 flex items-center gap-2 text-[12px] text-ink-faint">
+      <span className="flex gap-[3px]" aria-hidden>
+        {stats.recent.map((status, i) => (
+          <span key={i} title={STATUS[status] ?? status} className={`h-3 w-1.5 rounded-full ${DOT[status] ?? "bg-ink/20"}`} />
+        ))}
+      </span>
+      <span>
+        {stats.ok} of {stats.runs} finished{stats.failed ? `, ${stats.failed} failed` : ""}
+        {seconds}
+        {stats.waiting ? ` · ${stats.waiting} waiting for you` : ""}
+      </span>
+    </div>
+  );
+}
+
 export default function JobList() {
   const { jobs, runs, tools, busy, runNow, toggle, remove } = useAgents();
+  const { draft, drafting, stats, loadStats, clear } = useWorkflows();
   const [adding, setAdding] = useState(false);
   const lastRun = (job: Job): JobRun | undefined => runs.find((r) => r.job_id === job.id);
+  useEffect(() => void loadStats().catch(() => undefined), [loadStats, runs]);
 
-  if (adding) return <JobForm tools={tools} onDone={() => setAdding(false)} />;
+  if (adding || draft || drafting) {
+    return (
+      <JobForm
+        tools={tools}
+        onDone={() => {
+          setAdding(false);
+          clear();
+        }}
+      />
+    );
+  }
 
   return (
     <div>
       {jobs.length === 0 ? (
-        <Empty icon={Bot} title="No routines yet">
-          A routine is an instruction, a schedule, and the tools you allow it - "every morning, summarise what changed in
-          my notes folder".
+        <Empty icon={Bot} title="No workflows yet">
+          Describe one in a sentence - "every weekday at 7, check ES and tell me if the overnight range was over 30
+          points" - or open a chat where you did something once and choose "Make this a workflow".
         </Empty>
       ) : (
         <div className="-mx-4">
@@ -45,6 +86,7 @@ export default function JobList() {
                   <p className="mt-0.5 text-[12.5px] text-ink-faint">
                     {job.enabled ? `${describe(job.cron)} · next ${when(job.next_run_at)}` : "Paused"}
                   </p>
+                  <History stats={stats[job.id]} />
                   {run && (
                     <p className={`mt-1 line-clamp-2 text-[13px] ${run.status === "failed" ? "text-danger" : "text-ink-muted"}`}>
                       {STATUS[run.status] ?? run.status}
@@ -65,7 +107,7 @@ export default function JobList() {
       )}
       <div className="mt-2 flex justify-center">
         <Button icon={Plus} onClick={() => setAdding(true)}>
-          New routine
+          New workflow
         </Button>
       </div>
     </div>

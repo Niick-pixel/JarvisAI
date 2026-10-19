@@ -114,3 +114,5 @@ export type AgentTurnStarted = S["AgentTurnStarted"];
 export type MemoryUse = S["MemoryUse"];
 export type Briefing = S["Briefing"];
 export type BriefingSettings = S["BriefingSettings"];
+export type JobDraft = S["JobDraft"];
+export type JobStats = S["JobStats"];
