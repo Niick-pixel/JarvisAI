@@ -17,6 +17,7 @@ from typing import Any
 from server.settings import Settings
 from server.voice import capability
 from server.voice.capability import VoiceUnavailable
+from server.voice.spoken import for_speech
 
 UNKNOWN_LENGTH = 0xFFFFFFFF
 """RIFF has no way to say "I don't know yet"; the maximum is the convention for a live stream."""
@@ -112,7 +113,7 @@ async def stream_wav(
     settings: Settings, text: str, name: str | None = None
 ) -> AsyncIterator[bytes]:
     """Yields a WAV header, then one PCM block per sentence, in order."""
-    spoken = text.strip()
+    spoken = for_speech(text)
     if not spoken:
         raise ValueError("Nothing to speak.")
     _, voice = await voice_for(settings, name)

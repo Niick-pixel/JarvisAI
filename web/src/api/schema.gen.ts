@@ -461,6 +461,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/client-errors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Report */
+        post: operations["report_api_client_errors_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/context/blocks": {
         parameters: {
             query?: never;
@@ -2888,6 +2905,13 @@ export interface components {
              */
             tools: string[];
         };
+        /** ClientError */
+        ClientError: {
+            /** Message */
+            message: string;
+            /** Where */
+            where: string;
+        };
         /** Commit */
         Commit: {
             /** Message */
@@ -4547,6 +4571,8 @@ export interface components {
         };
         /** ModelRecommendation */
         ModelRecommendation: {
+            /** Active Params B */
+            active_params_b?: number | null;
             /** Ctx Len Max */
             ctx_len_max: number;
             /** Display Name */
@@ -4583,8 +4609,24 @@ export interface components {
              * @default []
              */
             tags: string[];
+            /**
+             * Warning
+             * @default
+             */
+            warning: string;
+            /**
+             * Weight
+             * @default light
+             * @enum {string}
+             */
+            weight: "light" | "heavy" | "too_heavy";
             /** Why */
             why: string;
+            /**
+             * Words Per Sec
+             * @default 0
+             */
+            words_per_sec: number;
         };
         /** NudgeEvent */
         NudgeEvent: {
@@ -6418,6 +6460,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    report_api_client_errors_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClientError"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

@@ -6,7 +6,15 @@
 // nothing measurable.
 import { create } from "zustand";
 import { ApiError, api } from "../api/client";
-import type { InboxItem, Job, JobCreate, JobRun, PendingCall, ToolInfo } from "../api/types";
+import type {
+  InboxItem,
+  Job,
+  JobCreate,
+  JobRun,
+  PendingCall,
+  ToolInfo,
+} from "../api/types";
+import { whenVisible } from "../ui/visible";
 
 const POLL_MS = 5_000;
 let timer: number | null = null;
@@ -63,9 +71,19 @@ export const useAgents = create<AgentsState>((set, get) => ({
   },
 
   watch: () => {
-    void get().refresh().catch(() => undefined);
+    void get()
+      .refresh()
+      .catch(() => undefined);
     if (timer === null) {
-      timer = window.setInterval(() => void get().poll().catch(() => undefined), POLL_MS);
+      timer = window.setInterval(
+        whenVisible(
+          () =>
+            void get()
+              .poll()
+              .catch(() => undefined),
+        ),
+        POLL_MS,
+      );
     }
     return () => {
       if (timer !== null) window.clearInterval(timer);
@@ -85,13 +103,19 @@ export const useAgents = create<AgentsState>((set, get) => ({
   },
 
   toggle: async (job: Job) => {
-    await api.patchJob(job.id, { enabled: !job.enabled }).catch((e) => set({ error: message(e) }));
-    await get().refresh().catch(() => undefined);
+    await api
+      .patchJob(job.id, { enabled: !job.enabled })
+      .catch((e) => set({ error: message(e) }));
+    await get()
+      .refresh()
+      .catch(() => undefined);
   },
 
   remove: async (jobId: string) => {
     await api.deleteJob(jobId).catch((e) => set({ error: message(e) }));
-    await get().refresh().catch(() => undefined);
+    await get()
+      .refresh()
+      .catch(() => undefined);
   },
 
   runNow: async (jobId: string) => {
@@ -120,7 +144,10 @@ export const useAgents = create<AgentsState>((set, get) => ({
 
   markRead: async (itemId: string, read: boolean) => {
     const item = await api.markInboxRead(itemId, read).catch(() => null);
-    if (item) set((s) => ({ inbox: s.inbox.map((i) => (i.id === item.id ? item : i)) }));
+    if (item)
+      set((s) => ({
+        inbox: s.inbox.map((i) => (i.id === item.id ? item : i)),
+      }));
   },
 
   dismiss: () => set({ error: null }),

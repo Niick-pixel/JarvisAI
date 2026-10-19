@@ -37,6 +37,10 @@ def resolve_file(entry: dict[str, Any]) -> tuple[str | None, int | None, str | N
     return _resolve_cached(entry["hf_repo"], entry["file_glob"])
 
 
+def _plain(name: str) -> str:
+    return "".join(ch for ch in name if ch.isalnum())
+
+
 def installed_file(entry: dict[str, Any], models_dir: Path) -> Path | None:
     """A file in models_dir that matches this entry's glob. Exact, not a fuzzy name comparison."""
     if not models_dir.is_dir():
@@ -45,9 +49,10 @@ def installed_file(entry: dict[str, Any], models_dir: Path) -> Path | None:
         if fnmatch(path.name, entry["file_glob"]) or fnmatch(
             path.name.lower(), entry["file_glob"].lower()
         ):
-            # The glob alone matches every model at that quant; the repo stem must be in the name.
-            stem = entry["hf_repo"].split("/")[-1].lower().replace("-gguf", "")
-            if stem.split("-")[0] in path.name.lower():
+            # The glob alone matches every model at that quant; the whole repo stem must be in the
+            # name, or "Qwen3 8B" would claim a downloaded "Qwen3 Coder 30B" as its own.
+            stem = _plain(entry["hf_repo"].split("/")[-1].lower().replace("-gguf", ""))
+            if stem in _plain(path.name.lower()):
                 return path
     return None
 

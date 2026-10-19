@@ -55,6 +55,7 @@ async def catalog(state: State) -> list[ModelRecommendation]:
         gpu=gpus[0] if gpus else None,
         browser_reserve_mb=state.settings.hardware.browser_vram_reserve_mb,
         kv_dtype=state.settings.hardware.kv_cache_dtype,
+        ram_mb=_ram_mb(),
     )
     by_key = {e["key"]: e for e in entries}
     # Sizes come from the registry, concurrently and cached for the process: the first open of
@@ -73,6 +74,15 @@ async def catalog(state: State) -> list[ModelRecommendation]:
         )
         for rec, (filename, size, _) in zip(ranked, resolved, strict=True)
     ]
+
+
+def _ram_mb() -> int | None:
+    try:
+        import psutil
+
+        return int(psutil.virtual_memory().total // (1024 * 1024))
+    except Exception:  # noqa: BLE001 - a missing number only drops the "will not run" verdict
+        return None
 
 
 @router.get("/download")

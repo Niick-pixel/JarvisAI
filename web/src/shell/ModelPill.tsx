@@ -6,6 +6,8 @@ import type { ModelOption } from "../api/types";
 import { useDownloads } from "../store/downloads";
 import { useLibrary } from "../store/library";
 import Menu, { type MenuItem } from "../ui/Menu";
+import { whenVisible } from "../ui/visible";
+import { useConfirm } from "../ui/confirm";
 
 const FIT: Record<ModelOption["status"], string> = {
   fits: "Runs well on this PC",
@@ -23,6 +25,23 @@ function detail(option: ModelOption): string {
   return parts.join(" · ");
 }
 
+/** A model that will not fit the card says so, and asks, before it is loaded. */
+async function switchTo(
+  option: ModelOption,
+  select: (id: string) => Promise<void>,
+) {
+  if (option.status === "needs_offload" && !option.remote) {
+    const yes = await useConfirm.getState().ask({
+      title: `${option.model.display_name} is too big for your graphics card`,
+      body: `${option.reason} Part of it will run from system memory: answers can be several times slower and the PC may stutter while it thinks.`,
+      confirm: "Use it anyway",
+      danger: true,
+    });
+    if (!yes) return;
+  }
+  await select(option.model.id);
+}
+
 export default function ModelPill() {
   const { models, selectedModelId, refreshModels, selectModel } = useLibrary();
 
@@ -32,20 +51,26 @@ export default function ModelPill() {
     // On launch llama-server can take a while to load the model. Keep asking until one appears,
     // instead of saying "No model" until someone happens to click.
     if (!empty) return;
-    const timer = window.setInterval(() => void refreshModels().catch(() => undefined), 3000);
+    const timer = window.setInterval(
+      whenVisible(() => void refreshModels().catch(() => undefined)),
+      3000,
+    );
     return () => window.clearInterval(timer);
   }, [refreshModels, empty]);
 
   const auto = models.find((m) => m.recommended);
   const smart = selectedModelId === SMART;
   const current = models.find((m) => m.model.id === selectedModelId) ?? auto;
-  const label = smart && !empty ? "Smart" : (current?.model.display_name ?? "No model");
+  const label =
+    smart && !empty ? "Smart" : (current?.model.display_name ?? "No model");
 
   const items: MenuItem[] = [
     {
       key: "auto",
       label: "Automatic",
-      detail: auto ? `Uses ${auto.model.display_name}, the best fit for this PC` : "Picks the best model this PC can run",
+      detail: auto
+        ? `Uses ${auto.model.display_name}, the best fit for this PC`
+        : "Picks the best model this PC can run",
       icon: Sparkles,
       checked: !selectedModelId,
       onSelect: () => void selectModel(null),
@@ -53,7 +78,8 @@ export default function ModelPill() {
     {
       key: SMART,
       label: "Smart",
-      detail: "Picks a model for each message - code, reasoning, quick questions - and says why",
+      detail:
+        "Picks a model for each message - code, reasoning, quick questions - and says why",
       icon: Route,
       checked: smart,
       onSelect: () => void selectModel(SMART),
@@ -63,7 +89,7 @@ export default function ModelPill() {
       label: option.model.display_name,
       detail: detail(option),
       checked: option.model.id === selectedModelId,
-      onSelect: () => void selectModel(option.model.id),
+      onSelect: () => void switchTo(option, selectModel),
     })),
   ];
 
@@ -93,8 +119,14 @@ export default function ModelPill() {
           }}
           className="flex h-10 items-center gap-1.5 rounded-full px-3.5 text-[17px] text-ink transition-colors hover:bg-ink/[0.06]"
         >
-          <span className="max-w-[16rem] truncate font-display font-medium tracking-tight">{label}</span>
-          <ChevronDown size={17} strokeWidth={2} className={`text-ink-faint transition-transform ${open ? "rotate-180" : ""}`} />
+          <span className="max-w-[16rem] truncate font-display font-medium tracking-tight">
+            {label}
+          </span>
+          <ChevronDown
+            size={17}
+            strokeWidth={2}
+            className={`text-ink-faint transition-transform ${open ? "rotate-180" : ""}`}
+          />
         </button>
       )}
     />

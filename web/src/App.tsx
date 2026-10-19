@@ -24,10 +24,13 @@ import { IconButton } from "./ui/controls";
 import { BOUNCE } from "./ui/motion";
 import { useNarrow } from "./ui/narrow";
 import VoiceMode from "./voice/VoiceMode";
+import { ConfirmHost } from "./ui/confirm";
 
 export default function App() {
   const bootstrap = useSession((s) => s.bootstrap);
-  const hasTurns = useSession((s) => s.activePath.length > 0 || s.streamingId !== null);
+  const hasTurns = useSession(
+    (s) => s.activePath.length > 0 || s.streamingId !== null,
+  );
   const busy = useSession((s) => s.runId !== null);
   const listening = useVoice((s) => s.phase === "listening");
   const voiceMode = useUi((s) => s.voiceMode);
@@ -36,9 +39,15 @@ export default function App() {
   useEffect(() => {
     void bootstrap().catch(() => undefined);
     // Asked once, at boot: the answer decides whether the mic explains itself or works.
-    void useVoice.getState().refresh().catch(() => undefined);
+    void useVoice
+      .getState()
+      .refresh()
+      .catch(() => undefined);
     // A fresh install has llama.cpp but no model yet: offer one instead of an empty chat.
-    void useDownloads.getState().checkFirstRun().catch(() => undefined);
+    void useDownloads
+      .getState()
+      .checkFirstRun()
+      .catch(() => undefined);
     // Jobs fire while you are elsewhere; this is what makes an approval appear without a reload.
     return useAgents.getState().watch();
   }, [bootstrap]);
@@ -47,9 +56,20 @@ export default function App() {
     <div className="flex h-full">
       <Sidebar />
       <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-bg">
-        <Halo state={listening ? "listening" : busy ? "busy" : "rest"} placement={hasTurns ? "bottom" : "center"} />
+        <Halo
+          state={listening ? "listening" : busy ? "busy" : "rest"}
+          placement={hasTurns ? "bottom" : "center"}
+        />
         <header className="relative z-10 flex h-14 shrink-0 items-center gap-1 px-3">
-          {narrow && <IconButton icon={PanelLeft} label="Menu" size={40} tip="none" onClick={() => useUi.getState().setDrawer(true)} />}
+          {narrow && (
+            <IconButton
+              icon={PanelLeft}
+              label="Menu"
+              size={40}
+              tip="none"
+              onClick={() => useUi.getState().setDrawer(true)}
+            />
+          )}
           <ModelPill />
         </header>
         <LayoutGroup>
@@ -79,6 +99,7 @@ export default function App() {
       <ScreenHotkey />
       <Toasts />
       <GetModel />
+      <ConfirmHost />
     </div>
   );
 }

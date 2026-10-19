@@ -7,6 +7,7 @@ import Sheet from "../shell/Sheet";
 import { useHome } from "../store/home";
 import { Button, Empty, FIELD, Row, Switch } from "../ui/controls";
 import DeviceTile from "./DeviceTile";
+import { whenVisible } from "../ui/visible";
 
 const POLL_MS = 4000;
 
@@ -23,13 +24,25 @@ function Connect() {
   return (
     <div className="mx-auto mt-2 max-w-[520px]">
       <Empty icon={House} title="Connect Home Assistant">
-        Jarvis controls your home through Home Assistant on your own network. Nothing goes through a cloud.
+        Jarvis controls your home through Home Assistant on your own network.
+        Nothing goes through a cloud.
       </Empty>
-      <label className="mt-2 block text-[13px] font-medium text-ink-muted" htmlFor="ha-url">
+      <label
+        className="mt-2 block text-[13px] font-medium text-ink-muted"
+        htmlFor="ha-url"
+      >
         Address
       </label>
-      <input id="ha-url" value={url} onChange={(e) => setUrl(e.target.value)} className={`${FIELD} mt-1`} />
-      <label className="mt-4 block text-[13px] font-medium text-ink-muted" htmlFor="ha-token">
+      <input
+        id="ha-url"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        className={`${FIELD} mt-1`}
+      />
+      <label
+        className="mt-4 block text-[13px] font-medium text-ink-muted"
+        htmlFor="ha-token"
+      >
         Long-lived access token
       </label>
       <input
@@ -42,12 +55,16 @@ function Connect() {
         className={`${FIELD} mt-1`}
       />
       <p className="mt-2 text-[12.5px] leading-relaxed text-ink-faint">
-        In Home Assistant, open your profile (bottom left), then Security › Long-lived access tokens › Create token. It is
-        stored only on this PC.
+        In Home Assistant, open your profile (bottom left), then Security ›
+        Long-lived access tokens › Create token. It is stored only on this PC.
       </p>
       {error && <p className="mt-3 text-[13px] text-danger">{error}</p>}
       <div className="mt-4 flex justify-end">
-        <Button tone="primary" disabled={busy || !url.trim() || !token.trim()} onClick={() => void submit()}>
+        <Button
+          tone="primary"
+          disabled={busy || !url.trim() || !token.trim()}
+          onClick={() => void submit()}
+        >
           {busy ? "Connecting…" : "Connect"}
         </Button>
       </div>
@@ -85,26 +102,40 @@ function Command() {
           <ArrowUp size={20} strokeWidth={2} />
         </button>
       </div>
-      {reply && <p className="mt-2 pl-5 text-[13.5px] text-ink-muted">{reply}</p>}
+      {reply && (
+        <p className="mt-2 pl-5 text-[13.5px] text-ink-muted">{reply}</p>
+      )}
     </div>
   );
 }
 
 export default function HomeSheet() {
-  const { status, devices, error, refresh, loadDevices, setRouteChat, disconnect } = useHome();
+  const {
+    status,
+    devices,
+    error,
+    refresh,
+    loadDevices,
+    setRouteChat,
+    disconnect,
+  } = useHome();
   const connected = status?.connected ?? false;
 
   useEffect(() => void refresh().catch(() => undefined), [refresh]);
   useEffect(() => {
     // Keep tiles honest while you look: a light switched at the wall shows within seconds.
     if (!connected) return;
-    const timer = window.setInterval(() => void loadDevices(), POLL_MS);
+    const timer = window.setInterval(
+      whenVisible(() => void loadDevices()),
+      POLL_MS,
+    );
     return () => window.clearInterval(timer);
   }, [connected, loadDevices]);
 
   const rooms = useMemo(() => {
     const byRoom = new Map<string, Device[]>();
-    for (const device of devices) byRoom.set(device.area, [...(byRoom.get(device.area) ?? []), device]);
+    for (const device of devices)
+      byRoom.set(device.area, [...(byRoom.get(device.area) ?? []), device]);
     return [...byRoom.entries()];
   }, [devices]);
 
@@ -124,10 +155,14 @@ export default function HomeSheet() {
             </p>
           )}
           {connected && <Command />}
-          {error && connected && <p className="mb-4 text-[13px] text-danger">{error}</p>}
+          {error && connected && (
+            <p className="mb-4 text-[13px] text-danger">{error}</p>
+          )}
           {rooms.map(([room, items]) => (
             <section key={room} className="mb-6">
-              <h3 className="mb-2 text-[13px] font-semibold text-ink-muted">{room}</h3>
+              <h3 className="mb-2 text-[13px] font-semibold text-ink-muted">
+                {room}
+              </h3>
               <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(168px,1fr))]">
                 {items.map((device) => (
                   <DeviceTile key={device.entity_id} device={device} />
@@ -140,10 +175,26 @@ export default function HomeSheet() {
               title="Home commands in chat and voice"
               detail='Messages like "dim the bedroom to 30%" go to Home Assistant first, using its own local command matcher. Anything else goes to the model as usual.'
             >
-              <Switch label="Home commands in chat and voice" checked={status.route_chat} onChange={(on) => void setRouteChat(on)} />
+              <Switch
+                label="Home commands in chat and voice"
+                checked={status.route_chat}
+                onChange={(on) => void setRouteChat(on)}
+              />
             </Row>
-            <Row title={status.url} detail={status.version ? `Home Assistant ${status.version}` : "Not answering"}>
-              <Button small tone="ghost" icon={Unplug} onClick={() => void disconnect()}>
+            <Row
+              title={status.url}
+              detail={
+                status.version
+                  ? `Home Assistant ${status.version}`
+                  : "Not answering"
+              }
+            >
+              <Button
+                small
+                tone="ghost"
+                icon={Unplug}
+                onClick={() => void disconnect()}
+              >
                 Disconnect
               </Button>
             </Row>

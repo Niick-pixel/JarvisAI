@@ -8,6 +8,7 @@ function of the settings, the database and the card - it starts nothing.
 from __future__ import annotations
 
 import functools
+import re
 import shutil
 import sqlite3
 import subprocess
@@ -119,22 +120,40 @@ def command(settings: Settings, model_path: str, ctx_len: int) -> list[str]:
     if (projector := mmproj_for(model_path)).is_file():
         # A vision model's image encoder, downloaded beside it: without it the model is blind.
         argv += ["--mmproj", str(projector)]
-    if gpus:
-        argv += ["-ngl", "999"]
+    argv += gpu_args(cfg.binary, model_path, bool(gpus))
     if kv != "f16":
         argv += flash_attn_args(cfg.binary)
     return argv + list(cfg.extra_args)
 
 
-@functools.cache
-def flash_attn_args(binary: str) -> list[str]:
-    """A quantised V cache needs flash attention, and llama.cpp has spelled that two ways.
+FIT_FLAG = re.compile(r"--fit\b[^\n]*on\|off")
+MOE_NAME = re.compile(r"(?i)gpt-oss|-a\d+(\.\d+)?b|moe|mixtral|deepseek-coder-v2|qwen3-coder")
 
-    Older builds take a bare `--flash-attn`. Current builds take `--flash-attn on|off|auto`,
-    default `auto` - so the bare flag, appended last, makes the server exit at startup with
-    "expected value". The binary's own `--help` says which it is; asking is cheaper than guessing
-    and wrong in half the installs.
+
+def gpu_args(binary: str, model_path: str, has_gpu: bool) -> list[str]:
+    """How much of the model goes on the card.
+
+    `-ngl 999` used to be unconditional: every layer on the GPU. For a model bigger than the card
+    that either fails to load or - with the NVIDIA driver's "sysmem fallback" on Windows - spills
+    into shared system memory over PCIe and crawls at a token every few seconds. Current llama.cpp
+    measures free memory and fits the model itself, keeping the dense layers on the card and
+    moving a mixture-of-experts model's experts to the CPU first, which is the fast split. It only
+    does that for settings left unset, so the right move is to stop forcing the layer count.
     """
+    if not has_gpu:
+        return []
+    if FIT_FLAG.search(_help_text(binary)):
+        return ["--fit", "on"]
+    # An older build: everything on the card, and for a MoE model the experts on the CPU, which
+    # costs little speed because only a few experts run per token.
+    if MOE_NAME.search(Path(model_path).name):
+        return ["-ngl", "999", "--n-cpu-moe", "999"]
+    return ["-ngl", "999"]
+
+
+@functools.cache
+def _help_text(binary: str) -> str:
+    """The binary's own `--help`: which flags this build has. Cheaper than guessing by version."""
     resolved = shutil.which(binary) or binary
     try:
         # No console window on Windows: a windowed app must not flash a terminal to ask a question.
@@ -150,8 +169,18 @@ def flash_attn_args(binary: str) -> list[str]:
             creationflags=flags,
         )
     except (OSError, subprocess.SubprocessError):
-        return []
-    help_text = result.stdout + result.stderr
+        return ""
+    return result.stdout + result.stderr
+
+
+def flash_attn_args(binary: str) -> list[str]:
+    """A quantised V cache needs flash attention, and llama.cpp has spelled that two ways.
+
+    Older builds take a bare `--flash-attn`. Current builds take `--flash-attn on|off|auto`,
+    default `auto` - so the bare flag, appended last, makes the server exit at startup with
+    "expected value".
+    """
+    help_text = _help_text(binary)
     if "on|off|auto" in help_text:
         return []  # auto already enables it whenever the backend can
     return ["--flash-attn"] if "--flash-attn" in help_text else []

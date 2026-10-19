@@ -22,6 +22,7 @@ export function Button({
   disabled,
   title,
   small,
+  autoFocus,
 }: {
   children: ReactNode;
   onClick?: () => void;
@@ -30,11 +31,13 @@ export function Button({
   disabled?: boolean;
   title?: string;
   small?: boolean;
+  autoFocus?: boolean;
 }) {
   const reduced = useReducedMotion();
   return (
     <motion.button
       type="button"
+      autoFocus={autoFocus}
       title={title}
       onClick={onClick}
       disabled={disabled}
@@ -81,7 +84,9 @@ export function IconButton({
       transition={BOUNCE}
       style={{ width: size, height: size }}
       className={`group/tip relative inline-flex shrink-0 items-center justify-center rounded-full transition-colors disabled:opacity-40 ${
-        active ? "bg-accent/12 text-accent" : "text-ink-muted hover:bg-ink/[0.06] hover:text-ink"
+        active
+          ? "bg-accent/12 text-accent"
+          : "text-ink-muted hover:bg-ink/[0.06] hover:text-ink"
       } ${className}`}
     >
       <Icon size={Math.round(size * 0.5)} strokeWidth={1.75} />
@@ -97,7 +102,13 @@ const TIP_SIDE = {
 } as const;
 
 /** A quiet label that appears after a beat of hovering, the way macOS does it. */
-export function Tip({ children, side = "bottom" }: { children: ReactNode; side?: keyof typeof TIP_SIDE }) {
+export function Tip({
+  children,
+  side = "bottom",
+}: {
+  children: ReactNode;
+  side?: keyof typeof TIP_SIDE;
+}) {
   return (
     <span
       role="tooltip"
@@ -199,7 +210,11 @@ export function Row({
     <div className="flex items-center gap-4 py-3.5">
       <div className="min-w-0 flex-1">
         <p className="text-[14px] font-medium text-ink">{title}</p>
-        {detail && <p className="mt-0.5 text-[13px] leading-snug text-ink-faint">{detail}</p>}
+        {detail && (
+          <p className="mt-0.5 text-[13px] leading-snug text-ink-faint">
+            {detail}
+          </p>
+        )}
       </div>
       {children}
     </div>
@@ -207,14 +222,26 @@ export function Row({
 }
 
 /** An empty state that says what would be here and how to put it there. */
-export function Empty({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children?: ReactNode }) {
+export function Empty({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: LucideIcon;
+  title: string;
+  children?: ReactNode;
+}) {
   return (
     <div className="flex flex-col items-center px-6 py-12 text-center">
       <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-ink/[0.05] text-ink-faint">
         <Icon size={22} strokeWidth={1.5} />
       </span>
       <p className="text-[15px] font-medium text-ink">{title}</p>
-      {children && <div className="mt-1 max-w-sm text-[13px] leading-relaxed text-ink-faint">{children}</div>}
+      {children && (
+        <div className="mt-1 max-w-sm text-[13px] leading-relaxed text-ink-faint">
+          {children}
+        </div>
+      )}
     </div>
   );
 }

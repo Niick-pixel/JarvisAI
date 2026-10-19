@@ -86,6 +86,7 @@ hf_repo = "ggml-org/gpt-oss-20b-GGUF"
 file_glob = "*mxfp4*.gguf"
 quant = "MXFP4"
 params_b = 20.9
+active_params_b = 3.6
 ctx_len_max = 131072
 tags = ["oversized"]
 why = "~13GB of weights. Needs CPU offload on this card; offered with a measured tok/s, not a guess."
@@ -113,3 +114,75 @@ params_b = 7.6
 ctx_len_max = 32768
 tags = ["vision"]
 why = "Sharper at reading small text in screenshots and charts than Gemma 3 4B, if the card has room."
+
+# DeepSeek. The full DeepSeek V3 / R1 is a 671B model - hundreds of GB, a server rack, not a PC.
+# What runs locally are the distills: DeepSeek's reasoning taught to a smaller Qwen model.
+[[model]]
+key = "deepseek-r1-qwen3-8b"
+display_name = "DeepSeek R1 8B (thinks step by step)"
+hf_repo = "unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF"
+file_glob = "*Q4_K_M*.gguf"
+quant = "Q4_K_M"
+params_b = 8.2
+ctx_len_max = 65536
+tags = ["reasoning", "deepseek"]
+why = "DeepSeek R1's reasoning in an 8B model: thinks out loud before answering, strong at maths and logic. Fits a 10GB card."
+
+[[model]]
+key = "deepseek-r1-distill-14b"
+display_name = "DeepSeek R1 Distill 14B"
+hf_repo = "bartowski/DeepSeek-R1-Distill-Qwen-14B-GGUF"
+file_glob = "*Q4_K_M*.gguf"
+quant = "Q4_K_M"
+params_b = 14.8
+ctx_len_max = 32768
+tags = ["reasoning", "deepseek"]
+why = "The larger R1 distill: deeper reasoning than the 8B, slower to start answering. Wants a 12GB card."
+
+[[model]]
+key = "deepseek-coder-v2-lite"
+display_name = "DeepSeek Coder V2 Lite (MoE)"
+hf_repo = "bartowski/DeepSeek-Coder-V2-Lite-Instruct-GGUF"
+file_glob = "*Q4_K_M*.gguf"
+quant = "Q4_K_M"
+params_b = 15.7
+active_params_b = 2.4
+ctx_len_max = 32768
+tags = ["code", "deepseek", "moe"]
+why = "DeepSeek's coder. Mixture-of-experts: only 2.4B of 15.7B run per word, so it is quick even when it spills past the card."
+
+# Coding.
+[[model]]
+key = "qwen2.5-coder-14b"
+display_name = "Qwen2.5 Coder 14B"
+hf_repo = "bartowski/Qwen2.5-Coder-14B-Instruct-GGUF"
+file_glob = "*Q4_K_M*.gguf"
+quant = "Q4_K_M"
+params_b = 14.8
+ctx_len_max = 32768
+tags = ["code"]
+why = "A clear step up from the 7B coder on real projects. Wants a 12GB card; on 10GB a little spills to RAM."
+
+[[model]]
+key = "qwen3-coder-30b-a3b"
+display_name = "Qwen3 Coder 30B-A3B (MoE)"
+hf_repo = "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF"
+file_glob = "*Q4_K_M*.gguf"
+quant = "Q4_K_M"
+params_b = 30.5
+active_params_b = 3.3
+ctx_len_max = 65536
+tags = ["code", "moe"]
+why = "The best local coding model that still runs on a gaming PC: 30B of knowledge, 3B of work per word. Needs 32GB of RAM."
+
+[[model]]
+key = "qwen3-30b-a3b"
+display_name = "Qwen3 30B-A3B (MoE)"
+hf_repo = "unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF"
+file_glob = "*Q4_K_M*.gguf"
+quant = "Q4_K_M"
+params_b = 30.5
+active_params_b = 3.3
+ctx_len_max = 65536
+tags = ["general", "moe"]
+why = "A much bigger brain than Qwen3 8B at a similar speed, because only 3B of it runs per word. Needs 32GB of RAM."

@@ -91,6 +91,13 @@ class ModelRecommendation(BaseModel):
     note: str = ""
     tags: list[str] = []
     installed: bool = False
+    active_params_b: float | None = None
+    """For a mixture-of-experts model, the billions that run per word; None for a dense one."""
+    weight: Literal["light", "heavy", "too_heavy"] = "light"
+    words_per_sec: float = 0.0
+    """A ballpark from memory bandwidth (server/hardware/heavy.py), not a benchmark."""
+    warning: str = ""
+    """Said before download and before switching; empty when the model sits comfortably."""
 
 
 DownloadState = Literal[
