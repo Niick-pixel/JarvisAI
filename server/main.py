@@ -43,6 +43,7 @@ from server.api import (
 )
 from server.api import attachments as attachments_api
 from server.api import briefing as briefing_api
+from server.api import images as images_api
 from server.api import wake as wake_api
 from server.briefing.service import Briefings
 from server.chat.agentic import ChatAgents
@@ -59,6 +60,7 @@ from server.forecast.jobs import ForecastJobs
 from server.forecast.pack import ForecastPack
 from server.hardware.downloader import Downloader
 from server.home.hub import Hub
+from server.imagegen.engine import ImageEngine
 from server.knowledge import retrieval
 from server.knowledge.indexer import Indexer
 from server.knowledge.watcher import Watcher
@@ -128,6 +130,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         state.chat_agents = ChatAgents(runtime)
         state.briefings = Briefings(state)
         state.copilot = Copilot(db, settings)
+        with db.session() as conn:
+            if chosen := repo.settings.get(conn, images_api.CHOSEN):
+                settings.images.model = str(chosen)
+        state.images = ImageEngine(settings)
         watching = asyncio.create_task(state.copilot.run_forever())
         state.scheduler.start()
         briefing_api.schedule(state)
@@ -182,6 +188,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         trading.router,
         wake_api.router,
         attachments_api.router,
+        images_api.router,
         memory.router,
         knowledge.router,
         search.router,

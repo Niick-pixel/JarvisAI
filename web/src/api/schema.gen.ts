@@ -1200,6 +1200,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/images/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate
+         * @description The prompt becomes your message; the picture is the answer, kept in the chat.
+         */
+        post: operations["generate_api_images_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/images/install": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Install
+         * @description Fetch stable-diffusion.cpp (if missing) and this model. Only when you press the button.
+         */
+        post: operations["install_api_images_install_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/images/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_api_images_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/knowledge/open": {
         parameters: {
             query?: never;
@@ -3447,6 +3504,30 @@ export interface components {
             /** Remaining */
             remaining: number;
         };
+        /** GenerateRequest */
+        GenerateRequest: {
+            /** Conversation Id */
+            conversation_id: string;
+            /**
+             * Negative
+             * @default
+             */
+            negative: string;
+            /** Prompt */
+            prompt: string;
+            /** Seed */
+            seed?: number | null;
+        };
+        /** Generated */
+        Generated: {
+            attachment: components["schemas"]["Attachment"];
+            /** Conversation Id */
+            conversation_id: string;
+            /** Message Id */
+            message_id: string;
+            /** Seconds */
+            seconds: number;
+        };
         /** GpuInfo */
         GpuInfo: {
             /** Index */
@@ -3620,6 +3701,53 @@ export interface components {
             /** Old Start */
             old_start: number;
         };
+        /** ImageModelOption */
+        ImageModelOption: {
+            /** Display Name */
+            display_name: string;
+            /** Installed */
+            installed: boolean;
+            /** Key */
+            key: string;
+            /** License */
+            license: string;
+            /** Why */
+            why: string;
+        };
+        /** ImageStatus */
+        ImageStatus: {
+            /**
+             * Detail
+             * @default
+             */
+            detail: string;
+            /** Model */
+            model: string;
+            /** Model Installed */
+            model_installed: boolean;
+            /** Options */
+            options: components["schemas"]["ImageModelOption"][];
+            /** Ready */
+            ready: boolean;
+            /** Runtime */
+            runtime: boolean;
+            /**
+             * State
+             * @default idle
+             * @enum {string}
+             */
+            state: "idle" | "installing" | "generating" | "failed";
+            /**
+             * Step
+             * @default 0
+             */
+            step: number;
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+        };
         /** ImportResult */
         ImportResult: {
             /** Bars */
@@ -3713,6 +3841,11 @@ export interface components {
              * @enum {string}
              */
             state: "idle" | "scanning" | "chunking" | "embedding" | "paused" | "done" | "error";
+        };
+        /** InstallRequest */
+        InstallRequest: {
+            /** Model */
+            model: string;
         };
         /** Job */
         Job: {
@@ -7500,6 +7633,92 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HudSample"];
                     "text/event-stream": unknown;
+                };
+            };
+        };
+    };
+    generate_api_images_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Generated"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    install_api_images_install_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstallRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImageStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    status_api_images_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImageStatus"];
                 };
             };
         };

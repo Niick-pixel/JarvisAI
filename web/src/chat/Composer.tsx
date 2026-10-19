@@ -6,6 +6,7 @@ import { ArrowUp, AudioLines, Mic, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
 import { useAttachments } from "../store/attachments";
+import { useImages } from "../store/images";
 import { useSession } from "../store/session";
 import { toast } from "../store/toast";
 import { useUi } from "../store/ui";
@@ -67,6 +68,7 @@ export default function Composer({ autoFocus }: { autoFocus?: boolean }) {
   const setVoiceMode = useUi((s) => s.setVoiceMode);
   const running = runId !== null;
   const pictures = useAttachments((s) => s.pending.length);
+  const imageMode = useImages((s) => s.mode);
   const empty = draft.trim() === "" && pictures === 0;
 
   useEffect(() => {
@@ -130,7 +132,9 @@ export default function Composer({ autoFocus }: { autoFocus?: boolean }) {
         ? "Writing down what you said…"
         : running
           ? "Steer the answer - Enter to nudge, Esc to stop"
-          : "Ask Jarvis";
+          : imageMode
+            ? "Describe the picture"
+            : "Ask Jarvis";
 
   return (
     <div

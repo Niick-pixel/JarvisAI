@@ -29,6 +29,7 @@ if TYPE_CHECKING:  # the scheduler imports the loop, which imports this module
     from server.agents.scheduler import JobScheduler
     from server.briefing.service import Briefings
     from server.chat.agentic import ChatAgents
+    from server.imagegen.engine import ImageEngine
     from server.trading.copilot import Copilot
 
 
@@ -61,6 +62,8 @@ class AppState:
     """Agent-mode chat turns: tool use inside a conversation, through the same gate as jobs."""
     briefings: Briefings | None = None
     """The morning briefing: written on your schedule, shown on Home."""
+    images: ImageEngine | None = None
+    """Making pictures with stable-diffusion.cpp, one at a time."""
     copilot: Copilot | None = None
     """The trading co-pilot: live bars from NinjaTrader, rolling forecasts, alerts."""
     llama: LlamaServer | None = None

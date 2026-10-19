@@ -12,6 +12,7 @@ import { useVoice } from "../store/voice";
 import { Button, FIELD, Row, Segmented, Switch } from "../ui/controls";
 import VoicePack from "../voice/VoicePack";
 import BriefingSettings from "./BriefingSettings";
+import ImageSettings from "./ImageSettings";
 import WakeRow from "./WakeRow";
 import LocalModels from "./LocalModels";
 import Machine from "./Machine";
@@ -109,6 +110,10 @@ export default function SettingsSheet() {
         <div className="flex justify-end py-3 empty:hidden">
           <VoicePack />
         </div>
+      </Section>
+
+      <Section title="Images">
+        <ImageSettings />
       </Section>
 
       <Section title="This PC">
