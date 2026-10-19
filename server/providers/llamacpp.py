@@ -99,6 +99,7 @@ class LlamaCppProvider:
                 file_path=path or None,
                 supports_logprobs=True,
                 supports_prefix=True,
+                supports_vision=bool((props.get("modalities") or {}).get("vision")),
             )
         ]
 
@@ -119,7 +120,7 @@ class LlamaCppProvider:
         `thinking` reaches the template as `enable_thinking`, which is how Qwen3-style models are
         told to answer directly. Templates without the variable ignore it.
         """
-        payload: dict[str, Any] = {"messages": [m.model_dump() for m in messages]}
+        payload: dict[str, Any] = {"messages": [_marked(m) for m in messages]}
         if thinking is not None:
             payload["chat_template_kwargs"] = {"enable_thinking": thinking}
         try:
@@ -145,6 +146,7 @@ class LlamaCppProvider:
         assistant_prefix: str | None = None,
     ) -> AsyncIterator[StreamItem]:
         prompt = await self.build_prompt(messages, params.thinking)
+        images = [url.split(",", 1)[-1] for m in messages for url in m.images]
         if assistant_prefix:
             # Continuing the same prefix means llama.cpp reuses the KV cache for it.
             prompt += assistant_prefix
@@ -152,7 +154,7 @@ class LlamaCppProvider:
         def complete(
             text: str, n_predict: int, stop: list[str] | None
         ) -> AsyncIterator[StreamItem]:
-            return self._complete(text, params, n_predict, stop)
+            return self._complete(text, params, n_predict, stop, images)
 
         if params.min_thinking_tokens and params.thinking is not False:
             stream = forcing.forced(complete, prompt, params.max_tokens, params.min_thinking_tokens)
@@ -162,10 +164,17 @@ class LlamaCppProvider:
             yield item
 
     async def _complete(
-        self, prompt: str, params: SamplingParams, n_predict: int, stop: list[str] | None
+        self,
+        prompt: str,
+        params: SamplingParams,
+        n_predict: int,
+        stop: list[str] | None,
+        images: list[str] | None = None,
     ) -> AsyncIterator[StreamItem]:
+        # With images, llama-server takes the prompt and the base64 images together; each
+        # MEDIA_MARKER in the text is where one image's embeddings go (needs --mmproj).
         body: dict[str, Any] = {
-            "prompt": prompt,
+            "prompt": ({"prompt_string": prompt, "multimodal_data": images} if images else prompt),
             "n_predict": n_predict,
             "temperature": params.temperature,
             "top_p": params.top_p,
@@ -214,6 +223,14 @@ class LlamaCppProvider:
         )
 
 
+MEDIA_MARKER = "<__media__>"
+
+
+def _marked(m: PromptMessage) -> dict[str, str]:
+    """The message as the chat template sees it: one media marker per image, before the text."""
+    return {"role": m.role, "content": MEDIA_MARKER * len(m.images) + m.content}
+
+
 def chatml_prompt(messages: list[PromptMessage]) -> str:
-    parts = [f"<|im_start|>{m.role}\n{m.content}<|im_end|>\n" for m in messages]
+    parts = [f"<|im_start|>{m.role}\n{_marked(m)['content']}<|im_end|>\n" for m in messages]
     return "".join(parts) + "<|im_start|>assistant\n"

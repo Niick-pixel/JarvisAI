@@ -46,6 +46,8 @@ class ModelInfo(BaseModel):
     """The three GGUF fields the KV-cache formula needs (PLAN.md 1.1)."""
     supports_logprobs: bool = False
     supports_prefix: bool = False
+    supports_vision: bool = False
+    """It can look at images: a vision model with its projector loaded, or one Ollama says sees."""
     bench_gen_tps: float | None = None
     bench_prompt_tps: float | None = None
     """Measured on this machine by `make models`, never copied from a table."""

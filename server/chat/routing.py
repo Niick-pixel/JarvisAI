@@ -20,6 +20,7 @@ from typing import Literal
 
 from server.db import repo
 from server.db.connection import Database
+from server.errors import Remedy, SovereignError
 from server.hardware import probe, selection
 from server.hardware.selection import infer_params_b
 from server.models.hardware import ModelOption
@@ -192,6 +193,7 @@ async def route(
     *,
     text: str = "",
     conversation_id: str | None = None,
+    needs_vision: bool = False,
 ) -> Route:
     """In order: what the request asked for, what you pinned, Smart mode, what fits.
 
@@ -199,12 +201,15 @@ async def route(
     something else - silently falls back to the automatic choice rather than failing the request.
     Switching backends should not mean editing settings.
     """
-    if requested and requested != SMART:
+    if requested and requested != SMART and not needs_vision:
         return Route(requested)
     with db.session() as conn:
         pinned = repo.settings.get(conn, repo.settings.SELECTED_MODEL)
     smart = requested == SMART or pinned == SMART
     options = await ranked(registry, settings)
+    if needs_vision:
+        chosen = requested if requested and requested != SMART else pinned
+        return seeing(options, None if chosen == SMART else chosen)
     if not smart and pinned and any(o.model.id == pinned for o in options):
         return Route(str(pinned))
     if smart and text:
@@ -216,6 +221,26 @@ async def route(
             return chosen
     choice = selection.best(options)
     return Route(choice.model.id if choice else None)
+
+
+def seeing(options: list[ModelOption], preferred: str | None) -> Route:
+    """A message with an image needs a model that can see: the one you chose if it can, else the
+    best one that can - and if none is running, say exactly that rather than answer blind."""
+    if preferred and any(o.model.id == preferred and o.model.supports_vision for o in options):
+        return Route(preferred)
+    seers = [o for o in options if o.model.supports_vision]
+    if not seers:
+        raise SovereignError(
+            "provider_incapable",
+            "This message has an image, and no model that can see is running. Download"
+            ' "Gemma 3 4B (sees images)" in Settings > Models on this PC, or load a vision model'
+            " in Ollama or LM Studio.",
+            remedy=Remedy(label="Choose a model", action="choose_model"),
+        )
+    best = seers[0]
+    return Route(
+        best.model.id, f"This message has an image, so a model that can see: {_name(best)}."
+    )
 
 
 async def resolve_model_id(

@@ -90,6 +90,11 @@ def choose(models: list[ModelInfo], settings: Settings) -> tuple[ModelInfo | Non
     return best
 
 
+def mmproj_for(model_path: str) -> Path:
+    """Where a vision model's projector lives: beside the model, same name, `.mmproj`."""
+    return Path(model_path).with_suffix(".mmproj")
+
+
 def command(settings: Settings, model_path: str, ctx_len: int) -> list[str]:
     """The argv, matching what `make models` prints, plus whatever you added in extra_args."""
     cfg = settings.providers.llamacpp
@@ -111,6 +116,9 @@ def command(settings: Settings, model_path: str, ctx_len: int) -> list[str]:
         "--cache-type-v",
         kv,
     ]
+    if (projector := mmproj_for(model_path)).is_file():
+        # A vision model's image encoder, downloaded beside it: without it the model is blind.
+        argv += ["--mmproj", str(projector)]
     if gpus:
         argv += ["-ngl", "999"]
     if kv != "f16":

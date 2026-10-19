@@ -7,6 +7,7 @@ import { homeApi } from "../api/home";
 import { startChatStream, type ChatRequestBody } from "../api/stream";
 import type { ContextAssembly, Conversation, ErrorBody, Message, Remedy, SamplingParams } from "../api/types";
 import { useAppearance } from "../design/theme";
+import { useAttachments } from "./attachments";
 import { useChatAgent } from "./chatAgent";
 import { streamHandlers } from "./streamHandlers";
 import { thinkingParams, useUi } from "./ui";
@@ -138,7 +139,8 @@ export const useSession = create<SessionState>((set, get) => ({
       return;
     }
     const params = thinkingParams(useUi.getState().think) as SamplingParams;
-    if (get().tools) {
+    const attachments = useAttachments.getState().take();
+    if (get().tools && attachments.length === 0) {
       await useChatAgent.getState().start(conversation.id, content, params);
       return;
     }
@@ -148,6 +150,7 @@ export const useSession = create<SessionState>((set, get) => ({
       ctx_len: ctxLen,
       research: get().research,
       params,
+      attachments,
     });
   },
 

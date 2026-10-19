@@ -5,12 +5,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUp, AudioLines, Mic, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
+import { useAttachments } from "../store/attachments";
 import { useSession } from "../store/session";
 import { toast } from "../store/toast";
 import { useUi } from "../store/ui";
 import { useVoice } from "../store/voice";
 import { IconButton } from "../ui/controls";
 import { BOUNCE } from "../ui/motion";
+import AttachmentTray from "./AttachmentTray";
 import ComposerTools from "./ComposerTools";
 import ContextRing from "./ContextRing";
 
@@ -64,7 +66,8 @@ export default function Composer({ autoFocus }: { autoFocus?: boolean }) {
   const stt = useVoice((s) => s.status?.stt);
   const setVoiceMode = useUi((s) => s.setVoiceMode);
   const running = runId !== null;
-  const empty = draft.trim() === "";
+  const pictures = useAttachments((s) => s.pending.length);
+  const empty = draft.trim() === "" && pictures === 0;
 
   useEffect(() => {
     // Dictation lands in the box, not the conversation: you read it before it is sent.
@@ -102,7 +105,8 @@ export default function Composer({ autoFocus }: { autoFocus?: boolean }) {
   };
 
   const submit = () => {
-    const content = draft.trim();
+    const hasImages = useAttachments.getState().pending.length > 0;
+    const content = draft.trim() || (hasImages && !running ? "What's in this image?" : "");
     if (!content) return;
     setDraft("");
     if (running) void nudge(content).catch(() => toast("Couldn't steer that answer", "error"));
@@ -129,8 +133,24 @@ export default function Composer({ autoFocus }: { autoFocus?: boolean }) {
           : "Ask Jarvis";
 
   return (
-    <div className="relative rounded-[28px] border border-ink/[0.07] bg-surface p-2 shadow-float transition-colors focus-within:border-ink/[0.14]">
+    <div
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={(event) => {
+        const files = Array.from(event.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
+        if (files.length === 0) return;
+        event.preventDefault();
+        void useAttachments.getState().addFiles(files);
+      }}
+      className="relative rounded-[28px] border border-ink/[0.07] bg-surface p-2 shadow-float transition-colors focus-within:border-ink/[0.14]"
+    >
+      <AttachmentTray />
       <textarea
+        onPaste={(event) => {
+          const files = Array.from(event.clipboardData.files).filter((f) => f.type.startsWith("image/"));
+          if (files.length === 0) return;
+          event.preventDefault();
+          void useAttachments.getState().addFiles(files);
+        }}
         ref={area}
         value={draft}
         autoFocus={autoFocus}

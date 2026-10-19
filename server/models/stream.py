@@ -110,6 +110,8 @@ class ChatRequest(BaseModel):
     ctx_len: int | None = None
     tools: list[str] = []
     """Agent mode: tools the model may call in this turn. Set by the chat agent driver."""
+    attachments: list[str] = []
+    """Images sent with this message (ids from /api/attachments), for a model that can see."""
 
 
 class StopRequest(BaseModel):

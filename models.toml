@@ -89,3 +89,27 @@ params_b = 20.9
 ctx_len_max = 131072
 tags = ["oversized"]
 why = "~13GB of weights. Needs CPU offload on this card; offered with a measured tok/s, not a guess."
+
+[[model]]
+key = "gemma3-4b-vision"
+display_name = "Gemma 3 4B (sees images)"
+hf_repo = "ggml-org/gemma-3-4b-it-GGUF"
+file_glob = "*Q4_K_M*.gguf"
+mmproj_glob = "mmproj*.gguf"
+quant = "Q4_K_M"
+params_b = 3.9
+ctx_len_max = 32768
+tags = ["vision"]
+why = "Reads photos and screenshots - what's on your screen, a chart, a document photo. Small enough to leave room for a browser."
+
+[[model]]
+key = "qwen2.5-vl-7b"
+display_name = "Qwen2.5 VL 7B (sees images)"
+hf_repo = "ggml-org/Qwen2.5-VL-7B-Instruct-GGUF"
+file_glob = "*Q4_K_M*.gguf"
+mmproj_glob = "mmproj*.gguf"
+quant = "Q4_K_M"
+params_b = 7.6
+ctx_len_max = 32768
+tags = ["vision"]
+why = "Sharper at reading small text in screenshots and charts than Gemma 3 4B, if the card has room."

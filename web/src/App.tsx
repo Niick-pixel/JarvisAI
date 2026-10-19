@@ -2,6 +2,7 @@ import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { useEffect } from "react";
 import Approvals from "./agents/Approvals";
 import AlertWatcher from "./trading/AlertWatcher";
+import ScreenHotkey from "./voice/ScreenHotkey";
 import WakeListener from "./voice/WakeListener";
 import Composer from "./chat/Composer";
 import Home from "./chat/Home";
@@ -70,6 +71,7 @@ export default function App() {
       <Approvals />
       <AlertWatcher />
       <WakeListener />
+      <ScreenHotkey />
       <Toasts />
       <GetModel />
     </div>

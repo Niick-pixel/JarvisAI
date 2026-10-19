@@ -21,6 +21,11 @@ from server.models.stream import Alternative
 class PromptMessage(BaseModel):
     role: str
     content: str
+    images: list[str] = []
+    """Data URLs (data:image/png;base64,...) for a model that can see. Empty for everything else."""
+
+    def plain(self) -> dict[str, str]:
+        return {"role": self.role, "content": self.content}
 
 
 class Token(BaseModel):

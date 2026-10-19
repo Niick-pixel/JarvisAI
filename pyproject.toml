@@ -27,6 +27,8 @@ dependencies = [
     "tzdata>=2024.1",
     # Files: edit Word documents paragraph by paragraph, keeping their formatting.
     "python-docx>=1.1",
+    # Screen awareness: a screenshot, pure Python over the OS's own APIs (no Pillow needed).
+    "mss>=9.0",
 ]
 
 [project.optional-dependencies]

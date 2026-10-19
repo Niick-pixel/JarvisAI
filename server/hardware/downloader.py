@@ -20,6 +20,7 @@ import httpx
 from server.db.connection import Database
 from server.hardware import registry_files
 from server.models.hardware import DownloadProgress
+from server.providers.launch_args import mmproj_for
 
 CHUNK = 1 << 20
 HF_FILE_URL = "https://huggingface.co/{repo}/resolve/main/{filename}"
@@ -72,6 +73,8 @@ class Downloader:
                 self._fail("the file's sha256 did not match the registry, so it was discarded")
                 return
             target.with_suffix(".part").replace(target)
+            if entry.get("mmproj_glob") and not await self._projector(entry, target):
+                return
             with self.db.session() as conn:
                 registry_files.register(conn, target, entry, sha256, ctx_len)
             self._update(state="done", path=str(target), detail=f"saved to {target}")
@@ -82,6 +85,24 @@ class Downloader:
             self._update(state="cancelled", detail="stopped; downloading again resumes from here")
         except (httpx.HTTPError, OSError) as exc:
             self._fail(f"{type(exc).__name__}: {exc}. Downloading again resumes from here.")
+
+    async def _projector(self, entry: dict[str, Any], model: Path) -> bool:
+        """A vision model's image encoder, fetched after the model and saved beside it."""
+        spec = {**entry, "file_glob": entry["mmproj_glob"]}
+        filename, size, sha256 = await asyncio.to_thread(registry_files.resolve_file, spec)
+        if filename is None:
+            self._fail(f"could not find the image encoder in {entry['hf_repo']}")
+            return False
+        target = mmproj_for(str(model))
+        self._update(filename=filename, bytes_total=size, bytes_done=0, state="downloading")
+        await self._stream(HF_FILE_URL.format(repo=entry["hf_repo"], filename=filename), target)
+        part = target.with_suffix(".part")
+        if sha256 and not await asyncio.to_thread(matches, part, sha256):
+            part.unlink(missing_ok=True)
+            self._fail("the image encoder's sha256 did not match the registry, so it was discarded")
+            return False
+        part.replace(target)
+        return True
 
     async def _stream(self, url: str, target: Path) -> None:
         self.models_dir.mkdir(parents=True, exist_ok=True)

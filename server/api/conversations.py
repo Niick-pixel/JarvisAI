@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
+from server import attachments
 from server.db import repo
 from server.deps import State
 from server.errors import NotFound
@@ -58,6 +59,8 @@ def get_tree(conversation_id: str, state: State) -> ConversationTree:
         if conversation is None:
             raise NotFound("Conversation")
         messages = repo.messages.list_for_conversation(conn, conversation_id)
+        pictures = attachments.for_conversation(conn, conversation_id)
+    messages = [m.model_copy(update={"attachments": pictures.get(m.id, [])}) for m in messages]
     path = dag.path_to_leaf(messages, conversation.active_leaf_id)
     return ConversationTree(
         conversation=conversation, messages=messages, active_path=[m.id for m in path]

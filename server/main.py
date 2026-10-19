@@ -41,6 +41,7 @@ from server.api import (
     workflows,
     xray,
 )
+from server.api import attachments as attachments_api
 from server.api import briefing as briefing_api
 from server.api import wake as wake_api
 from server.briefing.service import Briefings
@@ -180,6 +181,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         workflows.router,
         trading.router,
         wake_api.router,
+        attachments_api.router,
         memory.router,
         knowledge.router,
         search.router,
