@@ -68,15 +68,16 @@ export default function SettingsSheet() {
       </Section>
 
       <Section title="Answers">
-        <Row title="Thinking" detail="Whether reasoning models think before they answer. You can change it per message too.">
+        <Row title="Thinking" detail="How long reasoning models think before they answer. Heavy makes them keep checking their work, much longer. You can change it per message too.">
           <Segmented<ThinkMode>
             id="think"
             value={think}
             onChange={setThink}
             options={[
+              { value: "off", label: "Fast" },
               { value: "auto", label: "Auto" },
               { value: "on", label: "Think" },
-              { value: "off", label: "Fast" },
+              { value: "heavy", label: "Heavy" },
             ]}
           />
         </Row>

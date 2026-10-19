@@ -14,8 +14,7 @@ import httpx
 
 from server.models.params import SamplingParams
 from server.models.provider import Capabilities, ModelInfo, ProviderInfo, ProviderKind
-from server.models.stream import Alternative
-from server.providers import names
+from server.providers import forcing, names
 from server.providers.base import (
     PromptMessage,
     ProviderError,
@@ -25,6 +24,7 @@ from server.providers.base import (
     capabilities_for,
 )
 from server.providers.httpsse import iter_sse_json
+from server.providers.llamacpp_wire import probabilities, stop_reason
 
 FALLBACK_TEMPLATE_NOTE = "chat template applied locally (backend has no /apply-template)"
 
@@ -148,9 +148,25 @@ class LlamaCppProvider:
         if assistant_prefix:
             # Continuing the same prefix means llama.cpp reuses the KV cache for it.
             prompt += assistant_prefix
-        body = {
+
+        def complete(
+            text: str, n_predict: int, stop: list[str] | None
+        ) -> AsyncIterator[StreamItem]:
+            return self._complete(text, params, n_predict, stop)
+
+        if params.min_thinking_tokens and params.thinking is not False:
+            stream = forcing.forced(complete, prompt, params.max_tokens, params.min_thinking_tokens)
+        else:
+            stream = complete(prompt, params.max_tokens, None)
+        async for item in stream:
+            yield item
+
+    async def _complete(
+        self, prompt: str, params: SamplingParams, n_predict: int, stop: list[str] | None
+    ) -> AsyncIterator[StreamItem]:
+        body: dict[str, Any] = {
             "prompt": prompt,
-            "n_predict": params.max_tokens,
+            "n_predict": n_predict,
             "temperature": params.temperature,
             "top_p": params.top_p,
             "top_k": params.top_k,
@@ -160,6 +176,8 @@ class LlamaCppProvider:
             "cache_prompt": True,
             "stream": True,
         }
+        if stop:
+            body["stop"] = stop
         started = time.perf_counter()
         async with self._client() as client:
             try:
@@ -183,54 +201,17 @@ class LlamaCppProvider:
                 gen_tokens=int(timings.get("predicted_n") or 0),
                 prompt_eval_ms=int(timings.get("prompt_ms") or 0),
                 gen_ms=int(timings.get("predicted_ms") or (time.perf_counter() - started) * 1000),
-                stop_reason=_stop_reason(chunk),
+                stop_reason=stop_reason(chunk),
             )
         if not text:
             return None
-        logprob, top = _probabilities(chunk)
+        logprob, top = probabilities(chunk)
         return Token(
             text=text,
             logprob=logprob,
             top_alternatives=top,
             timing_ms=(time.perf_counter() - started) * 1000,
         )
-
-
-def _stop_reason(chunk: dict[str, Any]) -> str:
-    stop_type = chunk.get("stop_type")
-    if stop_type in ("limit", "length"):
-        return "length"
-    return "eos"
-
-
-def _probabilities(chunk: dict[str, Any]) -> tuple[float | None, list[Alternative] | None]:
-    """Normalise the two shapes llama.cpp has shipped for `completion_probabilities`."""
-    entries = chunk.get("completion_probabilities")
-    if not entries:
-        return None, None
-    entry = entries[0]
-    if "top_logprobs" in entry:
-        alts = [
-            Alternative(token=a.get("token", ""), logprob=float(a.get("logprob", 0.0)))
-            for a in entry.get("top_logprobs", [])
-        ]
-        return _as_float(entry.get("logprob")), alts or None
-    if "probs" in entry:
-        import math
-
-        alts = [
-            Alternative(
-                token=a.get("tok_str", ""),
-                logprob=math.log(max(float(a.get("prob", 0.0)), 1e-12)),
-            )
-            for a in entry.get("probs", [])
-        ]
-        return (alts[0].logprob if alts else None), alts or None
-    return None, None
-
-
-def _as_float(value: Any) -> float | None:
-    return float(value) if isinstance(value, int | float) else None
 
 
 def chatml_prompt(messages: list[PromptMessage]) -> str:

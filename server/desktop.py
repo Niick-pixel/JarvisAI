@@ -16,6 +16,7 @@ Three things a packaged Windows app gets wrong unless told:
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import logging
 import os
@@ -30,6 +31,7 @@ from typing import Any
 from server import paths
 from server.desktop_window import open_window, window_test
 from server.updates.install import QUIT_HOOK
+from server.version import VERSION
 
 READY_TIMEOUT_S = 60.0
 LOCK_NAME = "desktop.lock"
@@ -159,13 +161,42 @@ def _clear_lock() -> None:
 
 
 def _running_instance() -> str | None:
-    """Another Jarvis window is already serving: open onto it instead of starting a second one."""
+    """Another Jarvis window is already serving: open onto it instead of starting a second one.
+
+    Only if it is this version. A Jarvis from before an update - above all one from before the app
+    had a window, which kept serving in the background after its browser tab closed - would
+    otherwise be reopened forever, and the update would seem not to have happened. An older one
+    is stopped, with the llama-server it started, and this one starts fresh."""
     try:
         lock = json.loads(_lock_path().read_text())
     except (OSError, ValueError):
         return None
     url = f"http://127.0.0.1:{int(lock.get('port', 0))}"
-    return url if _get(f"{url}/api/health") is not None else None
+    health = _get(f"{url}/api/health")
+    if health is None:
+        return None
+    if health.get("version") == VERSION:
+        return url
+    logging.info("stopping Jarvis %s (pid %s) left running", health.get("version"), lock.get("pid"))
+    _stop_process(int(lock.get("pid", 0)))
+    return None
+
+
+def _stop_process(pid: int) -> None:
+    import psutil
+
+    try:
+        process = psutil.Process(pid)
+        family = [*process.children(recursive=True), process]
+    except psutil.Error:
+        return
+    for member in family:
+        with contextlib.suppress(psutil.Error):
+            member.terminate()
+    _, alive = psutil.wait_procs(family, timeout=10)
+    for member in alive:
+        with contextlib.suppress(psutil.Error):
+            member.kill()
 
 
 if __name__ == "__main__":

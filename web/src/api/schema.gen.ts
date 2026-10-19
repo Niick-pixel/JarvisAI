@@ -1790,6 +1790,7 @@ export interface components {
             /**
              * @default {
              *       "max_tokens": 2048,
+             *       "min_thinking_tokens": 0,
              *       "n_probs": 5,
              *       "repeat_penalty": 1.1,
              *       "seed": -1,
@@ -3423,6 +3424,11 @@ export interface components {
              * @default 2048
              */
             max_tokens: number;
+            /**
+             * Min Thinking Tokens
+             * @default 0
+             */
+            min_thinking_tokens: number;
             /**
              * N Probs
              * @default 5
