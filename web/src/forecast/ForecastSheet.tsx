@@ -1,9 +1,8 @@
-// Forecast: ES and NQ five-minute bars from your NinjaTrader exports, forecast by Kronos on this PC,
+// The Forecast tab of Trading: ES and NQ five-minute bars from your NinjaTrader exports, forecast by Kronos on this PC,
 // with the spread of what it thinks could happen and - one click away - how it has done before.
 import { motion } from "framer-motion";
 import { CandlestickChart, FileUp, MessageSquareText, Play, Target } from "lucide-react";
 import { useEffect, useRef } from "react";
-import Sheet from "../shell/Sheet";
 import { HORIZONS, type Market, useForecast } from "../store/forecast";
 import { useSession } from "../store/session";
 import { useUi } from "../store/ui";
@@ -64,7 +63,7 @@ export default function ForecastSheet() {
   };
 
   return (
-    <Sheet title="Forecast" subtitle="ES and NQ, five-minute bars, forecast by Kronos on this PC. Not trading advice." width={980}>
+    <>
       <div className="flex flex-wrap items-center gap-2">
         <Segmented<Market> id="market" value={symbol} onChange={setSymbol} options={[{ value: "ES", label: "ES" }, { value: "NQ", label: "NQ" }]} />
         <Segmented<string>
@@ -156,6 +155,6 @@ export default function ForecastSheet() {
       )}
 
       {record && <Backtest result={record} tick={tick} />}
-    </Sheet>
+    </>
   );
 }

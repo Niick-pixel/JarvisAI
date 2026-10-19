@@ -1837,6 +1837,164 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/trading/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Alerts */
+        get: operations["list_alerts_api_trading_alerts_get"];
+        put?: never;
+        /** Add Alert */
+        post: operations["add_alert_api_trading_alerts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/trading/alerts/events/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read Events */
+        post: operations["read_events_api_trading_alerts_events_read_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/trading/alerts/{rule_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Alert */
+        delete: operations["remove_alert_api_trading_alerts__rule_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/trading/journal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Journal Stats */
+        get: operations["journal_stats_api_trading_journal_get"];
+        put?: never;
+        post?: never;
+        /** Clear Journal */
+        delete: operations["clear_journal_api_trading_journal_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/trading/journal/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask */
+        post: operations["ask_api_trading_journal_ask_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/trading/journal/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import Journal */
+        post: operations["import_journal_api_trading_journal_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/trading/journal/trades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Journal Trades */
+        get: operations["journal_trades_api_trading_journal_trades_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/trading/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Live */
+        get: operations["live_api_trading_live_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/trading/ninjascript": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ninjascript
+         * @description The JarvisFeed indicator, to drop into NinjaTrader's Custom/Indicators folder.
+         */
+        get: operations["ninjascript_api_trading_ninjascript_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/updates": {
         parameters: {
             query?: never;
@@ -2086,6 +2244,59 @@ export interface components {
              */
             type: "agreement";
         };
+        /** AlertEvent */
+        AlertEvent: {
+            /** Created At */
+            created_at: number;
+            /** Id */
+            id: string;
+            /** Message */
+            message: string;
+            /** Read At */
+            read_at?: number | null;
+            /** Rule Id */
+            rule_id?: string | null;
+            /** Symbol */
+            symbol: string;
+        };
+        /** AlertRule */
+        AlertRule: {
+            /**
+             * Armed
+             * @default true
+             */
+            armed: boolean;
+            /** Created At */
+            created_at: number;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "above" | "below" | "prob_up" | "prob_down" | "range" | "stale";
+            /** Symbol */
+            symbol: string;
+            /** Value */
+            value: number;
+        };
+        /** AlertRuleCreate */
+        AlertRuleCreate: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "above" | "below" | "prob_up" | "prob_down" | "range" | "stale";
+            /** Symbol */
+            symbol: string;
+            /** Value */
+            value: number;
+        };
         /** Alternative */
         Alternative: {
             /** Logprob */
@@ -2268,6 +2479,17 @@ export interface components {
             pinned: boolean;
             /** Source Ref */
             source_ref: string;
+        };
+        /** Breakdown */
+        Breakdown: {
+            /** Label */
+            label: string;
+            /** Net */
+            net: number;
+            /** Trades */
+            trades: number;
+            /** Win Rate */
+            win_rate: number;
         };
         /** Briefing */
         Briefing: {
@@ -3517,6 +3739,76 @@ export interface components {
             /** Waiting */
             waiting: number;
         };
+        /** JournalAnswer */
+        JournalAnswer: {
+            /** Answer */
+            answer: string;
+            /** Model Id */
+            model_id?: string | null;
+        };
+        /** JournalImport */
+        JournalImport: {
+            /** Added */
+            added: number;
+            /** Skipped */
+            skipped: number;
+            /** Unreadable */
+            unreadable: number;
+        };
+        /** JournalQuestion */
+        JournalQuestion: {
+            /** Question */
+            question: string;
+        };
+        /** JournalStats */
+        JournalStats: {
+            /** Avg Loss */
+            avg_loss: number;
+            /** Avg Win */
+            avg_win: number;
+            /**
+             * By Hour
+             * @default []
+             */
+            by_hour: components["schemas"]["Breakdown"][];
+            /**
+             * By Instrument
+             * @default []
+             */
+            by_instrument: components["schemas"]["Breakdown"][];
+            /**
+             * By Side
+             * @default []
+             */
+            by_side: components["schemas"]["Breakdown"][];
+            /**
+             * By Weekday
+             * @default []
+             */
+            by_weekday: components["schemas"]["Breakdown"][];
+            /** Expectancy */
+            expectancy: number;
+            /**
+             * First
+             * @default
+             */
+            first: string;
+            /**
+             * Last
+             * @default
+             */
+            last: string;
+            /** Max Drawdown */
+            max_drawdown: number;
+            /** Net */
+            net: number;
+            /** Profit Factor */
+            profit_factor: number | null;
+            /** Trades */
+            trades: number;
+            /** Win Rate */
+            win_rate: number;
+        };
         /** LaunchStatus */
         LaunchStatus: {
             /** Autostart */
@@ -3561,6 +3853,45 @@ export interface components {
             runs_completed: number;
             /** Tokens Generated */
             tokens_generated: number;
+        };
+        /** LiveStatus */
+        LiveStatus: {
+            /** Events */
+            events: components["schemas"]["AlertEvent"][];
+            /** Files */
+            files: string[];
+            /** Folder */
+            folder: string;
+            /** Folder Exists */
+            folder_exists: boolean;
+            /** Forecasting */
+            forecasting: boolean;
+            /** Symbols */
+            symbols: components["schemas"]["LiveSymbol"][];
+        };
+        /** LiveSymbol */
+        LiveSymbol: {
+            /** Bars Received */
+            bars_received: number;
+            /** Contract */
+            contract: string;
+            /**
+             * Forecast
+             * @default
+             */
+            forecast: string;
+            /** Forecast At */
+            forecast_at?: number | null;
+            /** Last Close */
+            last_close: number;
+            /** Last T */
+            last_t: number;
+            /** Prob Up */
+            prob_up?: number | null;
+            /** Stale */
+            stale: boolean;
+            /** Symbol */
+            symbol: string;
         };
         /** LocalModel */
         LocalModel: {
@@ -4536,6 +4867,46 @@ export interface components {
              * @enum {string}
              */
             target_kind: "path" | "host" | "command" | "none";
+        };
+        /** Trade */
+        Trade: {
+            /** Account */
+            account: string;
+            /**
+             * Commission
+             * @default 0
+             */
+            commission: number;
+            /** Entry Price */
+            entry_price: number;
+            /** Entry Time */
+            entry_time: string;
+            /** Exit Price */
+            exit_price: number;
+            /** Exit Time */
+            exit_time: string;
+            /** Id */
+            id: string;
+            /** Instrument */
+            instrument: string;
+            /** Mae */
+            mae?: number | null;
+            /** Mfe */
+            mfe?: number | null;
+            /** Profit */
+            profit: number;
+            /** Qty */
+            qty: number;
+            /**
+             * Side
+             * @enum {string}
+             */
+            side: "long" | "short";
+            /**
+             * Strategy
+             * @default
+             */
+            strategy: string;
         };
         /** Transcript */
         Transcript: {
@@ -8071,6 +8442,274 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_alerts_api_trading_alerts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertRule"][];
+                };
+            };
+        };
+    };
+    add_alert_api_trading_alerts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlertRuleCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertRule"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_events_api_trading_alerts_events_read_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    remove_alert_api_trading_alerts__rule_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    journal_stats_api_trading_journal_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JournalStats"];
+                };
+            };
+        };
+    };
+    clear_journal_api_trading_journal_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    ask_api_trading_journal_ask_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JournalQuestion"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JournalAnswer"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_journal_api_trading_journal_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JournalImport"];
+                };
+            };
+        };
+    };
+    journal_trades_api_trading_journal_trades_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Trade"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    live_api_trading_live_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LiveStatus"];
+                };
+            };
+        };
+    };
+    ninjascript_api_trading_ninjascript_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };

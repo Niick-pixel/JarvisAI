@@ -125,6 +125,7 @@ def settings(tmp_path: Path) -> Settings:
             # Never the real ./memory: a test that writes there leaks into the next run.
             "memory_dir": str(tmp_path / "memory"),
         },
+        trading={"feed_dir": str(tmp_path / "feed")},
         providers={
             "llamacpp": {"enabled": False},
             "ollama": {"enabled": False},

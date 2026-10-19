@@ -209,7 +209,7 @@ export default function Sidebar() {
         <NavRow icon={Brain} label="Memory" open={open} active={sheet === "memory"} onClick={place("memory")} />
         <NavRow icon={FolderCode} label="Files" open={open} active={sheet === "files"} onClick={place("files")} />
         <NavRow icon={Library} label="Knowledge" open={open} active={sheet === "knowledge"} onClick={place("knowledge")} />
-        <NavRow icon={CandlestickChart} label="Forecast" open={open} active={sheet === "forecast"} onClick={place("forecast")} />
+        <NavRow icon={CandlestickChart} label="Trading" open={open} active={sheet === "forecast"} onClick={place("forecast")} />
         <NavRow icon={Bot} label="Agents" open={open} active={sheet === "agents"} badge={waiting} onClick={place("agents")} />
         <NavRow icon={Settings} label="Settings" open={open} active={sheet === "settings"} onClick={place("settings")} />
       </div>

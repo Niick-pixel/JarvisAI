@@ -14,6 +14,7 @@ WINDOWS = sys.platform == "win32"
 datas = [
     (str(ROOT / "web" / "dist"), "web/dist"),
     (str(ROOT / "server" / "db" / "migrations"), "server/db/migrations"),
+    (str(ROOT / "server" / "trading" / "ninjascript"), "server/trading/ninjascript"),
     (str(ROOT / "models.toml"), "."),
     (str(ROOT / "config.toml.example"), "."),
 ]
