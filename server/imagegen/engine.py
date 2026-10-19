@@ -10,6 +10,8 @@ import asyncio
 import logging
 import random
 import re
+import subprocess
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -196,8 +198,15 @@ class ImageEngine:
                 return out.read_bytes()
 
     async def _run(self, argv: list[str]) -> None:
+        # No console window on Windows: without the flag every picture flashed a black terminal.
+        flags = 0
+        if sys.platform == "win32":
+            flags = subprocess.CREATE_NO_WINDOW
         process = await asyncio.create_subprocess_exec(
-            *argv, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
+            *argv,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            creationflags=flags,
         )
         assert process.stdout is not None
         last = ""

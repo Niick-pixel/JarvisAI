@@ -8,7 +8,8 @@ down the ordinary way, which is what stops the llama-server it started.
 Three things a packaged Windows app gets wrong unless told:
 - A windowed PyInstaller build has no console, so sys.stdout is None, and the first log line
   uvicorn writes raises. Output goes to a log file in the user folder instead.
-- A fixed port collides with whatever else you run. The port is picked at launch.
+- A fixed port collides with whatever else you run, and a new one each launch loses the
+  window's saved settings. The last port is reused when free, otherwise a new one is picked.
 - A second double-click must not start a second server on the same database. It finds the
   running one and opens a window onto that instead.
 """
@@ -101,7 +102,38 @@ def _route_output() -> Path:
     return log_file
 
 
+DEFAULT_PORT = 47615
+
+
 def _free_port() -> int:
+    """The same port as last time whenever it is free.
+
+    The window's local storage (your name, the theme, every toggle) belongs to the page's origin,
+    and the origin includes the port: a new port each launch meant a blank slate each launch.
+    Only when the remembered port is taken is a new one picked, and then remembered instead.
+    """
+    remembered = paths.user_root() / "port"
+    with contextlib.suppress(OSError, ValueError):
+        wanted = int(remembered.read_text().strip())
+        if _bindable(wanted):
+            return wanted
+    port = DEFAULT_PORT if _bindable(DEFAULT_PORT) else _any_port()
+    with contextlib.suppress(OSError):
+        remembered.parent.mkdir(parents=True, exist_ok=True)
+        remembered.write_text(str(port))
+    return port
+
+
+def _bindable(port: int) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        try:
+            probe.bind(("127.0.0.1", port))
+        except OSError:
+            return False
+        return True
+
+
+def _any_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
         probe.bind(("127.0.0.1", 0))
         return int(probe.getsockname()[1])

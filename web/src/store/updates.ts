@@ -13,10 +13,13 @@ interface UpdatesState {
   check: () => Promise<void>;
   download: () => Promise<void>;
   install: () => Promise<void>;
+  /** One click: fetch the new version if needed, then restart into it as soon as it verifies. */
+  updateNow: () => Promise<void>;
+  installWhenReady: boolean;
   setAuto: (auto: boolean) => Promise<void>;
 }
 
-export const useUpdates = create<UpdatesState>((set) => {
+export const useUpdates = create<UpdatesState>((set, get) => {
   const apply = (status: UpdateStatus) => set({ status });
   const quietly = (call: () => Promise<UpdateStatus>) => async () => {
     try {
@@ -36,6 +39,12 @@ export const useUpdates = create<UpdatesState>((set) => {
     },
     download: quietly(updatesApi.download),
     install: quietly(updatesApi.install),
+    installWhenReady: false,
+    updateNow: async () => {
+      if (get().status?.state === "ready") return get().install();
+      set({ installWhenReady: true });
+      await get().download();
+    },
     setAuto: async (auto) => quietly(() => updatesApi.setAuto(auto))(),
   };
 });
@@ -44,8 +53,15 @@ export const useUpdates = create<UpdatesState>((set) => {
 export function watchUpdates(): () => void {
   let timer = 0;
   const tick = async () => {
-    await useUpdates.getState().refresh();
+    const updates = useUpdates.getState();
+    await updates.refresh();
     const state = useUpdates.getState().status?.state ?? "";
+    if (updates.installWhenReady && state === "ready") {
+      useUpdates.setState({ installWhenReady: false });
+      await updates.install();
+    } else if (updates.installWhenReady && state === "failed") {
+      useUpdates.setState({ installWhenReady: false });
+    }
     timer = window.setTimeout(() => void tick(), BUSY.includes(state) ? 1000 : 60_000);
   };
   void tick();
