@@ -35,7 +35,7 @@ export default function Sheet({
   }, [close]);
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center p-6">
+    <div className="fixed inset-0 z-40 flex items-center justify-center sm:p-6">
       <motion.div
         className="absolute inset-0 bg-bg/55 backdrop-blur-md"
         initial={{ opacity: 0 }}
@@ -51,9 +51,9 @@ export default function Sheet({
         exit={{ opacity: 0, scale: 0.97, y: 8, transition: { duration: 0.15 } }}
         transition={BOUNCE}
         style={{ maxWidth: width }}
-        className="relative flex max-h-[min(86vh,860px)] w-full flex-col overflow-hidden rounded-4xl border border-ink/[0.06] bg-surface shadow-float"
+        className="relative flex h-full w-full flex-col overflow-hidden border-ink/[0.06] bg-surface shadow-float sm:h-auto sm:max-h-[min(86vh,860px)] sm:rounded-4xl sm:border"
       >
-        <header className="flex items-start gap-3 px-7 pb-3 pt-6">
+        <header className="flex items-start gap-3 px-4 pb-3 pt-5 sm:px-7 sm:pt-6">
           <div className="min-w-0 flex-1">
             <h2 className="font-display text-[22px] font-semibold tracking-tight text-ink">{title}</h2>
             {subtitle && <p className="mt-0.5 text-[13px] text-ink-faint">{subtitle}</p>}
@@ -61,7 +61,7 @@ export default function Sheet({
           {actions}
           <IconButton icon={X} label="Close" onClick={close} tip="none" />
         </header>
-        <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto px-7 pb-7">{children}</div>
+        <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto px-4 pb-7 sm:px-7">{children}</div>
       </motion.section>
     </div>
   );

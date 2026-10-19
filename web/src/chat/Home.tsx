@@ -44,7 +44,7 @@ export default function Home() {
   const briefing = useBriefing();
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center px-6 pb-16">
+    <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center px-3 pb-16 sm:px-6">
       <div className="w-full max-w-[760px]">
         <motion.div
           initial={{ opacity: 0, y: 14, scale: 0.98 }}
@@ -53,13 +53,13 @@ export default function Home() {
           className="mb-8 px-2"
         >
           <Orb size={44} />
-          <h1 className="mt-5 font-display text-[40px] font-semibold leading-tight tracking-tight">
+          <h1 className="mt-5 font-display text-[30px] font-semibold leading-tight tracking-tight sm:text-[40px]">
             <span className="gradient-text">
               {greeting()}
               {name ? `, ${name}` : ""}
             </span>
           </h1>
-          <p className="font-display text-[40px] font-semibold leading-tight tracking-tight text-ink-faint">
+          <p className="font-display text-[30px] font-semibold leading-tight tracking-tight text-ink-faint sm:text-[40px]">
             How can I help?
           </p>
         </motion.div>

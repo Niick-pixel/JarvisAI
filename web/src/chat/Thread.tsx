@@ -52,7 +52,7 @@ export default function Thread() {
       }}
       className="scroll-quiet min-h-0 flex-1 overflow-y-auto"
     >
-      <div ref={column} className="mx-auto flex w-full max-w-[760px] flex-col gap-8 px-6 pb-10 pt-6">
+      <div ref={column} className="mx-auto flex w-full max-w-[760px] flex-col gap-8 px-4 pb-10 pt-6 sm:px-6">
         {visible.map((message) =>
           isToolResult(message) ? (
             <ToolResults key={message.id} message={message} />

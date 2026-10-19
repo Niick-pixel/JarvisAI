@@ -19,7 +19,10 @@ import { useDownloads } from "./store/downloads";
 import { useSession } from "./store/session";
 import { useUi } from "./store/ui";
 import { useVoice } from "./store/voice";
+import { PanelLeft } from "lucide-react";
+import { IconButton } from "./ui/controls";
 import { BOUNCE } from "./ui/motion";
+import { useNarrow } from "./ui/narrow";
 import VoiceMode from "./voice/VoiceMode";
 
 export default function App() {
@@ -28,6 +31,7 @@ export default function App() {
   const busy = useSession((s) => s.runId !== null);
   const listening = useVoice((s) => s.phase === "listening");
   const voiceMode = useUi((s) => s.voiceMode);
+  const narrow = useNarrow();
 
   useEffect(() => {
     void bootstrap().catch(() => undefined);
@@ -44,14 +48,15 @@ export default function App() {
       <Sidebar />
       <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-bg">
         <Halo state={listening ? "listening" : busy ? "busy" : "rest"} placement={hasTurns ? "bottom" : "center"} />
-        <header className="relative z-10 flex h-14 shrink-0 items-center px-3">
+        <header className="relative z-10 flex h-14 shrink-0 items-center gap-1 px-3">
+          {narrow && <IconButton icon={PanelLeft} label="Menu" size={40} tip="none" onClick={() => useUi.getState().setDrawer(true)} />}
           <ModelPill />
         </header>
         <LayoutGroup>
           {hasTurns ? (
             <>
               <Thread />
-              <div className="relative z-10 mx-auto w-full max-w-[760px] px-6 pb-4">
+              <div className="relative z-10 mx-auto w-full max-w-[760px] px-3 pb-4 sm:px-6">
                 <motion.div layoutId="composer" transition={BOUNCE}>
                   <Composer />
                 </motion.div>

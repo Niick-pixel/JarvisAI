@@ -32,6 +32,8 @@ class ServerConfig(BaseModel):
     host: str = "127.0.0.1"
     port: int = 8080
     auth_token: str = ""
+    phone_port: int = 8800
+    """The phone companion's network-facing entrance - only open while it is turned on."""
 
 
 class PathsConfig(BaseModel):

@@ -44,6 +44,7 @@ from server.api import (
 from server.api import attachments as attachments_api
 from server.api import briefing as briefing_api
 from server.api import images as images_api
+from server.api import phone as phone_api
 from server.api import wake as wake_api
 from server.briefing.service import Briefings
 from server.chat.agentic import ChatAgents
@@ -64,6 +65,9 @@ from server.imagegen.engine import ImageEngine
 from server.knowledge import retrieval
 from server.knowledge.indexer import Indexer
 from server.knowledge.watcher import Watcher
+from server.phone.gate import Gate
+from server.phone.listener import PhoneListener
+from server.phone.pairing import Pairing
 from server.providers.launcher import LlamaServer
 from server.providers.registry import ProviderRegistry
 from server.settings import Settings, load_settings
@@ -134,6 +138,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             if chosen := repo.settings.get(conn, images_api.CHOSEN):
                 settings.images.model = str(chosen)
         state.images = ImageEngine(settings)
+        state.phone, state.pairing = PhoneListener(), Pairing()
+        with db.session() as conn:
+            phone_on = bool(repo.settings.get(conn, phone_api.ENABLED))
+        if phone_on:
+            await phone_api.switch(state, app, True)
         watching = asyncio.create_task(state.copilot.run_forever())
         state.scheduler.start()
         briefing_api.schedule(state)
@@ -150,6 +159,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             launching.cancel()
             checking.cancel()
             watching.cancel()
+            await state.phone.stop()
             await state.llama.stop()
 
     app = FastAPI(
@@ -161,6 +171,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.app = state
     app.state.migrations = []
     app.add_exception_handler(SovereignError, handle_sovereign_error)
+    # Outermost: nothing from the network reaches a route without a paired device's token.
+    app.add_middleware(Gate)
 
     @app.get("/api/health", tags=["health"])
     def health(state: State) -> Health:
@@ -189,6 +201,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         wake_api.router,
         attachments_api.router,
         images_api.router,
+        phone_api.router,
         memory.router,
         knowledge.router,
         search.router,
