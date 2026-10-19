@@ -1,8 +1,11 @@
-// A new routine. The schedule is chosen in words and written as cron underneath; the tool list is
-// the backend's own catalogue, so what you tick is exactly what the model is told it has.
-import { useState } from "react";
-import type { ToolInfo } from "../api/types";
+// A new workflow. Describe it in a sentence and Jarvis drafts the rest - or fill it in by hand. The
+// schedule is chosen in words and written as cron underneath; the tool list is the backend's own
+// catalogue, so what you tick is exactly what the model is told it has.
+import { Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { JobDraft, ToolInfo } from "../api/types";
 import { useAgents } from "../store/agents";
+import { useWorkflows } from "../store/workflows";
 import { Button, FIELD, Segmented, Switch } from "../ui/controls";
 
 type Every = "day" | "weekdays" | "week" | "hour" | "custom";
@@ -33,8 +36,49 @@ function build(every: Every, time: string, day: number, custom: string): string 
   return `${m ?? 0} ${h ?? 9} * * ${dow}`;
 }
 
+/** The form's own controls for a cron, where it is one of the shapes they can show. */
+function fromCron(cron: string): { every: Every; time: string; day: number } | null {
+  const [m, h, dom, mon, dow] = cron.trim().split(/\s+/);
+  if (dom !== "*" || mon !== "*") return null;
+  if (cron.trim() === "0 * * * *") return { every: "hour", time: "09:00", day: 1 };
+  if (!/^\d+$/.test(m ?? "") || !/^\d+$/.test(h ?? "")) return null;
+  const time = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  if (dow === "*") return { every: "day", time, day: 1 };
+  if (dow === "1-5") return { every: "weekdays", time, day: 1 };
+  if (/^[0-6]$/.test(dow ?? "")) return { every: "week", time, day: Number(dow) };
+  return null;
+}
+
+function Describe() {
+  const { describe, drafting } = useWorkflows();
+  const [text, setText] = useState("");
+  const go = () => text.trim() && void describe(text.trim());
+  return (
+    <div className="flex items-end gap-2 rounded-3xl bg-accent/[0.06] p-1.5 pl-4">
+      <textarea
+        rows={2}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            go();
+          }
+        }}
+        placeholder="Describe it - e.g. every weekday at 7am, check ES and tell me if the overnight range was over 30 points"
+        className="min-w-0 flex-1 resize-none bg-transparent py-2 text-[14px] text-ink outline-none placeholder:text-ink-faint"
+      />
+      <Button small tone="primary" icon={Sparkles} disabled={drafting || !text.trim()} onClick={go}>
+        {drafting ? "Drafting…" : "Draft it"}
+      </Button>
+    </div>
+  );
+}
+
 export default function JobForm({ tools, onDone }: { tools: ToolInfo[]; onDone: () => void }) {
   const create = useAgents((s) => s.create);
+  const draft = useWorkflows((s) => s.draft);
+  const drafting = useWorkflows((s) => s.drafting);
   const [name, setName] = useState("");
   const [prompt, setPrompt] = useState("");
   const [every, setEvery] = useState<Every>("day");
@@ -45,6 +89,26 @@ export default function JobForm({ tools, onDone }: { tools: ToolInfo[]; onDone: 
   const [chosen, setChosen] = useState<string[]>([]);
   const ready = Boolean(name.trim() && prompt.trim());
 
+  useEffect(() => {
+    if (!draft) return;
+    apply(draft);
+  }, [draft]);
+
+  function apply(d: JobDraft) {
+    setName(d.name);
+    setPrompt(d.prompt);
+    setChosen(d.tools);
+    const shape = fromCron(d.cron);
+    if (shape) {
+      setEvery(shape.every);
+      setTime(shape.time);
+      setDay(shape.day);
+    } else {
+      setEvery("custom");
+      setCustom(d.cron);
+    }
+  }
+
   const submit = async () => {
     if (!ready) return;
     const cron = build(every, time, day, custom);
@@ -54,7 +118,16 @@ export default function JobForm({ tools, onDone }: { tools: ToolInfo[]; onDone: 
 
   return (
     <div className="space-y-4">
-      <input className={FIELD} placeholder="Name it - e.g. Morning briefing" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+      <Describe />
+      {drafting && <p className="shimmer px-1 text-[13.5px] font-medium">Drafting the workflow</p>}
+      {draft && !drafting && (
+        <p className="px-1 text-[12.5px] text-ink-muted">
+          Drafted - check it over before you create it.{" "}
+          {draft.schedule_found ? `Runs: ${draft.schedule}.` : "No schedule in the description, so it is set to every day at 09:00."}{" "}
+          {draft.note}
+        </p>
+      )}
+      <input className={FIELD} placeholder="Name it - e.g. Overnight ES range" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
       <textarea
         className={`${FIELD} min-h-28 resize-y`}
         placeholder="What should it do? Ask the way you'd ask a person."
@@ -125,7 +198,7 @@ export default function JobForm({ tools, onDone }: { tools: ToolInfo[]; onDone: 
           Cancel
         </Button>
         <Button tone="primary" onClick={() => void submit()} disabled={!ready}>
-          Create routine
+          Create workflow
         </Button>
       </div>
     </div>

@@ -8,6 +8,7 @@ every edit. That also means a job you disable stops firing immediately rather th
 from __future__ import annotations
 
 import logging
+import re
 from collections.abc import Awaitable, Callable
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -20,10 +21,30 @@ from server.models.agents import Job
 log = logging.getLogger("jarvis.agents")
 
 
+DOW_NAMES = ("sun", "mon", "tue", "wed", "thu", "fri", "sat")
+
+
+def trigger(expression: str) -> CronTrigger:
+    """Cron as everyone else reads it.
+
+    APScheduler numbers weekdays from Monday = 0; standard cron (and every form here) from
+    Sunday = 0. Passed straight through, "1-5" - weekdays - fired Tuesday to Saturday. Numbers in
+    the weekday field are turned into names first, which both read the same way.
+    """
+    fields = expression.split()
+    if len(fields) == 5 and "/" not in fields[4]:
+        fields[4] = re.sub(
+            r"\d+",
+            lambda m: DOW_NAMES[int(m.group()) % 7] if int(m.group()) <= 7 else m.group(),
+            fields[4],
+        )
+    return CronTrigger.from_crontab(" ".join(fields))
+
+
 def validate_cron(expression: str) -> str:
     """Returns an empty string when the expression is fine, else the reason it is not."""
     try:
-        CronTrigger.from_crontab(expression)
+        trigger(expression)
     except ValueError as exc:
         return str(exc)
     return ""
@@ -56,23 +77,21 @@ class JobScheduler:
         """Rebuild the schedule from the table. Called at startup and after any job edit."""
         self._scheduler.remove_all_jobs()
         for key, (cron, fire) in self._builtin.items():
-            self._scheduler.add_job(
-                fire, CronTrigger.from_crontab(cron), id=f"builtin:{key}", replace_existing=True
-            )
+            self._scheduler.add_job(fire, trigger(cron), id=f"builtin:{key}", replace_existing=True)
         with self.runtime.db.session() as conn:
             jobs = repo.agents.list_jobs(conn)
         for job in jobs:
             if not job.enabled:
                 continue
             try:
-                trigger = CronTrigger.from_crontab(job.cron)
+                when = trigger(job.cron)
             except ValueError:
                 # A job with an unparseable cron stays visible and simply never fires; the API
                 # rejects bad expressions, so this only happens to rows edited by hand.
                 log.warning("job %s has an invalid cron %r and will not run", job.id, job.cron)
                 continue
             self._scheduler.add_job(
-                self._fire, trigger, args=[job.id], id=job.id, replace_existing=True
+                self._fire, when, args=[job.id], id=job.id, replace_existing=True
             )
 
     def next_run_at(self, job_id: str) -> int | None:

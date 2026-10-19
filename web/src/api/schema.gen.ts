@@ -5,6 +5,57 @@
  */
 
 export interface paths {
+    "/api/agents/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Dashboard */
+        get: operations["dashboard_api_agents_dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agents/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Draft */
+        post: operations["draft_api_agents_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agents/drafts/from-conversation/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Draft From Chat */
+        post: operations["draft_from_chat_api_agents_drafts_from_conversation__conversation_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/agents/inbox": {
         parameters: {
             query?: never;
@@ -2737,6 +2788,11 @@ export interface components {
             /** Key */
             key: string;
         };
+        /** DraftRequest */
+        DraftRequest: {
+            /** Description */
+            description: string;
+        };
         /** EngineStatus */
         EngineStatus: {
             /** Available */
@@ -3369,6 +3425,26 @@ export interface components {
              */
             workspace: string;
         };
+        /** JobDraft */
+        JobDraft: {
+            /** Cron */
+            cron: string;
+            /** Name */
+            name: string;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /** Prompt */
+            prompt: string;
+            /** Schedule */
+            schedule: string;
+            /** Schedule Found */
+            schedule_found: boolean;
+            /** Tools */
+            tools: string[];
+        };
         /** JobPatch */
         JobPatch: {
             /** Cron */
@@ -3421,6 +3497,25 @@ export interface components {
              * @default
              */
             summary: string;
+        };
+        /** JobStats */
+        JobStats: {
+            /** Avg Seconds */
+            avg_seconds?: number | null;
+            /** Failed */
+            failed: number;
+            /** Job Id */
+            job_id: string;
+            /** Last Finished At */
+            last_finished_at?: number | null;
+            /** Ok */
+            ok: number;
+            /** Recent */
+            recent: string[];
+            /** Runs */
+            runs: number;
+            /** Waiting */
+            waiting: number;
         };
         /** LaunchStatus */
         LaunchStatus: {
@@ -4655,6 +4750,90 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    dashboard_api_agents_dashboard_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStats"][];
+                };
+            };
+        };
+    };
+    draft_api_agents_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobDraft"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    draft_from_chat_api_agents_drafts_from_conversation__conversation_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobDraft"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     inbox_api_agents_inbox_get: {
         parameters: {
             query?: {

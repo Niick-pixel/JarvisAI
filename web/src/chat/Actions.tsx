@@ -1,6 +1,6 @@
 // The row under an answer: copy, try again, read it aloud, and "more" for the tools no hosted
 // assistant has - carry on from here, edit its words, replay it exactly, see how sure it was.
-import { Check, Copy, Ellipsis, GitCompare, Pencil, Play, RefreshCw, Repeat, ScanEye, Square, Volume2 } from "lucide-react";
+import { Check, Copy, Ellipsis, GitCompare, Pencil, Play, RefreshCw, Repeat, ScanEye, Square, Volume2, Workflow } from "lucide-react";
 import { useState } from "react";
 import type { Message } from "../api/types";
 import { useGraph } from "../store/graph";
@@ -8,6 +8,7 @@ import { useSession } from "../store/session";
 import { toast } from "../store/toast";
 import { useVoice } from "../store/voice";
 import { useXray } from "../store/xray";
+import { useWorkflows } from "../store/workflows";
 import { IconButton } from "../ui/controls";
 import Menu, { type MenuItem } from "../ui/Menu";
 import SiblingNav from "./SiblingNav";
@@ -88,6 +89,13 @@ export default function Actions({
       onSelect: () => void toggleXray(message.id),
     },
   ];
+  more.push({
+    key: "workflow",
+    label: "Make this a workflow",
+    detail: "Run what you did here again, on a schedule",
+    icon: Workflow,
+    onSelect: () => void useWorkflows.getState().fromChat(message.conversation_id),
+  });
   if (message.forked_reason === "rerun") {
     more.push({
       key: "diff",

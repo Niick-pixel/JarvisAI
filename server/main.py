@@ -37,6 +37,7 @@ from server.api import (
     tools,
     updates,
     voice,
+    workflows,
     xray,
 )
 from server.api import briefing as briefing_api
@@ -170,6 +171,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         hud.router,
         memory_timeline.router,
         briefing_api.router,
+        workflows.router,
         memory.router,
         knowledge.router,
         search.router,
