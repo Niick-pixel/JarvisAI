@@ -42,6 +42,7 @@ from server.api import (
     xray,
 )
 from server.api import briefing as briefing_api
+from server.api import wake as wake_api
 from server.briefing.service import Briefings
 from server.chat.agentic import ChatAgents
 from server.chat.live import LiveRuns
@@ -178,6 +179,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         briefing_api.router,
         workflows.router,
         trading.router,
+        wake_api.router,
         memory.router,
         knowledge.router,
         search.router,

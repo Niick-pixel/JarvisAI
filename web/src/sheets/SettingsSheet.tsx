@@ -12,6 +12,7 @@ import { useVoice } from "../store/voice";
 import { Button, FIELD, Row, Segmented, Switch } from "../ui/controls";
 import VoicePack from "../voice/VoicePack";
 import BriefingSettings from "./BriefingSettings";
+import WakeRow from "./WakeRow";
 import LocalModels from "./LocalModels";
 import Machine from "./Machine";
 import Updates from "./Updates";
@@ -104,6 +105,7 @@ export default function SettingsSheet() {
       <Section title="Voice">
         <Engine title="Dictation" engine={voice?.stt} />
         <Engine title="Reading aloud" engine={voice?.tts} />
+        <WakeRow />
         <div className="flex justify-end py-3 empty:hidden">
           <VoicePack />
         </div>
