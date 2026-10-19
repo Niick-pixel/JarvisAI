@@ -1,6 +1,7 @@
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { useEffect } from "react";
 import Approvals from "./agents/Approvals";
+import AlertWatcher from "./trading/AlertWatcher";
 import Composer from "./chat/Composer";
 import Home from "./chat/Home";
 import Thread from "./chat/Thread";
@@ -66,6 +67,7 @@ export default function App() {
       <AnimatePresence>{voiceMode && <VoiceMode />}</AnimatePresence>
       <CaptureCard />
       <Approvals />
+      <AlertWatcher />
       <Toasts />
       <GetModel />
     </div>

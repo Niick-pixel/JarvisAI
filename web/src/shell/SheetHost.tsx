@@ -2,7 +2,7 @@
 import { AnimatePresence } from "framer-motion";
 import HomeSheet from "../home/HomeSheet";
 import FilesSheet from "../files/FilesSheet";
-import ForecastSheet from "../forecast/ForecastSheet";
+import TradingSheet from "../trading/TradingSheet";
 import AgentsSheet from "../sheets/AgentsSheet";
 import CouncilSheet from "../sheets/CouncilSheet";
 import KnowledgeSheet from "../sheets/KnowledgeSheet";
@@ -17,7 +17,7 @@ const SHEETS: Record<SheetName, () => JSX.Element> = {
   settings: SettingsSheet,
   council: CouncilSheet,
   home: HomeSheet,
-  forecast: ForecastSheet,
+  forecast: TradingSheet,
   files: FilesSheet,
 };
 

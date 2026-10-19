@@ -18,7 +18,7 @@ from pydantic_settings import (
 )
 
 from server import paths
-from server.forecast.config import ForecastConfig
+from server.forecast.config import ForecastConfig, TradingConfig
 
 CONFIG_PATH = paths.config_path()
 
@@ -203,6 +203,7 @@ class Settings(BaseSettings):
     voice: VoiceConfig = Field(default_factory=VoiceConfig)
     agents: AgentsConfig = Field(default_factory=AgentsConfig)
     forecast: ForecastConfig = Field(default_factory=ForecastConfig)
+    trading: TradingConfig = Field(default_factory=TradingConfig)
     updates: UpdatesConfig = Field(default_factory=UpdatesConfig)
     openai_api_key: str = ""
 

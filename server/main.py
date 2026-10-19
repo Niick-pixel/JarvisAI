@@ -35,6 +35,7 @@ from server.api import (
     models_api,
     search,
     tools,
+    trading,
     updates,
     voice,
     workflows,
@@ -62,6 +63,7 @@ from server.knowledge.watcher import Watcher
 from server.providers.launcher import LlamaServer
 from server.providers.registry import ProviderRegistry
 from server.settings import Settings, load_settings
+from server.trading.copilot import Copilot
 from server.updates.updater import Updater
 from server.version import VERSION
 from server.voice.pack import VoicePack
@@ -123,6 +125,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         state.scheduler = JobScheduler(runtime)
         state.chat_agents = ChatAgents(runtime)
         state.briefings = Briefings(state)
+        state.copilot = Copilot(db, settings)
+        watching = asyncio.create_task(state.copilot.run_forever())
         state.scheduler.start()
         briefing_api.schedule(state)
         # Loading a model takes tens of seconds, and the app must not be unreachable for them: the
@@ -137,6 +141,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             state.scheduler.shutdown()
             launching.cancel()
             checking.cancel()
+            watching.cancel()
             await state.llama.stop()
 
     app = FastAPI(
@@ -172,6 +177,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         memory_timeline.router,
         briefing_api.router,
         workflows.router,
+        trading.router,
         memory.router,
         knowledge.router,
         search.router,

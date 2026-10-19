@@ -19,3 +19,13 @@ class ForecastConfig(BaseModel):
     top_p: float = 0.9
     threads: int = 0
     """CPU threads for PyTorch. 0 means all but two."""
+
+
+class TradingConfig(BaseModel):
+    """[trading] in config.toml: the live co-pilot."""
+
+    feed_dir: str = ""
+    """Where the JarvisFeed indicator writes. Empty means Documents/NinjaTrader 8/jarvis."""
+    forecast_every: int = 3
+    """Re-forecast after this many new five-minute bars: 3 is every quarter of an hour."""
+    poll_seconds: float = 3.0
