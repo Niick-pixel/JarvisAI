@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useSession } from "../store/session";
 import ErrorCard from "./ErrorCard";
+import Painting from "./Painting";
 import { PendingCalls, ToolResults } from "./ToolCalls";
 import { isToolResult } from "./toolResults";
 import { AssistantTurn, UserTurn } from "./Turn";
@@ -62,6 +63,7 @@ export default function Thread() {
           ),
         )}
         <PendingCalls />
+        <Painting />
         <ErrorCard />
       </div>
     </div>

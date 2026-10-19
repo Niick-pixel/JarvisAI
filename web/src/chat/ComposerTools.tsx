@@ -1,7 +1,8 @@
 // The left side of the composer: "+" for the bigger tools, and how hard to think.
-import { BookOpen, BrainCircuit, Globe, ImagePlus, Lightbulb, Plus, ScreenShare, Users, Wrench, X, Zap } from "lucide-react";
+import { BookOpen, BrainCircuit, Globe, ImagePlus, Lightbulb, Palette, Plus, ScreenShare, Users, Wrench, X, Zap } from "lucide-react";
 import { useRef } from "react";
 import { useAttachments } from "../store/attachments";
+import { useImages } from "../store/images";
 import { useSession } from "../store/session";
 import { type ThinkMode, useUi } from "../store/ui";
 import { IconButton } from "../ui/controls";
@@ -53,6 +54,8 @@ export default function ComposerTools() {
   const setThink = useUi((s) => s.setThink);
   const openSheet = useUi((s) => s.openSheet);
   const picker = useRef<HTMLInputElement>(null);
+  const imageMode = useImages((s) => s.mode);
+  const setImageMode = useImages((s) => s.setMode);
 
   return (
     <div className="flex items-center gap-1">
@@ -86,6 +89,14 @@ export default function ComposerTools() {
             detail: "Ask about a picture, a chart or a document - or paste or drop one",
             icon: ImagePlus,
             onSelect: () => picker.current?.click(),
+          },
+          {
+            key: "image",
+            label: "Create an image",
+            detail: "Describe a picture and Jarvis paints it, on this PC",
+            icon: Palette,
+            checked: imageMode,
+            onSelect: () => setImageMode(!imageMode),
           },
           {
             key: "screen",
@@ -135,6 +146,7 @@ export default function ComposerTools() {
       />
       {research && <Chip label="Research" icon={Globe} active onClear={() => setResearch(false)} />}
       {tools && <Chip label="Tools" icon={Wrench} active onClear={() => setTools(false)} />}
+      {imageMode && <Chip label="Image" icon={Palette} active onClear={() => setImageMode(false)} />}
     </div>
   );
 }

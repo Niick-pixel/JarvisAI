@@ -19,6 +19,7 @@ from pydantic_settings import (
 
 from server import paths
 from server.forecast.config import ForecastConfig, TradingConfig
+from server.imagegen.config import ImagesConfig
 
 CONFIG_PATH = paths.config_path()
 
@@ -204,6 +205,7 @@ class Settings(BaseSettings):
     agents: AgentsConfig = Field(default_factory=AgentsConfig)
     forecast: ForecastConfig = Field(default_factory=ForecastConfig)
     trading: TradingConfig = Field(default_factory=TradingConfig)
+    images: ImagesConfig = Field(default_factory=ImagesConfig)
     updates: UpdatesConfig = Field(default_factory=UpdatesConfig)
     openai_api_key: str = ""
 

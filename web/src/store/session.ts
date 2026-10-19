@@ -9,6 +9,8 @@ import type { ContextAssembly, Conversation, ErrorBody, Message, Remedy, Samplin
 import { useAppearance } from "../design/theme";
 import { useAttachments } from "./attachments";
 import { useChatAgent } from "./chatAgent";
+import { useImages } from "./images";
+import { useLibrary } from "./library";
 import { streamHandlers } from "./streamHandlers";
 import { thinkingParams, useUi } from "./ui";
 
@@ -136,6 +138,21 @@ export const useSession = create<SessionState>((set, get) => ({
     if (home?.handled) {
       await get().refreshTree();
       set({ homeReply: { at: Date.now(), text: home.reply } });
+      return;
+    }
+    if (useImages.getState().mode) {
+      // Image mode: the message is a description, and the answer is the picture.
+      // Shown at once, so the painting has a question above it; the real rows replace it after.
+      const pending = { id: "pending-image", conversation_id: conversation.id, role: "user", content, created_at: Date.now() };
+      set((s) => ({
+        visual: "thinking",
+        messages: [...s.messages, pending as Message],
+        activePath: [...s.activePath, pending.id],
+      }));
+      await useImages.getState().paint(conversation.id, content);
+      await get().refreshTree();
+      void useLibrary.getState().refresh().catch(() => undefined);
+      set({ visual: "idle" });
       return;
     }
     const params = thinkingParams(useUi.getState().think) as SamplingParams;

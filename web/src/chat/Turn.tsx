@@ -80,6 +80,11 @@ export function AssistantTurn({ message, streaming }: { message: Message; stream
         {waiting && <p className="shimmer pt-0.5 text-[15px] font-medium">Thinking</p>}
         {(thinking || open) && <Thinking text={thinking} live={streaming && open} ms={thoughtMs} />}
 
+        {(message.attachments ?? []).map((a) => (
+          <a key={a.id} href={a.url} download={`jarvis-${a.id}.png`} title="Save this picture" className="mb-2 block w-fit overflow-hidden rounded-3xl border border-ink/[0.07]">
+            <img src={a.url} alt="A picture Jarvis made" className="max-h-[420px] max-w-full" />
+          </a>
+        ))}
         {editing ? (
           <EditMessage messageId={message.id} initial={message.content} isAssistant />
         ) : xrayOn && xray?.supports_logprobs && !streaming ? (
@@ -112,7 +117,7 @@ export function AssistantTurn({ message, streaming }: { message: Message; stream
             <ReplayDiff message={message} original={messages.find((m) => m.id === message.edited_from_id)} />
           </div>
         )}
-        {!streaming && !running && !editing && (
+        {!streaming && !running && !editing && !(message.content === "" && message.attachments?.length) && (
           <Actions message={message} showDiff={showDiff} onToggleDiff={() => setShowDiff(!showDiff)} />
         )}
       </div>
