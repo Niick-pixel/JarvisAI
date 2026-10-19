@@ -8,6 +8,7 @@ falls back (a text field; the server-side capture).
 
 from __future__ import annotations
 
+import sys
 import time
 from typing import Any
 
@@ -44,6 +45,25 @@ class Bridge:
                 window.show()
         response = httpx.post(f"{self._url}/api/attachments", content=png, timeout=30.0)
         return response.json() if response.status_code == 200 else None
+
+    def exclude_from_capture(self, on: bool) -> bool:
+        """While you share your screen, leave Jarvis's own window out of every capture, so what
+        it sees is the app behind it rather than itself. Windows 10 2004 and later.
+
+        The window is found by its title rather than through pywebview's handle: reading the
+        native handle from this thread waits on the UI thread, which is the freeze above."""
+        if sys.platform != "win32":
+            return False
+        import ctypes
+
+        from server.desktop_window import TITLE
+
+        user32 = ctypes.windll.user32
+        hwnd = user32.FindWindowW(None, TITLE)
+        if not hwnd:
+            return False
+        exclude, normal = 0x11, 0x0  # WDA_EXCLUDEFROMCAPTURE, WDA_NONE
+        return bool(user32.SetWindowDisplayAffinity(hwnd, exclude if on else normal))
 
     def pick_folder(self) -> str | None:
         import webview

@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 
 from fastapi import APIRouter, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 
 from server import attachments, screen
 from server.deps import State
@@ -47,3 +47,13 @@ async def capture(state: State) -> Attachment:
         raise SovereignError("provider_unavailable", str(exc), status_code=503) from exc
     with state.db.session() as conn:
         return attachments.save(conn, state.settings.paths.data_dir, png, source="screen")
+
+
+@router.get("/screen/frame")
+async def frame(size: int = screen.PREVIEW) -> Response:
+    """A live thumbnail while you share your screen. Shown, never stored."""
+    try:
+        png = await asyncio.to_thread(screen.grab_png, max(120, min(size, screen.FULL)))
+    except screen.NoScreen as exc:
+        raise SovereignError("provider_unavailable", str(exc), status_code=503) from exc
+    return Response(png, media_type="image/png", headers={"Cache-Control": "no-store"})
