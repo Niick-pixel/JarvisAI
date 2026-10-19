@@ -134,3 +134,4 @@ export type PhoneStatus = S["PhoneStatus"];
 export type DataKind = S["DataKind"];
 export type AccountStatus = S["AccountStatus"];
 export type GalleryItem = S["GalleryItem"];
+export type KokoroStatus = S["KokoroStatus"];

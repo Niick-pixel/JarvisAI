@@ -15,7 +15,7 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 from server.settings import Settings
-from server.voice import capability
+from server.voice import capability, kokoro
 from server.voice.capability import VoiceUnavailable
 from server.voice.spoken import for_speech
 
@@ -116,6 +116,12 @@ async def stream_wav(
     spoken = for_speech(text)
     if not spoken:
         raise ValueError("Nothing to speak.")
+    if name is None and kokoro.active(settings):
+        # The natural voice, a sentence at a time like Piper, at Kokoro's 24 kHz.
+        yield wav_header(kokoro.SAMPLE_RATE)
+        for sentence in sentences(spoken):
+            yield await kokoro.synthesize(settings, sentence)
+        return
     _, voice = await voice_for(settings, name)
     yield wav_header(voice.config.sample_rate)
     for sentence in sentences(spoken):

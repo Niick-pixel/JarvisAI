@@ -18,6 +18,7 @@ URL = re.compile(r"https?://\S+|www\.\S+")
 LINE_MARK = re.compile(r"^\s{0,3}(#{1,6}|>|[-*+•]|\d+[.)])\s+", re.M)
 EMPHASIS = re.compile(r"[*_~|#]+")
 SPACES = re.compile(r"[ \t]+")
+LOOSE_PUNCTUATION = re.compile(r"\s+([.,!?;:])")
 # Joiners and selectors that glue emoji sequences together; alone they are silent but confuse TTS.
 GLUE = {"‍", "︎", "️", "⃣"}
 
@@ -42,5 +43,7 @@ def for_speech(text: str) -> str:
     out = LINE_MARK.sub("", out)
     out = EMPHASIS.sub("", out)
     out = "".join(ch for ch in out if not _is_pictograph(ch))
-    lines = (SPACES.sub(" ", line).strip() for line in out.splitlines())
+    lines = (
+        LOOSE_PUNCTUATION.sub(r"\1", SPACES.sub(" ", line)).strip() for line in out.splitlines()
+    )
     return "\n".join(line for line in lines if line)
