@@ -194,3 +194,30 @@ body {
     transform: translate(calc(var(--dx) * -0.6), calc(var(--dy) * 0.7)) scale(0.96);
   }
 }
+
+/* Softer icons everywhere: a lighter line than lucide's default 2px, always with round caps and
+   joins. CSS outranks the presentation attribute each icon sets, so this one rule covers them all. */
+svg.lucide {
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* The edge glow's frame (shell/EdgeGlow.tsx): visible within ~90px of each side, fading inward. */
+.edge-glow {
+  transition: opacity 1.2s ease;
+  -webkit-mask-image:
+    linear-gradient(to right, #000, transparent 90px, transparent calc(100% - 90px), #000),
+    linear-gradient(to bottom, #000, transparent 90px, transparent calc(100% - 90px), #000);
+  mask-image:
+    linear-gradient(to right, #000, transparent 90px, transparent calc(100% - 90px), #000),
+    linear-gradient(to bottom, #000, transparent 90px, transparent calc(100% - 90px), #000);
+}
+@keyframes edge-turn {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
