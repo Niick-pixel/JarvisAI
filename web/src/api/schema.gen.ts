@@ -478,6 +478,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_api_connections_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/connections/github": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Connect Github */
+        put: operations["connect_github_api_connections_github_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/connections/gmail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Connect Gmail */
+        put: operations["connect_gmail_api_connections_gmail_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/connections/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Disconnect */
+        delete: operations["disconnect_api_connections__name__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/context/blocks": {
         parameters: {
             query?: never;
@@ -640,6 +708,40 @@ export interface paths {
         get: operations["read_scoreboard_api_council_scoreboard_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Usage */
+        get: operations["usage_api_data_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/clear": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Clear */
+        post: operations["clear_api_data_clear_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2412,6 +2514,24 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccountStatus */
+        AccountStatus: {
+            /**
+             * Connected
+             * @default false
+             */
+            connected: boolean;
+            /**
+             * Name
+             * @enum {string}
+             */
+            name: "gmail" | "github";
+            /**
+             * Who
+             * @default
+             */
+            who: string;
+        };
         /** AgentTurn */
         AgentTurn: {
             /**
@@ -2905,6 +3025,14 @@ export interface components {
              */
             tools: string[];
         };
+        /** ClearRequest */
+        ClearRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "chats" | "memory" | "knowledge" | "cache" | "models" | "everything";
+        };
         /** ClientError */
         ClientError: {
             /** Message */
@@ -3164,6 +3292,18 @@ export interface components {
              * @default
              */
             synthesis: string;
+        };
+        /** DataKind */
+        DataKind: {
+            /** Bytes */
+            bytes: number;
+            /** Count */
+            count: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "chats" | "memory" | "knowledge" | "cache" | "models" | "everything";
         };
         /** Decision */
         Decision: {
@@ -3623,6 +3763,18 @@ export interface components {
             message_id: string;
             /** Seconds */
             seconds: number;
+        };
+        /** GitHubConnect */
+        GitHubConnect: {
+            /** Token */
+            token: string;
+        };
+        /** GmailConnect */
+        GmailConnect: {
+            /** Address */
+            address: string;
+            /** App Password */
+            app_password: string;
         };
         /** GpuInfo */
         GpuInfo: {
@@ -6499,6 +6651,123 @@ export interface operations {
             };
         };
     };
+    status_api_connections_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountStatus"][];
+                };
+            };
+        };
+    };
+    connect_github_api_connections_github_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GitHubConnect"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountStatus"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    connect_gmail_api_connections_gmail_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GmailConnect"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountStatus"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disconnect_api_connections__name__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: "gmail" | "github";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountStatus"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     update_prefs_api_context_blocks_patch: {
         parameters: {
             query?: never;
@@ -6864,6 +7133,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ScoreboardRow"][];
+                };
+            };
+        };
+    };
+    usage_api_data_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataKind"][];
+                };
+            };
+        };
+    };
+    clear_api_data_clear_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClearRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataKind"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

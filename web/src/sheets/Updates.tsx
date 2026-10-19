@@ -9,7 +9,7 @@ function mb(bytes: number): string {
 }
 
 export default function Updates() {
-  const { status, refresh, check, setAuto, install } = useUpdates();
+  const { status, refresh, check, setAuto, updateNow } = useUpdates();
   useEffect(() => void refresh(), [refresh]);
   if (!status) return <Row title="Version" detail="Checking…" />;
 
@@ -40,8 +40,12 @@ export default function Updates() {
     <>
       <Row title={`Jarvis ${status.current}`} detail={detail}>
         {status.state === "ready" ? (
-          <Button small onClick={() => void install()}>
+          <Button small tone="primary" onClick={() => void updateNow()}>
             Restart to update
+          </Button>
+        ) : status.can_install && (status.state === "available" || status.state === "downloading") ? (
+          <Button small tone="primary" disabled={status.state === "downloading"} onClick={() => void updateNow()}>
+            {status.state === "downloading" ? "Updating…" : "Update now"}
           </Button>
         ) : (
           <Button small tone="ghost" disabled={status.state === "checking"} onClick={() => void check()}>

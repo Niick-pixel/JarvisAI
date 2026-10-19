@@ -1,139 +1,234 @@
-// Settings, in the order people look for things: you, how it looks, how it answers, voice, this
-// PC, and - last and off by default - the instruments for people who like instruments.
-import { Download, Monitor, Moon, Sun } from "lucide-react";
-import type { ReactNode } from "react";
-import type { EngineStatus } from "../api/types";
-import { type ThemeMode, useAppearance } from "../design/theme";
+// Settings, laid out like a desktop app's: a menu of pages on the left, in groups - you and how
+// Jarvis answers, what it connects to, this computer - and one page at a time on the right.
+// On a phone the menu becomes a row of chips above the page.
+import type { LucideIcon } from "lucide-react";
+import {
+  Code2,
+  Database,
+  Image,
+  Mic,
+  MonitorSmartphone,
+  RefreshCw,
+  Search,
+  Settings2,
+  Smartphone,
+  Sparkles,
+  Sun,
+} from "lucide-react";
+import { type ReactNode, useState } from "react";
 import Sheet from "../shell/Sheet";
-import { useDownloads } from "../store/downloads";
-import { useLibrary } from "../store/library";
-import { type ThinkMode, useUi } from "../store/ui";
-import { useVoice } from "../store/voice";
-import { Button, FIELD, Row, Segmented, Switch } from "../ui/controls";
-import VoicePack from "../voice/VoicePack";
+import { FIELD } from "../ui/controls";
 import BriefingSettings from "./BriefingSettings";
+import DataSettings from "./DataSettings";
 import ImageSettings from "./ImageSettings";
-import PhoneSettings from "./PhoneSettings";
-import WakeRow from "./WakeRow";
-import LocalModels from "./LocalModels";
 import Machine from "./Machine";
+import PhoneSettings from "./PhoneSettings";
+import { Answers, Developer, General, Group, Voice } from "./SettingsPanels";
 import Updates from "./Updates";
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+interface Page {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  /** Extra words the search box matches, beyond the label. */
+  keywords: string;
+  render: () => ReactNode;
+}
+
+const GROUPS: { title: string; pages: Page[] }[] = [
+  {
+    title: "Settings",
+    pages: [
+      {
+        id: "general",
+        label: "General",
+        icon: Settings2,
+        keywords: "name profile theme dark light effects glow",
+        render: () => <General />,
+      },
+      {
+        id: "answers",
+        label: "Models & answers",
+        icon: Sparkles,
+        keywords: "model thinking reasoning download delete",
+        render: () => <Answers />,
+      },
+      {
+        id: "voice",
+        label: "Voice",
+        icon: Mic,
+        keywords: "dictation speech wake word hey jarvis read aloud",
+        render: () => <Voice />,
+      },
+      {
+        id: "briefing",
+        label: "Morning briefing",
+        icon: Sun,
+        keywords: "briefing schedule morning",
+        render: () => (
+          <Group title="Every morning">
+            <BriefingSettings />
+          </Group>
+        ),
+      },
+      {
+        id: "images",
+        label: "Images",
+        icon: Image,
+        keywords: "picture generate stable diffusion",
+        render: () => (
+          <Group title="Making pictures">
+            <ImageSettings />
+          </Group>
+        ),
+      },
+    ],
+  },
+  {
+    title: "Connections",
+    pages: [
+      {
+        id: "phone",
+        label: "Phone",
+        icon: Smartphone,
+        keywords: "phone pair qr mobile",
+        render: () => (
+          <Group title="Phone">
+            <PhoneSettings />
+          </Group>
+        ),
+      },
+    ],
+  },
+  {
+    title: "This computer",
+    pages: [
+      {
+        id: "system",
+        label: "System",
+        icon: MonitorSmartphone,
+        keywords: "gpu vram ram hardware",
+        render: () => (
+          <Group title="This PC">
+            <Machine />
+          </Group>
+        ),
+      },
+      {
+        id: "updates",
+        label: "Updates",
+        icon: RefreshCw,
+        keywords: "version update upgrade",
+        render: () => (
+          <Group title="Updates">
+            <Updates />
+          </Group>
+        ),
+      },
+      {
+        id: "data",
+        label: "Data & storage",
+        icon: Database,
+        keywords: "clear delete reset cache memory chats storage",
+        render: () => <DataSettings />,
+      },
+      {
+        id: "developer",
+        label: "Developer",
+        icon: Code2,
+        keywords: "context meter advanced",
+        render: () => <Developer />,
+      },
+    ],
+  },
+];
+
+const ALL = GROUPS.flatMap((g) => g.pages);
+let remembered = "general";
+
+function NavItem({
+  page,
+  active,
+  onClick,
+}: {
+  page: Page;
+  active: boolean;
+  onClick: () => void;
+}) {
+  const Icon = page.icon;
   return (
-    <section className="mt-6 first:mt-1">
-      <h3 className="mb-1 text-[13px] font-semibold text-ink-muted">{title}</h3>
-      <div className="divide-y divide-ink/[0.06]">{children}</div>
-    </section>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-current={active ? "page" : undefined}
+      className={`flex shrink-0 items-center gap-3 rounded-xl px-3 py-2 text-left text-[14px] transition-colors ${
+        active
+          ? "bg-ink/[0.07] font-medium text-ink"
+          : "text-ink-muted hover:bg-ink/[0.04] hover:text-ink"
+      }`}
+    >
+      <Icon size={17} strokeWidth={1.6} className="shrink-0" />
+      <span className="whitespace-nowrap">{page.label}</span>
+    </button>
   );
 }
 
-function Engine({ title, engine }: { title: string; engine?: EngineStatus }) {
-  if (!engine) return <Row title={title} detail="Checking…" />;
-  if (engine.available) {
-    return <Row title={title} detail={`Ready - runs on this PC (${engine.engine}, ${engine.device})`} />;
-  }
-  const fix = engine.fix && !engine.downloadable ? ` ${engine.fix}` : "";
-  return <Row title={title} detail={`${engine.reason}${fix}`} />;
-}
-
 export default function SettingsSheet() {
-  const { mode, setMode, reduceEffects, setReduceEffects } = useAppearance();
-  const { name, setName, think, setThink, devTools, setDevTools } = useUi();
-  const voice = useVoice((s) => s.status);
-  const { models, selectedModelId } = useLibrary();
-  const current = models.find((m) => m.model.id === selectedModelId) ?? models.find((m) => m.recommended);
+  const [current, setCurrent] = useState(remembered);
+  const [query, setQuery] = useState("");
+  const open = (id: string) => {
+    remembered = id;
+    setCurrent(id);
+  };
+  const q = query.trim().toLowerCase();
+  const visible = (p: Page) =>
+    !q || `${p.label} ${p.keywords}`.toLowerCase().includes(q);
+  const page = ALL.find((p) => p.id === current) ?? (ALL[0] as Page);
 
   return (
-    <Sheet title="Settings" width={680}>
-      <Section title="You">
-        <Row title="Your name" detail="So Jarvis can greet you.">
-          <div className="w-56 shrink-0">
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className={FIELD} />
+    <Sheet title="Settings" width={960} bare>
+      <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
+        <nav className="scroll-quiet flex shrink-0 gap-1 overflow-x-auto border-ink/[0.06] px-3 pb-3 sm:w-60 sm:flex-col sm:overflow-y-auto sm:border-r sm:px-4 sm:pb-6">
+          <div className="relative mb-2 hidden sm:block">
+            <Search
+              size={15}
+              strokeWidth={1.6}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint"
+            />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search"
+              className={`${FIELD} !py-2 pl-9 !text-[13.5px]`}
+            />
           </div>
-        </Row>
-      </Section>
-
-      <Section title="Appearance">
-        <Row title="Theme">
-          <Segmented<ThemeMode>
-            id="theme"
-            value={mode}
-            onChange={setMode}
-            options={[
-              { value: "light", label: "Light", icon: Sun },
-              { value: "dark", label: "Dark", icon: Moon },
-              { value: "system", label: "Auto", icon: Monitor },
-            ]}
-          />
-        </Row>
-        <Row title="Reduce effects" detail="Keep the glow still. Also gives a little more of the GPU back to the model.">
-          <Switch label="Reduce effects" checked={reduceEffects} onChange={setReduceEffects} />
-        </Row>
-      </Section>
-
-      <Section title="Answers">
-        <Row title="Thinking" detail="How long reasoning models think before they answer. Heavy makes them keep checking their work, much longer. You can change it per message too.">
-          <Segmented<ThinkMode>
-            id="think"
-            value={think}
-            onChange={setThink}
-            options={[
-              { value: "off", label: "Fast" },
-              { value: "auto", label: "Auto" },
-              { value: "on", label: "Think" },
-              { value: "heavy", label: "Heavy" },
-            ]}
-          />
-        </Row>
-        <Row
-          title={current ? current.model.display_name : "No model yet"}
-          detail={current?.budget?.explanation ?? current?.reason ?? "Download one to get started."}
+          {GROUPS.map((group) => {
+            const pages = group.pages.filter(visible);
+            if (!pages.length) return null;
+            return (
+              <div key={group.title} className="flex gap-1 sm:mb-3 sm:flex-col">
+                <p className="hidden px-3 pb-1 pt-2 text-[12px] font-medium text-ink-faint sm:block">
+                  {group.title}
+                </p>
+                {pages.map((p) => (
+                  <NavItem
+                    key={p.id}
+                    page={p}
+                    active={p.id === page.id}
+                    onClick={() => open(p.id)}
+                  />
+                ))}
+              </div>
+            );
+          })}
+        </nav>
+        <div
+          key={page.id}
+          className="scroll-quiet min-h-0 flex-1 overflow-y-auto px-4 pb-8 pt-1 sm:px-8"
         >
-          <Button small icon={Download} onClick={() => void useDownloads.getState().show()}>
-            Models
-          </Button>
-        </Row>
-      </Section>
-
-      <Section title="Models on this PC">
-        <LocalModels />
-      </Section>
-
-      <Section title="Every morning">
-        <BriefingSettings />
-      </Section>
-
-      <Section title="Voice">
-        <Engine title="Dictation" engine={voice?.stt} />
-        <Engine title="Reading aloud" engine={voice?.tts} />
-        <WakeRow />
-        <div className="flex justify-end py-3 empty:hidden">
-          <VoicePack />
+          {page.render()}
         </div>
-      </Section>
-
-      <Section title="Phone">
-        <PhoneSettings />
-      </Section>
-
-      <Section title="Images">
-        <ImageSettings />
-      </Section>
-
-      <Section title="This PC">
-        <Machine />
-      </Section>
-
-      <Section title="Updates">
-        <Updates />
-      </Section>
-
-      <Section title="Advanced">
-        <Row title="Always show the context meter" detail="How full the model's memory is, and exactly what is being sent.">
-          <Switch label="Always show the context meter" checked={devTools} onChange={setDevTools} />
-        </Row>
-      </Section>
+      </div>
     </Sheet>
   );
 }

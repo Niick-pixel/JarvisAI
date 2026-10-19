@@ -24,6 +24,7 @@ from server.api import (
     context,
     conversations,
     council,
+    data,
     files,
     forecast,
     hardware,
@@ -220,6 +221,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         chat_agent.router,
         client_errors.router,
         connections.router,
+        data.router,
     ):
         app.include_router(router)
 

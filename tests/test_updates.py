@@ -104,5 +104,20 @@ def test_routes_that_start_downloads_run_on_the_event_loop(tmp_path: Path, serve
     serve.update(feed("99.0.0", hashlib.sha256(INSTALLER).hexdigest()))
     settings = load_settings(paths={"data_dir": tmp_path}, updates={"feed_url": FEED})
     with TestClient(create_app(settings)) as client:
+        client.put("/api/updates/prefs", json={"auto": False})
         assert client.post("/api/updates/check").json()["state"] == "available"
         assert client.post("/api/updates/download").json()["state"] == "downloading"
+
+
+def test_check_now_with_automatic_updates_on_starts_the_download(
+    tmp_path: Path, serve: dict
+) -> None:
+    """Finding a version and then sitting on it, with no button to fetch it, was the bug."""
+    from fastapi.testclient import TestClient
+
+    from server.main import create_app
+
+    serve.update(feed("99.0.0", hashlib.sha256(INSTALLER).hexdigest()))
+    settings = load_settings(paths={"data_dir": tmp_path}, updates={"feed_url": FEED})
+    with TestClient(create_app(settings)) as client:
+        assert client.post("/api/updates/check").json()["state"] == "downloading"
