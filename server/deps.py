@@ -30,6 +30,8 @@ if TYPE_CHECKING:  # the scheduler imports the loop, which imports this module
     from server.briefing.service import Briefings
     from server.chat.agentic import ChatAgents
     from server.imagegen.engine import ImageEngine
+    from server.phone.listener import PhoneListener
+    from server.phone.pairing import Pairing
     from server.trading.copilot import Copilot
 
 
@@ -62,6 +64,9 @@ class AppState:
     """Agent-mode chat turns: tool use inside a conversation, through the same gate as jobs."""
     briefings: Briefings | None = None
     """The morning briefing: written on your schedule, shown on Home."""
+    phone: PhoneListener | None = None
+    """The phone companion's network listener - running only while it is turned on."""
+    pairing: Pairing | None = None
     images: ImageEngine | None = None
     """Making pictures with stable-diffusion.cpp, one at a time."""
     copilot: Copilot | None = None

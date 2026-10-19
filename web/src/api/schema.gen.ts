@@ -1756,6 +1756,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/phone": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_api_phone_get"];
+        put?: never;
+        /** Toggle */
+        post: operations["toggle_api_phone_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/phone/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** New Code */
+        post: operations["new_code_api_phone_code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/phone/devices/{device_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke */
+        delete: operations["revoke_api_phone_devices__device_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/phone/pair": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pair
+         * @description The phone trades the code for its own token, kept in a cookie only this site can read.
+         */
+        post: operations["pair_api_phone_pair_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/providers": {
         parameters: {
             query?: never;
@@ -4564,6 +4636,27 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** PairRequest */
+        PairRequest: {
+            /** Code */
+            code: string;
+            /**
+             * Name
+             * @default Phone
+             */
+            name: string;
+        };
+        /** PairedDevice */
+        PairedDevice: {
+            /** Created At */
+            created_at: number;
+            /** Id */
+            id: string;
+            /** Last Seen */
+            last_seen?: number | null;
+            /** Name */
+            name: string;
+        };
         /** PendingCall */
         PendingCall: {
             /** Args Preview */
@@ -4605,6 +4698,42 @@ export interface components {
             target: string;
             /** Tool */
             tool: string;
+        };
+        /** PhoneStatus */
+        PhoneStatus: {
+            /** Addresses */
+            addresses: string[];
+            /**
+             * Code
+             * @default
+             */
+            code: string;
+            /** Code Expires At */
+            code_expires_at?: number | null;
+            /**
+             * Devices
+             * @default []
+             */
+            devices: components["schemas"]["PairedDevice"][];
+            /** Enabled */
+            enabled: boolean;
+            /**
+             * Error
+             * @default
+             */
+            error: string;
+            /** Port */
+            port: number;
+            /**
+             * Qr Svg
+             * @default
+             */
+            qr_svg: string;
+        };
+        /** PhoneToggle */
+        PhoneToggle: {
+            /** Enabled */
+            enabled: boolean;
         };
         /** PlanEvent */
         PlanEvent: {
@@ -8585,6 +8714,145 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SelectedModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    status_api_phone_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhoneStatus"];
+                };
+            };
+        };
+    };
+    toggle_api_phone_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhoneToggle"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhoneStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    new_code_api_phone_code_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhoneStatus"];
+                };
+            };
+        };
+    };
+    revoke_api_phone_devices__device_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhoneStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pair_api_phone_pair_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PairRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
                 };
             };
             /** @description Validation Error */

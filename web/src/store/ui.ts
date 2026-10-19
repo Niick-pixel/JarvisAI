@@ -30,6 +30,9 @@ function load(): Stored {
 
 interface UiState extends Stored {
   sheet: SheetName | null;
+  /** On a phone-sized screen the sidebar is a drawer over the page; this is whether it is out. */
+  drawer: boolean;
+  setDrawer: (open: boolean) => void;
   voiceMode: boolean;
   openSheet: (sheet: SheetName) => void;
   closeSheet: () => void;
@@ -43,6 +46,8 @@ interface UiState extends Stored {
 export const useUi = create<UiState>((set, get) => ({
   ...load(),
   sheet: null,
+  drawer: false,
+  setDrawer: (drawer) => set({ drawer }),
   voiceMode: false,
   // Opening a sheet replaces whatever was open; tapping the same one again closes it.
   openSheet: (sheet) => set((s) => ({ sheet: s.sheet === sheet ? null : sheet })),

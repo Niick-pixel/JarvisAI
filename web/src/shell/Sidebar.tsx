@@ -16,6 +16,7 @@ import { type SheetName, useUi } from "../store/ui";
 import { IconButton, Tip } from "../ui/controls";
 import Menu from "../ui/Menu";
 import { GLIDE } from "../ui/motion";
+import { useNarrow } from "../ui/narrow";
 import UpdateRow from "./UpdateRow";
 
 function bucket(ms: number): string {
@@ -141,16 +142,36 @@ export default function Sidebar() {
   }, [conversations, query]);
 
   const place = (name: SheetName) => () => openSheet(name);
+  const narrow = useNarrow();
+  const drawer = useUi((s) => s.drawer);
+  const setDrawer = useUi((s) => s.setDrawer);
+  // On a phone the drawer gets out of the way as soon as you have picked something.
+  useEffect(() => {
+    if (narrow) setDrawer(false);
+  }, [narrow, sheet, activeId, setDrawer]);
+  if (narrow && !drawer) return null;
+  const wide = narrow || open;
 
   return (
+    <>
+    {narrow && <div className="fixed inset-0 z-40 bg-bg/60 backdrop-blur-sm" onClick={() => setDrawer(false)} />}
     <motion.aside
-      animate={{ width: open ? 272 : 68 }}
+      initial={narrow ? { x: -280 } : false}
+      animate={narrow ? { x: 0, width: 272 } : { width: open ? 272 : 68 }}
       transition={GLIDE}
-      className="relative z-20 flex h-full shrink-0 flex-col overflow-hidden bg-sidebar px-2.5 pb-3 pt-3"
+      className={`flex h-full shrink-0 flex-col overflow-hidden bg-sidebar px-2.5 pb-3 pt-3 ${
+        narrow ? "fixed left-0 top-0 z-50 shadow-float" : "relative z-20"
+      }`}
     >
       <div className="flex h-10 items-center gap-2 pl-0.5">
-        <IconButton icon={PanelLeft} label={open ? "Collapse" : "Expand"} onClick={toggle} size={40} tip="none" />
-        {open && (
+        <IconButton
+          icon={PanelLeft}
+          label={narrow ? "Close" : open ? "Collapse" : "Expand"}
+          onClick={narrow ? () => setDrawer(false) : toggle}
+          size={40}
+          tip="none"
+        />
+        {wide && (
           <span className="flex items-center gap-2 pl-1">
             <Orb size={20} />
             <span className="font-display text-[17px] font-semibold tracking-tight text-ink">Jarvis</span>
@@ -159,8 +180,8 @@ export default function Sidebar() {
       </div>
 
       <div className="mt-4 space-y-0.5">
-        <NavRow icon={SquarePen} label="New chat" open={open} onClick={newChat} />
-        {open && query !== null ? (
+        <NavRow icon={SquarePen} label="New chat" open={wide} onClick={newChat} />
+        {wide && query !== null ? (
           <div className="flex h-10 items-center gap-3 rounded-full bg-ink/[0.06] px-3">
             <Search size={19} strokeWidth={1.75} className="shrink-0 text-ink-faint" />
             <input
@@ -177,7 +198,7 @@ export default function Sidebar() {
           <NavRow
             icon={Search}
             label="Search chats"
-            open={open}
+            open={wide}
             onClick={() => {
               if (!open) toggle();
               setQuery("");
@@ -198,21 +219,22 @@ export default function Sidebar() {
               </motion.section>
             ))}
         </AnimatePresence>
-        {open && groups.length === 0 && query && (
+        {wide && groups.length === 0 && query && (
           <p className="px-3 py-2 text-[13px] text-ink-faint">No chats match "{query}".</p>
         )}
       </div>
 
       <div className="space-y-0.5 pt-2">
-        <UpdateRow open={open} />
-        <NavRow icon={House} label="Home" open={open} active={sheet === "home"} onClick={place("home")} />
-        <NavRow icon={Brain} label="Memory" open={open} active={sheet === "memory"} onClick={place("memory")} />
-        <NavRow icon={FolderCode} label="Files" open={open} active={sheet === "files"} onClick={place("files")} />
-        <NavRow icon={Library} label="Knowledge" open={open} active={sheet === "knowledge"} onClick={place("knowledge")} />
-        <NavRow icon={CandlestickChart} label="Trading" open={open} active={sheet === "forecast"} onClick={place("forecast")} />
-        <NavRow icon={Bot} label="Agents" open={open} active={sheet === "agents"} badge={waiting} onClick={place("agents")} />
-        <NavRow icon={Settings} label="Settings" open={open} active={sheet === "settings"} onClick={place("settings")} />
+        <UpdateRow open={wide} />
+        <NavRow icon={House} label="Home" open={wide} active={sheet === "home"} onClick={place("home")} />
+        <NavRow icon={Brain} label="Memory" open={wide} active={sheet === "memory"} onClick={place("memory")} />
+        <NavRow icon={FolderCode} label="Files" open={wide} active={sheet === "files"} onClick={place("files")} />
+        <NavRow icon={Library} label="Knowledge" open={wide} active={sheet === "knowledge"} onClick={place("knowledge")} />
+        <NavRow icon={CandlestickChart} label="Trading" open={wide} active={sheet === "forecast"} onClick={place("forecast")} />
+        <NavRow icon={Bot} label="Agents" open={wide} active={sheet === "agents"} badge={waiting} onClick={place("agents")} />
+        <NavRow icon={Settings} label="Settings" open={wide} active={sheet === "settings"} onClick={place("settings")} />
       </div>
     </motion.aside>
+    </>
   );
 }
