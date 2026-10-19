@@ -112,3 +112,5 @@ export type LocalModel = S["LocalModel"];
 export type AgentTurn = S["AgentTurn"];
 export type AgentTurnStarted = S["AgentTurnStarted"];
 export type MemoryUse = S["MemoryUse"];
+export type Briefing = S["Briefing"];
+export type BriefingSettings = S["BriefingSettings"];

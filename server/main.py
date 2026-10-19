@@ -39,6 +39,8 @@ from server.api import (
     voice,
     xray,
 )
+from server.api import briefing as briefing_api
+from server.briefing.service import Briefings
 from server.chat.agentic import ChatAgents
 from server.chat.live import LiveRuns
 from server.db import repo
@@ -119,7 +121,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         runtime = agent_loop.Runtime(db, registry, settings, live, approvals)
         state.scheduler = JobScheduler(runtime)
         state.chat_agents = ChatAgents(runtime)
+        state.briefings = Briefings(state)
         state.scheduler.start()
+        briefing_api.schedule(state)
         # Loading a model takes tens of seconds, and the app must not be unreachable for them: the
         # launcher runs in the background and the provider list reports what it is doing.
         assert state.llama is not None
@@ -165,6 +169,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         xray.router,
         hud.router,
         memory_timeline.router,
+        briefing_api.router,
         memory.router,
         knowledge.router,
         search.router,

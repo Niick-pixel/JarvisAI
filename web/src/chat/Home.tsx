@@ -2,11 +2,13 @@
 // starting points underneath - each one does something, none of them is a canned prompt.
 import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
-import { AudioLines, BookOpen, Globe, Users } from "lucide-react";
+import { AudioLines, BookOpen, Globe, Sun, Users } from "lucide-react";
 import Orb from "../brand/Orb";
 import { useSession } from "../store/session";
 import { useUi } from "../store/ui";
+import { useBriefing } from "../store/briefing";
 import { BOUNCE } from "../ui/motion";
+import BriefingCard from "./BriefingCard";
 import Composer from "./Composer";
 
 function greeting(): string {
@@ -39,6 +41,7 @@ export default function Home() {
   const openSheet = useUi((s) => s.openSheet);
   const setVoiceMode = useUi((s) => s.setVoiceMode);
   const setResearch = useSession((s) => s.setResearch);
+  const briefing = useBriefing();
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center px-6 pb-16">
@@ -60,6 +63,7 @@ export default function Home() {
             How can I help?
           </p>
         </motion.div>
+        <BriefingCard />
         <motion.div layoutId="composer" transition={BOUNCE}>
           <Composer autoFocus />
         </motion.div>
@@ -68,6 +72,12 @@ export default function Home() {
           <Start i={1} icon={Globe} label="Research" onClick={() => setResearch(true)} />
           <Start i={2} icon={Users} label="Ask the council" onClick={() => openSheet("council")} />
           <Start i={3} icon={BookOpen} label="Add your documents" onClick={() => openSheet("knowledge")} />
+          <Start
+            i={4}
+            icon={Sun}
+            label={briefing.running ? "Writing your briefing…" : "Brief me"}
+            onClick={() => void briefing.run()}
+          />
         </div>
       </div>
     </div>

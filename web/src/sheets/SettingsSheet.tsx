@@ -11,6 +11,7 @@ import { type ThinkMode, useUi } from "../store/ui";
 import { useVoice } from "../store/voice";
 import { Button, FIELD, Row, Segmented, Switch } from "../ui/controls";
 import VoicePack from "../voice/VoicePack";
+import BriefingSettings from "./BriefingSettings";
 import LocalModels from "./LocalModels";
 import Machine from "./Machine";
 import Updates from "./Updates";
@@ -94,6 +95,10 @@ export default function SettingsSheet() {
 
       <Section title="Models on this PC">
         <LocalModels />
+      </Section>
+
+      <Section title="Every morning">
+        <BriefingSettings />
       </Section>
 
       <Section title="Voice">
