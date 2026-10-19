@@ -20,17 +20,7 @@ function greeting(): string {
   return "Good evening";
 }
 
-function Start({
-  icon: Icon,
-  label,
-  onClick,
-  i,
-}: {
-  icon: LucideIcon;
-  label: string;
-  onClick: () => void;
-  i: number;
-}) {
+function Start({ icon: Icon, label, onClick, i }: { icon: LucideIcon; label: string; onClick: () => void; i: number }) {
   return (
     <motion.button
       type="button"
@@ -104,30 +94,10 @@ export default function Home() {
           <Composer autoFocus />
         </motion.div>
         <div className="mt-5 flex flex-wrap gap-2 px-1">
-          <Start
-            i={0}
-            icon={AudioLines}
-            label="Talk"
-            onClick={() => setVoiceMode(true)}
-          />
-          <Start
-            i={1}
-            icon={Globe}
-            label="Research"
-            onClick={() => setResearch(true)}
-          />
-          <Start
-            i={2}
-            icon={Users}
-            label="Ask the council"
-            onClick={() => openSheet("council")}
-          />
-          <Start
-            i={3}
-            icon={BookOpen}
-            label="Add your documents"
-            onClick={() => openSheet("knowledge")}
-          />
+          <Start i={0} icon={AudioLines} label="Talk" onClick={() => setVoiceMode(true)} />
+          <Start i={1} icon={Globe} label="Research" onClick={() => setResearch(true)} />
+          <Start i={2} icon={Users} label="Ask the council" onClick={() => openSheet("council")} />
+          <Start i={3} icon={BookOpen} label="Add your documents" onClick={() => openSheet("knowledge")} />
           <Start
             i={4}
             icon={Sun}

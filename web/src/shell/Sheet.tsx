@@ -54,20 +54,12 @@ export default function Sheet({
         exit={{ opacity: 0, scale: 0.97, y: 8, transition: { duration: 0.15 } }}
         transition={BOUNCE}
         style={{ maxWidth: width }}
-        className={`relative flex h-full w-full flex-col overflow-hidden border-ink/[0.06] bg-surface shadow-float sm:rounded-4xl sm:border ${
-          bare
-            ? "sm:h-[min(86vh,780px)]"
-            : "sm:h-auto sm:max-h-[min(86vh,860px)]"
-        }`}
+        className={`relative flex h-full w-full flex-col overflow-hidden border-ink/[0.06] bg-surface shadow-float sm:rounded-4xl sm:border ${bare ? "sm:h-[min(86vh,780px)]" : "sm:h-auto sm:max-h-[min(86vh,860px)]"}`}
       >
         <header className="flex items-start gap-3 px-4 pb-3 pt-5 sm:px-7 sm:pt-6">
           <div className="min-w-0 flex-1">
-            <h2 className="font-display text-[22px] font-semibold tracking-tight text-ink">
-              {title}
-            </h2>
-            {subtitle && (
-              <p className="mt-0.5 text-[13px] text-ink-faint">{subtitle}</p>
-            )}
+            <h2 className="font-display text-[22px] font-semibold tracking-tight text-ink">{title}</h2>
+            {subtitle && <p className="mt-0.5 text-[13px] text-ink-faint">{subtitle}</p>}
           </div>
           {actions}
           <IconButton icon={X} label="Close" onClick={close} tip="none" />
@@ -75,9 +67,7 @@ export default function Sheet({
         {bare ? (
           <div className="flex min-h-0 flex-1 flex-col">{children}</div>
         ) : (
-          <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto px-4 pb-7 sm:px-7">
-            {children}
-          </div>
+          <div className="scroll-quiet min-h-0 flex-1 overflow-y-auto px-4 pb-7 sm:px-7">{children}</div>
         )}
       </motion.section>
     </div>

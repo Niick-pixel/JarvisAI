@@ -43,23 +43,12 @@ export default function Updates() {
           <Button small tone="primary" onClick={() => void updateNow()}>
             Restart to update
           </Button>
-        ) : status.can_install &&
-          (status.state === "available" || status.state === "downloading") ? (
-          <Button
-            small
-            tone="primary"
-            disabled={status.state === "downloading"}
-            onClick={() => void updateNow()}
-          >
+        ) : status.can_install && (status.state === "available" || status.state === "downloading") ? (
+          <Button small tone="primary" disabled={status.state === "downloading"} onClick={() => void updateNow()}>
             {status.state === "downloading" ? "Updating…" : "Update now"}
           </Button>
         ) : (
-          <Button
-            small
-            tone="ghost"
-            disabled={status.state === "checking"}
-            onClick={() => void check()}
-          >
+          <Button small tone="ghost" disabled={status.state === "checking"} onClick={() => void check()}>
             Check now
           </Button>
         )}
@@ -68,11 +57,7 @@ export default function Updates() {
         title="Update automatically"
         detail="Once a day, ask GitHub whether there is a new version and fetch it in the background. Nothing about you is sent."
       >
-        <Switch
-          label="Update automatically"
-          checked={status.auto}
-          onChange={(on) => void setAuto(on)}
-        />
+        <Switch label="Update automatically" checked={status.auto} onChange={(on) => void setAuto(on)} />
       </Row>
     </>
   );

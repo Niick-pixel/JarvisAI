@@ -35,8 +35,7 @@ export const useUpdates = create<UpdatesState>((set, get) => {
       const status = await updatesApi.check().catch(() => null);
       if (!status) return toast("Couldn't check for updates.", "error");
       apply(status);
-      if (status.state === "up_to_date")
-        toast(`Jarvis ${status.current} is the latest version.`);
+      if (status.state === "up_to_date") toast(`Jarvis ${status.current} is the latest version.`);
     },
     download: quietly(updatesApi.download),
     install: quietly(updatesApi.install),
@@ -63,10 +62,7 @@ export function watchUpdates(): () => void {
     } else if (updates.installWhenReady && state === "failed") {
       useUpdates.setState({ installWhenReady: false });
     }
-    timer = window.setTimeout(
-      () => void tick(),
-      BUSY.includes(state) ? 1000 : 60_000,
-    );
+    timer = window.setTimeout(() => void tick(), BUSY.includes(state) ? 1000 : 60_000);
   };
   void tick();
   return () => window.clearTimeout(timer);
