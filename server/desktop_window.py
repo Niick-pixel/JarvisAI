@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from server import desktop_hotkey as hotkey
+from server import paths
 
 TITLE = "Jarvis"
 WINDOW_TEST_TIMEOUT_S = 90.0
@@ -64,7 +65,9 @@ def open_window(
         if on_closed is not None:
             window.events.closed += on_closed
         hotkey.listen(lambda: _screen_to_chat(window, bridge))
-        webview.start(gui=_gui())
+        # Not private: pywebview's default is an incognito-style window whose storage is thrown
+        # away on close, which made Jarvis forget your name and theme at every launch.
+        webview.start(gui=_gui(), private_mode=False, storage_path=str(paths.user_path("webview")))
         return 0
     except Exception as exc:  # noqa: BLE001 - every way this fails ends at the same dialog
         logging.exception("could not open the Jarvis window")

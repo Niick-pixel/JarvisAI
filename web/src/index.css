@@ -203,21 +203,29 @@ svg.lucide {
   stroke-linejoin: round;
 }
 
-/* The edge glow's frame (shell/EdgeGlow.tsx): visible within ~90px of each side, fading inward. */
-.edge-glow {
+/* The edge glow's pools (shell/EdgeGlow.tsx): around the edge clockwise, stepping in and out so
+   the path zigzags. Container units, so the route follows the window; transform only. */
+.edge-roam {
+  container-type: size;
   transition: opacity 1.2s ease;
-  -webkit-mask-image:
-    linear-gradient(to right, #000, transparent 90px, transparent calc(100% - 90px), #000),
-    linear-gradient(to bottom, #000, transparent 90px, transparent calc(100% - 90px), #000);
-  mask-image:
-    linear-gradient(to right, #000, transparent 90px, transparent calc(100% - 90px), #000),
-    linear-gradient(to bottom, #000, transparent 90px, transparent calc(100% - 90px), #000);
 }
-@keyframes edge-turn {
-  from {
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-  to {
-    transform: translate(-50%, -50%) rotate(360deg);
-  }
+@keyframes edge-roam {
+  0% { transform: translate(0cqw, 0cqh); }
+  6% { transform: translate(16cqw, 7cqh); }
+  12% { transform: translate(33cqw, 0cqh); }
+  18% { transform: translate(50cqw, 6cqh); }
+  24% { transform: translate(67cqw, 0cqh); }
+  30% { transform: translate(84cqw, 8cqh); }
+  36% { transform: translate(100cqw, 0cqh); }
+  42% { transform: translate(94cqw, 30cqh); }
+  48% { transform: translate(100cqw, 60cqh); }
+  54% { transform: translate(100cqw, 100cqh); }
+  60% { transform: translate(80cqw, 93cqh); }
+  66% { transform: translate(60cqw, 100cqh); }
+  72% { transform: translate(40cqw, 94cqh); }
+  78% { transform: translate(20cqw, 100cqh); }
+  84% { transform: translate(0cqw, 100cqh); }
+  90% { transform: translate(6cqw, 66cqh); }
+  95% { transform: translate(0cqw, 33cqh); }
+  100% { transform: translate(0cqw, 0cqh); }
 }

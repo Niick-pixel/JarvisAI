@@ -11,12 +11,19 @@ interface BriefingState {
   run: () => Promise<void>;
   save: (patch: Partial<BriefingSettings>) => Promise<void>;
   markRead: () => Promise<void>;
+  /** On screen right now: a new briefing's one showing, or one you asked for with "Brief me". */
+  open: boolean;
+  show: () => void;
+  hide: () => void;
 }
 
 export const useBriefing = create<BriefingState>((set, get) => ({
   latest: null,
   settings: null,
   running: false,
+  open: false,
+  show: () => set({ open: true }),
+  hide: () => set({ open: false }),
 
   load: async () => {
     const [latest, settings] = await Promise.all([briefingApi.latest(), briefingApi.settings()]);
@@ -26,7 +33,7 @@ export const useBriefing = create<BriefingState>((set, get) => ({
   run: async () => {
     set({ running: true });
     try {
-      set({ latest: await briefingApi.run() });
+      set({ latest: await briefingApi.run(), open: true });
     } finally {
       set({ running: false });
     }

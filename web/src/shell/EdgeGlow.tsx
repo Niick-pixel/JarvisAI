@@ -1,32 +1,38 @@
-// Colour that drifts slowly around the edge of the window, after Gemini: the brand's three glow
-// colours on a wheel, turning once a minute, seen only through a soft frame at the border.
+// In a chat, after Gemini: a few small, faint pools of the brand colours drifting along the edges
+// of the window - in and out, in a zigzag, each at its own pace and direction, so the pattern
+// never visibly repeats. On Home the glow is the soft one behind the composer (Halo) instead.
 //
-// Cheap on purpose. The wheel is a single conic gradient rotated by a CSS animation - transform
-// only, so the compositor runs it - and the frame is a static mask. Nothing is redrawn per frame on
-// the main thread, which matters in an app whose GPU belongs to the model. Reduce effects (or the
-// OS's reduced motion) keeps the frame and stops the turning.
+// Cheap on purpose: each pool is one radial gradient moved by a CSS keyframe on transform only
+// (positions in container units, so it follows the window's size), which the compositor runs.
+// Reduce effects (or the OS's reduced motion) turns them off.
 import { useReducedMotion } from "framer-motion";
 import { useAppearance } from "../design/theme";
 
+const POOLS = [
+  { color: "glow-a", size: 300, seconds: 80, delay: 0, reverse: false },
+  { color: "glow-b", size: 240, seconds: 110, delay: -37, reverse: true },
+  { color: "glow-c", size: 270, seconds: 95, delay: -61, reverse: false },
+];
+
 export default function EdgeGlow({ busy }: { busy: boolean }) {
   const reduced = useReducedMotion();
-  const still = useAppearance((s) => s.reduceEffects) || reduced;
+  const off = useAppearance((s) => s.reduceEffects) || reduced;
+  if (off) return null;
   return (
-    <div
-      aria-hidden
-      className="edge-glow pointer-events-none absolute inset-0 z-0 overflow-hidden"
-      style={{ opacity: busy ? 1 : 0.8 }}
-    >
-      <div
-        className="absolute left-1/2 top-1/2 aspect-square w-[150vmax] -translate-x-1/2 -translate-y-1/2 will-change-transform"
-        style={{
-          background:
-            "conic-gradient(from 0deg, rgb(var(--c-glow-a) / 0.55), rgb(var(--c-glow-b) / 0.5), rgb(var(--c-glow-c) / 0.45), rgb(var(--c-glow-a) / 0) 62%, rgb(var(--c-glow-b) / 0.5) 80%, rgb(var(--c-glow-a) / 0.55))",
-          animation: still
-            ? undefined
-            : `edge-turn ${busy ? 24 : 60}s linear infinite`,
-        }}
-      />
+    <div aria-hidden className="edge-roam pointer-events-none absolute inset-0 z-0 overflow-hidden" style={{ opacity: busy ? 0.75 : 0.45 }}>
+      {POOLS.map((p) => (
+        <div
+          key={p.color}
+          className="absolute left-0 top-0 rounded-full will-change-transform"
+          style={{
+            width: p.size,
+            height: p.size,
+            margin: -p.size / 2,
+            background: `radial-gradient(closest-side, rgb(var(--c-${p.color}) / 0.55), rgb(var(--c-${p.color}) / 0))`,
+            animation: `edge-roam ${busy ? p.seconds / 2 : p.seconds}s ${p.delay}s linear infinite ${p.reverse ? "reverse" : "normal"}`,
+          }}
+        />
+      ))}
     </div>
   );
 }

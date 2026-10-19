@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import "./design/theme";
 import App from "./App";
 import "./index.css";
+import { syncPrefs } from "./store/prefs";
 
 // Anything that escapes React still reaches jarvis.log, so a crash leaves a trace to send.
 function report(where: string, error: unknown) {
@@ -21,6 +22,8 @@ window.addEventListener("error", (e) => report("window", e.error ?? e.message));
 window.addEventListener("unhandledrejection", (e) =>
   report("promise", e.reason),
 );
+
+void syncPrefs();
 
 const container = document.getElementById("root");
 if (!container) throw new Error("#root is missing from index.html");

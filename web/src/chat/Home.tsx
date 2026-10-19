@@ -102,7 +102,11 @@ export default function Home() {
             i={4}
             icon={Sun}
             label={briefing.running ? "Writing your briefing…" : "Brief me"}
-            onClick={() => void briefing.run()}
+            onClick={() => {
+              const fresh = briefing.latest && Date.now() - briefing.latest.created_at < 18 * 3_600_000;
+              if (fresh && !briefing.open) briefing.show();
+              else void briefing.run();
+            }}
           />
         </div>
       </div>
