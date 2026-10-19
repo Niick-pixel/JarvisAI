@@ -23,7 +23,9 @@ def status(state: State) -> UpdateStatus:
 async def check(state: State) -> UpdateStatus:
     """Ask GitHub for the newest release now, whether or not automatic updates are on."""
     assert state.updater is not None
-    return await state.updater.check()
+    # With automatic updates on, a found version starts downloading right away - checking and
+    # then waiting a day for the background loop to fetch it read as "nothing happens".
+    return await state.updater.check(fetch=state.updater.status.auto)
 
 
 @router.post("/download")

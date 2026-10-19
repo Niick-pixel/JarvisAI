@@ -646,6 +646,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Usage */
+        get: operations["usage_api_data_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data/clear": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Clear */
+        post: operations["clear_api_data_clear_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/files/list": {
         parameters: {
             query?: never;
@@ -2905,6 +2939,14 @@ export interface components {
              */
             tools: string[];
         };
+        /** ClearRequest */
+        ClearRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "chats" | "memory" | "knowledge" | "cache" | "models" | "everything";
+        };
         /** ClientError */
         ClientError: {
             /** Message */
@@ -3164,6 +3206,18 @@ export interface components {
              * @default
              */
             synthesis: string;
+        };
+        /** DataKind */
+        DataKind: {
+            /** Bytes */
+            bytes: number;
+            /** Count */
+            count: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "chats" | "memory" | "knowledge" | "cache" | "models" | "everything";
         };
         /** Decision */
         Decision: {
@@ -6864,6 +6918,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ScoreboardRow"][];
+                };
+            };
+        };
+    };
+    usage_api_data_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataKind"][];
+                };
+            };
+        };
+    };
+    clear_api_data_clear_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClearRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataKind"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

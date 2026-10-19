@@ -131,3 +131,4 @@ export type Attachment = S["Attachment"];
 export type ImageStatus = S["ImageStatus"];
 export type Generated = S["Generated"];
 export type PhoneStatus = S["PhoneStatus"];
+export type DataKind = S["DataKind"];

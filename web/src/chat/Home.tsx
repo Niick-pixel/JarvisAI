@@ -1,6 +1,7 @@
 // A new chat: the mark, a greeting, and the composer in the middle of the room. A few real
 // starting points underneath - each one does something, none of them is a canned prompt.
 import { motion } from "framer-motion";
+import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { AudioLines, BookOpen, Globe, Sun, Users } from "lucide-react";
 import Orb from "../brand/Orb";
@@ -19,7 +20,17 @@ function greeting(): string {
   return "Good evening";
 }
 
-function Start({ icon: Icon, label, onClick, i }: { icon: LucideIcon; label: string; onClick: () => void; i: number }) {
+function Start({
+  icon: Icon,
+  label,
+  onClick,
+  i,
+}: {
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+  i: number;
+}) {
   return (
     <motion.button
       type="button"
@@ -33,6 +44,30 @@ function Start({ icon: Icon, label, onClick, i }: { icon: LucideIcon; label: str
       <Icon size={17} strokeWidth={1.75} />
       {label}
     </motion.button>
+  );
+}
+
+/** Until Jarvis knows your name: one field, right under the greeting that will use it. */
+function NameAsk() {
+  const setName = useUi((s) => s.setName);
+  const [draft, setDraft] = useState("");
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (draft.trim()) setName(draft.trim());
+      }}
+      className="mt-3 flex items-center gap-2 text-[14px] text-ink-faint"
+    >
+      <label htmlFor="name-ask">What should I call you?</label>
+      <input
+        id="name-ask"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        placeholder="Your name"
+        className="w-36 rounded-full border border-ink/10 bg-surface/70 px-3 py-1 text-[14px] text-ink outline-none focus:border-accent/50"
+      />
+    </form>
   );
 }
 
@@ -62,16 +97,37 @@ export default function Home() {
           <p className="font-display text-[30px] font-semibold leading-tight tracking-tight text-ink-faint sm:text-[40px]">
             How can I help?
           </p>
+          {!name && <NameAsk />}
         </motion.div>
         <BriefingCard />
         <motion.div layoutId="composer" transition={BOUNCE}>
           <Composer autoFocus />
         </motion.div>
         <div className="mt-5 flex flex-wrap gap-2 px-1">
-          <Start i={0} icon={AudioLines} label="Talk" onClick={() => setVoiceMode(true)} />
-          <Start i={1} icon={Globe} label="Research" onClick={() => setResearch(true)} />
-          <Start i={2} icon={Users} label="Ask the council" onClick={() => openSheet("council")} />
-          <Start i={3} icon={BookOpen} label="Add your documents" onClick={() => openSheet("knowledge")} />
+          <Start
+            i={0}
+            icon={AudioLines}
+            label="Talk"
+            onClick={() => setVoiceMode(true)}
+          />
+          <Start
+            i={1}
+            icon={Globe}
+            label="Research"
+            onClick={() => setResearch(true)}
+          />
+          <Start
+            i={2}
+            icon={Users}
+            label="Ask the council"
+            onClick={() => openSheet("council")}
+          />
+          <Start
+            i={3}
+            icon={BookOpen}
+            label="Add your documents"
+            onClick={() => openSheet("knowledge")}
+          />
           <Start
             i={4}
             icon={Sun}
