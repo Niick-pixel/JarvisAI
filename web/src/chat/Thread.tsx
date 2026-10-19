@@ -3,6 +3,8 @@
 import { useEffect, useRef } from "react";
 import { useSession } from "../store/session";
 import ErrorCard from "./ErrorCard";
+import { PendingCalls, ToolResults } from "./ToolCalls";
+import { isToolResult } from "./toolResults";
 import { AssistantTurn, UserTurn } from "./Turn";
 
 export default function Thread() {
@@ -51,12 +53,15 @@ export default function Thread() {
     >
       <div ref={column} className="mx-auto flex w-full max-w-[760px] flex-col gap-8 px-6 pb-10 pt-6">
         {visible.map((message) =>
-          message.role === "user" ? (
+          isToolResult(message) ? (
+            <ToolResults key={message.id} message={message} />
+          ) : message.role === "user" ? (
             <UserTurn key={message.id} message={message} />
           ) : (
             <AssistantTurn key={message.id} message={message} streaming={message.id === streamingId} />
           ),
         )}
+        <PendingCalls />
         <ErrorCard />
       </div>
     </div>

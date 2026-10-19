@@ -1,5 +1,5 @@
 // The left side of the composer: "+" for the bigger tools, and how hard to think.
-import { BookOpen, BrainCircuit, Globe, Lightbulb, Plus, Users, X, Zap } from "lucide-react";
+import { BookOpen, BrainCircuit, Globe, Lightbulb, Plus, Users, Wrench, X, Zap } from "lucide-react";
 import { useSession } from "../store/session";
 import { type ThinkMode, useUi } from "../store/ui";
 import { IconButton } from "../ui/controls";
@@ -45,6 +45,8 @@ function Chip({ label, icon: Icon, active, onClick, onClear }: {
 export default function ComposerTools() {
   const research = useSession((s) => s.research);
   const setResearch = useSession((s) => s.setResearch);
+  const tools = useSession((s) => s.tools);
+  const setTools = useSession((s) => s.setTools);
   const think = useUi((s) => s.think);
   const setThink = useUi((s) => s.setThink);
   const openSheet = useUi((s) => s.openSheet);
@@ -63,6 +65,14 @@ export default function ComposerTools() {
             icon: Globe,
             checked: research,
             onSelect: () => setResearch(!research),
+          },
+          {
+            key: "tools",
+            label: "Use tools",
+            detail: "Read and write files, run commands, check forecasts and your home - each step asks you first",
+            icon: Wrench,
+            checked: tools,
+            onSelect: () => setTools(!tools),
           },
           {
             key: "council",
@@ -96,6 +106,7 @@ export default function ComposerTools() {
         }))}
       />
       {research && <Chip label="Research" icon={Globe} active onClear={() => setResearch(false)} />}
+      {tools && <Chip label="Tools" icon={Wrench} active onClear={() => setTools(false)} />}
     </div>
   );
 }

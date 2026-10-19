@@ -108,6 +108,8 @@ class ChatRequest(BaseModel):
     model_id: str | None = None
     params: SamplingParams = SamplingParams()
     ctx_len: int | None = None
+    tools: list[str] = []
+    """Agent mode: tools the model may call in this turn. Set by the chat agent driver."""
 
 
 class StopRequest(BaseModel):

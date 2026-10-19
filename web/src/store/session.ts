@@ -2,10 +2,12 @@
 // the server owns the truth, this holds what is on screen.
 import { create } from "zustand";
 import { api } from "../api/client";
+import { chatAgentApi } from "../api/chatAgent";
 import { homeApi } from "../api/home";
 import { startChatStream, type ChatRequestBody } from "../api/stream";
 import type { ContextAssembly, Conversation, ErrorBody, Message, Remedy, SamplingParams } from "../api/types";
 import { useAppearance } from "../design/theme";
+import { useChatAgent } from "./chatAgent";
 import { streamHandlers } from "./streamHandlers";
 import { thinkingParams, useUi } from "./ui";
 
@@ -35,6 +37,9 @@ export interface SessionState {
   lastPrompt: string | null;
   research: boolean;
   setResearch: (value: boolean) => void;
+  /** Agent mode: the model may use tools in this answer, each one under your approval. */
+  tools: boolean;
+  setTools: (value: boolean) => void;
   send: (content: string, ctxLen?: number | null) => Promise<void>;
   /** The last reply Home Assistant gave in this chat, so voice mode can read it out. */
   homeReply: { at: number; text: string } | null;
@@ -62,11 +67,13 @@ export const useSession = create<SessionState>((set, get) => ({
   tps: 0,
   lastPrompt: null,
   research: false,
+  tools: false,
   runStartedAt: 0,
   thoughtMs: {},
   homeReply: null,
 
   setResearch: (research: boolean) => set({ research }),
+  setTools: (tools: boolean) => set({ tools }),
 
   // The app opens on a fresh chat, the way every assistant does. The conversation row is only
   // written when you actually say something, so opening the app never litters the sidebar.
@@ -114,7 +121,7 @@ export const useSession = create<SessionState>((set, get) => ({
   },
 
   send: async (content: string, ctxLen: number | null = null) => {
-    if (get().runId) return;
+    if (get().runId || useChatAgent.getState().runId) return;
     let conversation = get().conversation;
     if (!conversation) {
       // The server gives it a real title from the first message; this placeholder never shows.
@@ -130,12 +137,17 @@ export const useSession = create<SessionState>((set, get) => ({
       set({ homeReply: { at: Date.now(), text: home.reply } });
       return;
     }
+    const params = thinkingParams(useUi.getState().think) as SamplingParams;
+    if (get().tools) {
+      await useChatAgent.getState().start(conversation.id, content, params);
+      return;
+    }
     await get().runStream({
       conversation_id: conversation.id,
       content,
       ctx_len: ctxLen,
       research: get().research,
-      params: thinkingParams(useUi.getState().think) as SamplingParams,
+      params,
     });
   },
 
@@ -168,6 +180,8 @@ export const useSession = create<SessionState>((set, get) => ({
   },
 
   stop: async () => {
+    const agentRun = useChatAgent.getState().runId;
+    if (agentRun) await chatAgentApi.stop(agentRun).catch(() => undefined);
     const runId = get().runId;
     if (runId) await api.stopRun(runId).catch(() => undefined);
   },
