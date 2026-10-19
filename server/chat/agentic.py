@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from server.agents import loop
 from server.chat import run as runner
 from server.chat.execute import execute as generate
+from server.connections.store import Accounts
 from server.db import repo
 from server.models.agents import Job, JobRunStatus
 from server.models.params import SamplingParams
@@ -36,6 +37,13 @@ DEFAULT_TOOLS = [
     "forecast",
     "home_devices",
     "home_control",
+    "email_search",
+    "email_read",
+    "email_draft",
+    "github_notifications",
+    "github_search",
+    "github_read",
+    "github_comment",
 ]
 
 
@@ -70,7 +78,15 @@ class ChatAgents:
         model_id: str | None,
         params: SamplingParams,
     ) -> str:
-        chosen = [t for t in (tools or DEFAULT_TOOLS) if t in DEFAULT_TOOLS]
+        # Account tools only once the account is connected: otherwise they are noise in the prompt.
+        accounts = Accounts(self.rt.settings.paths.data_dir)
+        prefixes = {"email_": "gmail", "github_": "github"}
+        chosen = [
+            t
+            for t in (tools or DEFAULT_TOOLS)
+            if t in DEFAULT_TOOLS
+            and all(not t.startswith(p) or accounts.get(n) for p, n in prefixes.items())
+        ]
         self._job(chosen)
         with self.rt.db.session() as conn:
             run_id = repo.agents.start_run(conn, CHAT_JOB_ID, conversation_id)

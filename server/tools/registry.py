@@ -6,29 +6,15 @@ the list in the UI, and the protocol text the model is shown - so those four can
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
 from typing import Any
 
-from server.models.tools import TargetKind, ToolInfo
+from server.models.tools import ToolInfo
 from server.tools import builtin
+from server.tools.accounts import ACCOUNT_TOOLS
 from server.tools.builtin import ToolContext, ToolResult
+from server.tools.tooldef import Runner, Tool
 
-Runner = Callable[[ToolContext, dict[str, Any]], Awaitable[ToolResult]]
-
-
-@dataclass(frozen=True)
-class Tool:
-    name: str
-    summary: str
-    side_effect: bool
-    """Side effects pass the approval gate. Reads are confined by the sandbox instead."""
-    target_kind: TargetKind
-    args: tuple[str, ...]
-    example: str
-    run: Runner
-    target: Callable[[dict[str, Any]], str]
-    """What this call would touch, worked out before it runs, for the approval card and the log."""
+__all__ = ["TOOLS", "Tool", "catalogue", "get"]
 
 
 def _home(name: str) -> Runner:
@@ -140,6 +126,7 @@ TOOLS: dict[str, Tool] = {
         target=lambda args: str(args.get("url", "")),
     ),
 }
+TOOLS.update(ACCOUNT_TOOLS)
 
 
 def get(name: str) -> Tool | None:
