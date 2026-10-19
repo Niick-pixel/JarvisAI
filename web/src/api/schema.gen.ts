@@ -3451,6 +3451,8 @@ export interface components {
              * @enum {string}
              */
             role: "system" | "user" | "assistant" | "tool";
+            /** Route Note */
+            route_note?: string | null;
             /**
              * Status
              * @default complete

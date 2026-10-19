@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from server.chat.run import resolve_model_id
+from server.chat.routing import resolve_model_id
 from server.deps import State
 from server.errors import SovereignError
 from server.files.docs import Unreadable

@@ -9,7 +9,7 @@ from server.models.params import SamplingParams
 
 COLUMNS = (
     "id, conversation_id, parent_id, role, content, model_id, params_json, token_count,"
-    " status, edited_from_id, forked_reason, created_at"
+    " status, edited_from_id, forked_reason, created_at, route_note"
 )
 
 
@@ -33,12 +33,13 @@ def create(
     status: MessageStatus = "complete",
     edited_from_id: str | None = None,
     forked_reason: ForkReason | None = None,
+    route_note: str | None = None,
 ) -> Message:
     mid = new_id("msg")
     conn.execute(
         "INSERT INTO messages (id, conversation_id, parent_id, role, content, model_id,"
-        " params_json, token_count, status, edited_from_id, forked_reason, created_at)"
-        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+        " params_json, token_count, status, edited_from_id, forked_reason, created_at,"
+        " route_note) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (
             mid,
             conversation_id,
@@ -52,6 +53,7 @@ def create(
             edited_from_id,
             forked_reason,
             now_ms(),
+            route_note,
         ),
     )
     got = get(conn, mid)

@@ -1,7 +1,7 @@
 // One turn of the conversation. Yours sits on the right in a soft bubble; Jarvis answers on the
 // open page, with its thinking folded away above and a quiet row of actions below.
 import { motion } from "framer-motion";
-import { Pencil } from "lucide-react";
+import { Pencil, Route } from "lucide-react";
 import { useState } from "react";
 import type { Message } from "../api/types";
 import Orb from "../brand/Orb";
@@ -84,6 +84,12 @@ export function AssistantTurn({ message, streaming }: { message: Message; stream
         {xrayOn && xray && !xray.supports_logprobs && (
           <p className="mt-2 text-[13px] text-ink-faint">
             This model didn't report how sure it was about each word, so there is nothing to show.
+          </p>
+        )}
+        {message.route_note && !streaming && (
+          <p className="mt-2 flex items-center gap-1.5 text-[12.5px] text-ink-faint" title="Smart mode chose this model">
+            <Route size={13} strokeWidth={1.75} className="shrink-0" />
+            {message.route_note}
           </p>
         )}
         {message.status === "stopped" && !streaming && (

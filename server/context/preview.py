@@ -7,7 +7,7 @@ Split out of chat/run.py, which owns turning a request into rows and tokens; thi
 from __future__ import annotations
 
 from server.chat.budget import resolve_ctx_len
-from server.chat.run import resolve_model_id
+from server.chat.routing import resolve_model_id
 from server.context.assembler import assemble
 from server.db import repo
 from server.db.connection import Database
