@@ -1,8 +1,9 @@
 // The left side of the composer: "+" for the bigger tools, and how hard to think.
-import { BookOpen, BrainCircuit, Globe, ImagePlus, Lightbulb, Palette, Plus, ScreenShare, Users, Wrench, X, Zap } from "lucide-react";
+import { BookOpen, BrainCircuit, Camera, Globe, ImagePlus, Lightbulb, Palette, Plus, ScreenShare, Users, Wrench, X, Zap } from "lucide-react";
 import { useRef } from "react";
 import { useAttachments } from "../store/attachments";
 import { useImages } from "../store/images";
+import { useScreenShare } from "../store/screenShare";
 import { useSession } from "../store/session";
 import { type ThinkMode, useUi } from "../store/ui";
 import { IconButton } from "../ui/controls";
@@ -55,6 +56,7 @@ export default function ComposerTools() {
   const openSheet = useUi((s) => s.openSheet);
   const picker = useRef<HTMLInputElement>(null);
   const imageMode = useImages((s) => s.mode);
+  const sharing = useScreenShare((s) => s.on);
   const setImageMode = useImages((s) => s.setMode);
 
   return (
@@ -99,10 +101,18 @@ export default function ComposerTools() {
             onSelect: () => setImageMode(!imageMode),
           },
           {
-            key: "screen",
-            label: "Look at my screen",
-            detail: "A screenshot to ask about. In the app: Ctrl+Shift+Space from anywhere",
+            key: "share",
+            label: "Share my screen",
+            detail: "Live: every message you send, typed or spoken, includes what's on your screen",
             icon: ScreenShare,
+            checked: sharing,
+            onSelect: () => void (sharing ? useScreenShare.getState().stop() : useScreenShare.getState().start()),
+          },
+          {
+            key: "screen",
+            label: "Screenshot once",
+            detail: "One picture of your screen to ask about. In the app: Ctrl+Shift+Space from anywhere",
+            icon: Camera,
             onSelect: () => void useAttachments.getState().captureScreen(),
           },
           {

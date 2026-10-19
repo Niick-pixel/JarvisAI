@@ -8,6 +8,7 @@ import { startChatStream, type ChatRequestBody } from "../api/stream";
 import type { ContextAssembly, Conversation, ErrorBody, Message, Remedy, SamplingParams } from "../api/types";
 import { useAppearance } from "../design/theme";
 import { useAttachments } from "./attachments";
+import { useScreenShare } from "./screenShare";
 import { useChatAgent } from "./chatAgent";
 import { useImages } from "./images";
 import { useLibrary } from "./library";
@@ -156,6 +157,8 @@ export const useSession = create<SessionState>((set, get) => ({
       return;
     }
     const params = thinkingParams(useUi.getState().think) as SamplingParams;
+    // Sharing your screen: what is on it right now goes with this message.
+    await useScreenShare.getState().attachNow();
     const attachments = useAttachments.getState().take();
     if (get().tools && attachments.length === 0) {
       await useChatAgent.getState().start(conversation.id, content, params);

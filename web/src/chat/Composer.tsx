@@ -14,6 +14,7 @@ import { useVoice } from "../store/voice";
 import { IconButton } from "../ui/controls";
 import { BOUNCE } from "../ui/motion";
 import AttachmentTray from "./AttachmentTray";
+import SharePill from "./SharePill";
 import ComposerTools from "./ComposerTools";
 import ContextRing from "./ContextRing";
 
@@ -147,6 +148,7 @@ export default function Composer({ autoFocus }: { autoFocus?: boolean }) {
       }}
       className="relative rounded-[28px] border border-ink/[0.07] bg-surface p-2 shadow-float transition-colors focus-within:border-ink/[0.14]"
     >
+      <SharePill />
       <AttachmentTray />
       <textarea
         onPaste={(event) => {
