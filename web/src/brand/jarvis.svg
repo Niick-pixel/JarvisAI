@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- The Jarvis mark: a helm with one red eye (after AUTO, WALL-E). Source of truth for the app
+       icon (scripts/render_icon.py) and the in-app mark (web/src/brand/Orb.tsx draws the same
+       shapes). Groups: ring rotates while thinking, eye glows while speaking. Shapes marked
+       class="detail" are dropped below 48 px, where they would only blur. -->
+  <defs>
+    <radialGradient id="shell" cx="40%" cy="35%" r="75%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="70%" stop-color="#EEF0F3"/>
+      <stop offset="100%" stop-color="#C9CED6"/>
+    </radialGradient>
+    <radialGradient id="lens" cx="44%" cy="42%" r="62%">
+      <stop offset="0%" stop-color="#FFD2C2"/>
+      <stop offset="18%" stop-color="#FF6B5E"/>
+      <stop offset="58%" stop-color="#E0201B"/>
+      <stop offset="100%" stop-color="#7A0A0A"/>
+    </radialGradient>
+  </defs>
+  <g id="ring">
+    <g fill="#2A2E36" stroke="#5A6170" stroke-width="1.4">
+      <rect x="44.5" y="1.5" width="11" height="22" rx="5.5"/>
+      <rect x="44.5" y="1.5" width="11" height="22" rx="5.5" transform="rotate(60 50 50)"/>
+      <rect x="44.5" y="1.5" width="11" height="22" rx="5.5" transform="rotate(120 50 50)"/>
+      <rect x="44.5" y="1.5" width="11" height="22" rx="5.5" transform="rotate(180 50 50)"/>
+      <rect x="44.5" y="1.5" width="11" height="22" rx="5.5" transform="rotate(240 50 50)"/>
+      <rect x="44.5" y="1.5" width="11" height="22" rx="5.5" transform="rotate(300 50 50)"/>
+    </g>
+    <g class="detail" fill="#F4F6F9">
+      <rect x="48.3" y="5.5" width="3.4" height="10.5" rx="1.7"/>
+      <rect x="48.3" y="5.5" width="3.4" height="10.5" rx="1.7" transform="rotate(60 50 50)"/>
+      <rect x="48.3" y="5.5" width="3.4" height="10.5" rx="1.7" transform="rotate(120 50 50)"/>
+      <rect x="48.3" y="5.5" width="3.4" height="10.5" rx="1.7" transform="rotate(180 50 50)"/>
+      <rect x="48.3" y="5.5" width="3.4" height="10.5" rx="1.7" transform="rotate(240 50 50)"/>
+      <rect x="48.3" y="5.5" width="3.4" height="10.5" rx="1.7" transform="rotate(300 50 50)"/>
+    </g>
+    <circle cx="50" cy="50" r="33" fill="#2A2E36" stroke="#5A6170" stroke-width="1.4"/>
+    <!-- The six light strips between the handles. -->
+    <circle class="detail" cx="50" cy="50" r="30" fill="none" stroke="#F4F6F9" stroke-width="2.2"
+            stroke-linecap="round" stroke-dasharray="15.4 16" stroke-dashoffset="7.7"/>
+  </g>
+  <g id="body">
+    <circle cx="50" cy="50" r="26" fill="url(#shell)"/>
+    <path class="detail" d="M50 24 V36 M50 64 V76" stroke="#2A2E36" stroke-width="1.8" stroke-linecap="round"/>
+    <rect x="44" y="22.5" width="12" height="4.5" rx="1.6" fill="#2A2E36"/>
+    <rect x="44" y="73" width="12" height="4.5" rx="1.6" fill="#2A2E36"/>
+    <rect x="23" y="42" width="5.5" height="16" rx="2.4" fill="#2A2E36"/>
+    <rect x="71.5" y="42" width="5.5" height="16" rx="2.4" fill="#2A2E36"/>
+  </g>
+  <g id="eye">
+    <circle cx="50" cy="50" r="15" fill="#1C1F25"/>
+    <circle cx="50" cy="50" r="12.6" fill="url(#lens)"/>
+    <circle cx="50" cy="50" r="10.2" fill="none" stroke="#9A0F0C" stroke-width="0.8" opacity="0.7"/>
+    <circle cx="55.5" cy="44" r="2.5" fill="#FFFFFF"/>
+  </g>
+</svg>
