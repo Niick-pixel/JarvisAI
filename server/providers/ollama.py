@@ -9,6 +9,7 @@ from __future__ import annotations
 import httpx
 
 from server.models.provider import ModelInfo, ProviderKind
+from server.providers import names
 from server.providers.openai_compat import OpenAICompatProvider
 
 
@@ -35,23 +36,27 @@ class OllamaProvider(OpenAICompatProvider):
                         id=f"ollama:{name}",
                         provider="ollama",
                         display_name=name,
-                        ctx_len_max=await self._context_length(client, name),
+                        ctx_len_max=(shown := await self._show(client, name))[0],
                         quant=details.get("quantization_level"),
                         size_bytes=entry.get("size"),
                         supports_logprobs=False,
                         supports_prefix=False,
+                        supports_vision=shown[1] or names.looks_visual(name),
                     )
                 )
         return out
 
-    async def _context_length(self, client: httpx.AsyncClient, name: str) -> int:
+    async def _show(self, client: httpx.AsyncClient, name: str) -> tuple[int, bool]:
+        """Its context length, and whether Ollama says it can see ("vision" in capabilities)."""
         try:
             resp = await client.post("/api/show", json={"model": name}, timeout=10.0)
             resp.raise_for_status()
-            info = resp.json().get("model_info") or {}
+            shown = resp.json()
+            info = shown.get("model_info") or {}
+            vision = "vision" in (shown.get("capabilities") or [])
             for key, value in info.items():
                 if key.endswith(".context_length"):
-                    return int(value)
+                    return int(value), vision
+            return self.default_ctx, vision
         except Exception:  # noqa: BLE001 - fall back to the documented default
-            pass
-        return self.default_ctx
+            return self.default_ctx, False

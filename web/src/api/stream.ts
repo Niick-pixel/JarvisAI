@@ -21,6 +21,7 @@ export interface ChatRequestBody {
   model_id?: string | null;
   params?: SamplingParams;
   ctx_len?: number | null;
+  attachments?: string[];
 }
 
 interface Frame {

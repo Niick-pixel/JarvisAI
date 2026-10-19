@@ -11,12 +11,15 @@ instead of a browser tab that pretends nothing did.
 from __future__ import annotations
 
 import contextlib
+import json
 import logging
 import sys
 import threading
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Literal
+
+from server import desktop_hotkey as hotkey
 
 TITLE = "Jarvis"
 WINDOW_TEST_TIMEOUT_S = 90.0
@@ -42,7 +45,7 @@ def open_window(
 
         from server.desktop_bridge import Bridge
 
-        bridge = Bridge()
+        bridge = Bridge(url)
         window = webview.create_window(
             TITLE,
             url,
@@ -60,11 +63,23 @@ def open_window(
         quit_hook.append(window.destroy)
         if on_closed is not None:
             window.events.closed += on_closed
+        hotkey.listen(lambda: _screen_to_chat(window, bridge))
         webview.start(gui=_gui())
         return 0
     except Exception as exc:  # noqa: BLE001 - every way this fails ends at the same dialog
         logging.exception("could not open the Jarvis window")
         return _cannot_open(url, exc, log_file, on_closed)
+
+
+def _screen_to_chat(window: Any, bridge: Any) -> None:
+    """The hotkey: capture, bring Jarvis forward, and open a new chat with the screenshot."""
+    attachment = bridge.capture_screen()
+    window.restore()
+    window.show()
+    if attachment:
+        window.evaluate_js(
+            f"window.__jarvisScreen && window.__jarvisScreen({json.dumps(attachment)})"
+        )
 
 
 def _cannot_open(

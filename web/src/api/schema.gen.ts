@@ -183,6 +183,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload
+         * @description The image itself as the request body. Only PNG, JPEG, GIF and WebP get through.
+         */
+        post: operations["upload_api_attachments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/attachments/{attachment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Show */
+        get: operations["show_api_attachments__attachment_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/audit": {
         parameters: {
             query?: never;
@@ -1705,6 +1742,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/screen/capture": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Capture
+         * @description What is on the primary display right now, as an image ready to ask about.
+         */
+        post: operations["capture_api_screen_capture_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/search": {
         parameters: {
             query?: never;
@@ -2407,6 +2464,27 @@ export interface components {
              */
             reply: string;
         };
+        /** Attachment */
+        Attachment: {
+            /** Bytes */
+            bytes: number;
+            /** Created At */
+            created_at: number;
+            /** Id */
+            id: string;
+            /** Message Id */
+            message_id?: string | null;
+            /** Mime */
+            mime: string;
+            /**
+             * Source
+             * @default upload
+             * @enum {string}
+             */
+            source: "upload" | "screen";
+            /** Url */
+            url: string;
+        };
         /** AuditEntry */
         AuditEntry: {
             /** Actor */
@@ -2635,6 +2713,11 @@ export interface components {
         };
         /** ChatRequest */
         ChatRequest: {
+            /**
+             * Attachments
+             * @default []
+             */
+            attachments: string[];
             /** Content */
             content?: string | null;
             /** Continue From */
@@ -4102,6 +4185,11 @@ export interface components {
         };
         /** Message */
         Message: {
+            /**
+             * Attachments
+             * @default []
+             */
+            attachments: components["schemas"]["Attachment"][];
             /** Content */
             content: string;
             /** Conversation Id */
@@ -4219,6 +4307,11 @@ export interface components {
              * @default false
              */
             supports_prefix: boolean;
+            /**
+             * Supports Vision
+             * @default false
+             */
+            supports_vision: boolean;
         };
         /**
          * ModelOption
@@ -5525,6 +5618,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PendingCall"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_api_attachments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Attachment"];
+                };
+            };
+        };
+    };
+    show_api_attachments__attachment_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attachment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -8271,6 +8415,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LaunchStatus"];
+                };
+            };
+        };
+    };
+    capture_api_screen_capture_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Attachment"];
                 };
             };
         };

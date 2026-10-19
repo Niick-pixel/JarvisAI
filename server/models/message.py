@@ -6,6 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from server.models.attachments import Attachment
 from server.models.params import SamplingParams
 
 Role = Literal["system", "user", "assistant", "tool"]
@@ -29,6 +30,8 @@ class Message(BaseModel):
     created_at: int
     route_note: str | None = None
     """Smart mode only: why this model answered, in one sentence."""
+    attachments: list[Attachment] = []
+    """Images sent with it. Filled in when a conversation is read, not stored on the row."""
 
 
 class MessageCreate(BaseModel):

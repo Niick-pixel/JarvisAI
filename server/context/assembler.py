@@ -166,8 +166,14 @@ def _protected_ids(blocks: list[ContextBlock]) -> set[str]:
     return protected
 
 
-def to_prompt_messages(assembly: ContextAssembly, path: list[Message]) -> list[PromptMessage]:
-    """Turn the surviving blocks back into provider messages, in block order."""
+def to_prompt_messages(
+    assembly: ContextAssembly,
+    path: list[Message],
+    images: dict[str, list[str]] | None = None,
+) -> list[PromptMessage]:
+    """Turn the surviving blocks back into provider messages, in block order. `images` maps a
+    message id to its pictures, which travel with that message's history block."""
+    images = images or {}
     roles = {m.id: m.role for m in path}
     out: list[PromptMessage] = []
     for block in assembly.blocks:
@@ -179,7 +185,11 @@ def to_prompt_messages(assembly: ContextAssembly, path: list[Message]) -> list[P
             out.append(PromptMessage(role="system", content=block.content))
         elif block.kind == "history":
             out.append(
-                PromptMessage(role=roles.get(block.source_ref or "", "user"), content=block.content)
+                PromptMessage(
+                    role=roles.get(block.source_ref or "", "user"),
+                    content=block.content,
+                    images=images.get(block.source_ref or "", []),
+                )
             )
         else:
             # Retrieved material is data, never instructions (BRIEF.md 7).

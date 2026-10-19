@@ -127,3 +127,4 @@ export type JournalAnswer = S["JournalAnswer"];
 export type Trade = S["Trade"];
 export type Breakdown = S["Breakdown"];
 export type WakeStatus = S["WakeStatus"];
+export type Attachment = S["Attachment"];

@@ -1,13 +1,19 @@
 """What the window can ask the desktop for, through pywebview's JS bridge.
 
-Only one thing today: a native folder picker, so adding a folder to Knowledge is "Choose folder"
-and not "type a path". The page calls `window.pywebview.api.pick_folder()`; in a plain browser
-that object does not exist and the page falls back to a text field.
+A native folder picker, so adding a folder is "Choose folder" and not "type a path"; and a
+screenshot that does not include Jarvis itself - the window steps aside for the capture. The page
+calls `window.pywebview.api.<name>()`; in a plain browser that object does not exist and the page
+falls back (a text field; the server-side capture).
 """
 
 from __future__ import annotations
 
+import time
 from typing import Any
+
+import httpx
+
+from server import screen
 
 
 class Bridge:
@@ -16,11 +22,28 @@ class Bridge:
     its size, position and DOM getters, which on Windows wait for the UI thread - the thread
     doing the walk - and the app froze at "Not Responding" on its first launch."""
 
-    def __init__(self) -> None:
+    def __init__(self, url: str = "") -> None:
         self._window: Any = None
+        self._url = url
 
     def _attach(self, window: Any) -> None:
         self._window = window
+
+    def capture_screen(self) -> dict[str, Any] | None:
+        """Hide the window, capture the screen behind it, bring it back, store the image."""
+        window = self._window
+        if window is not None:
+            window.hide()
+            time.sleep(0.35)  # let the compositor actually take it off the screen
+        try:
+            png = screen.grab_png()
+        except screen.NoScreen:
+            return None
+        finally:
+            if window is not None:
+                window.show()
+        response = httpx.post(f"{self._url}/api/attachments", content=png, timeout=30.0)
+        return response.json() if response.status_code == 200 else None
 
     def pick_folder(self) -> str | None:
         import webview

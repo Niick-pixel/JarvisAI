@@ -15,6 +15,7 @@ import httpx
 from server.models.params import SamplingParams
 from server.models.provider import Capabilities, ModelInfo, ProviderInfo, ProviderKind
 from server.models.stream import Alternative
+from server.providers import names
 from server.providers.base import (
     PromptMessage,
     ProviderError,
@@ -99,6 +100,7 @@ class OpenAICompatProvider:
                     ctx_len_max=int(ctx) if ctx else self.default_ctx,
                     supports_logprobs=caps.logprobs,
                     supports_prefix=caps.prefix_continuation,
+                    supports_vision=names.looks_visual(raw_id) or entry.get("type") == "vlm",
                 )
             )
         return out
@@ -114,7 +116,7 @@ class OpenAICompatProvider:
         model_name: str,
         assistant_prefix: str | None,
     ) -> dict[str, Any]:
-        payload = [m.model_dump() for m in messages]
+        payload: list[dict[str, Any]] = [_message(m) for m in messages]
         if assistant_prefix:
             payload.append({"role": "assistant", "content": assistant_prefix})
         body: dict[str, Any] = {
@@ -201,3 +203,12 @@ def _logprobs_for(choice: dict[str, Any]) -> tuple[float | None, list[Alternativ
         for a in entry.get("top_logprobs", [])
     ]
     return float(entry.get("logprob", 0.0)), alts or None
+
+
+def _message(m: PromptMessage) -> dict[str, Any]:
+    """OpenAI's shape: plain text, or text plus image parts when the message carries images."""
+    if not m.images:
+        return m.plain()
+    parts: list[dict[str, Any]] = [{"type": "text", "text": m.content}]
+    parts += [{"type": "image_url", "image_url": {"url": url}} for url in m.images]
+    return {"role": m.role, "content": parts}

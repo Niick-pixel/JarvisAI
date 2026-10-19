@@ -44,3 +44,15 @@ def friendly(path: str) -> str:
         else:
             out.append(word)
     return " ".join(out)
+
+
+VISION_NAME = re.compile(
+    r"(^|[-_.:/ ])(vl|vision|llava|bakllava|pixtral|moondream|minicpm-?v|gemma-?3|qwen2\.5-?vl"
+    r"|qwen2-?vl|internvl|smolvlm|granite-?vision|mistral-small-3)",
+    re.IGNORECASE,
+)
+
+
+def looks_visual(name: str) -> bool:
+    """A model whose name says it sees - the best a backend with no capability report allows."""
+    return bool(VISION_NAME.search(name))

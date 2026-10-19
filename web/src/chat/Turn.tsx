@@ -34,6 +34,15 @@ export function UserTurn({ message }: { message: Message }) {
   }
   return (
     <motion.div {...arrive} className="group flex flex-col items-end">
+      {(message.attachments ?? []).length > 0 && (
+        <div className="mb-1.5 flex max-w-[85%] flex-wrap justify-end gap-1.5">
+          {(message.attachments ?? []).map((a) => (
+            <a key={a.id} href={a.url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-2xl border border-ink/[0.08]">
+              <img src={a.url} alt={a.source === "screen" ? "Screenshot" : "Image"} className="max-h-48 max-w-[260px] object-cover" />
+            </a>
+          ))}
+        </div>
+      )}
       <div className="max-w-[85%] whitespace-pre-wrap rounded-[22px] rounded-br-lg bg-bubble px-5 py-3 text-[15.5px] leading-relaxed text-ink">
         {message.content}
       </div>

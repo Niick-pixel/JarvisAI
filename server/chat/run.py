@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
+from server import attachments
 from server.chat import budget, routing, titles
 from server.chat.steering import resolve_steering
 from server.context.assembler import assemble, to_prompt_messages
@@ -57,6 +58,7 @@ async def prepare(
         request.model_id,
         text=_question(db, request),
         conversation_id=request.conversation_id,
+        needs_vision=_sees(db, request),
     )
     provider, model = await registry.resolve(chosen.model_id)
     with db.session() as conn:
@@ -80,6 +82,8 @@ async def prepare(
             )
             messages.append(user_message)
             parent_id = user_message.id
+            if request.attachments:
+                attachments.link(conn, request.attachments, conversation.id, user_message.id)
         if parent_id is None:
             raise SovereignError("invalid_request", "Nothing to generate from: send a message.")
 
@@ -133,7 +137,8 @@ async def prepare(
             chunks=chunks,
             web_results=web_results,
         )
-        prompt = to_prompt_messages(assembly, path)
+        images = attachments.images_for(conn, settings.paths.data_dir, conversation.id)
+        prompt = to_prompt_messages(assembly, path, images)
 
         assistant = repo.messages.create(
             conn,
@@ -176,6 +181,20 @@ async def prepare(
         ctx_len=ctx_len,
         assistant_prefix=prefix,
     )
+
+
+def _sees(db: Database, request: ChatRequest) -> bool:
+    """Does the turn being answered carry an image - new with this message, or on the one being
+    re-answered? Only then must the model be one that can see."""
+    if request.attachments:
+        return True
+    if not request.parent_id or request.content is not None:
+        return False
+    with db.session() as conn:
+        found = conn.execute(
+            "SELECT 1 FROM attachments WHERE message_id = ? LIMIT 1", (request.parent_id,)
+        ).fetchone()
+    return found is not None
 
 
 def _question(db: Database, request: ChatRequest) -> str:

@@ -1,5 +1,7 @@
 // The left side of the composer: "+" for the bigger tools, and how hard to think.
-import { BookOpen, BrainCircuit, Globe, Lightbulb, Plus, Users, Wrench, X, Zap } from "lucide-react";
+import { BookOpen, BrainCircuit, Globe, ImagePlus, Lightbulb, Plus, ScreenShare, Users, Wrench, X, Zap } from "lucide-react";
+import { useRef } from "react";
+import { useAttachments } from "../store/attachments";
 import { useSession } from "../store/session";
 import { type ThinkMode, useUi } from "../store/ui";
 import { IconButton } from "../ui/controls";
@@ -50,9 +52,21 @@ export default function ComposerTools() {
   const think = useUi((s) => s.think);
   const setThink = useUi((s) => s.setThink);
   const openSheet = useUi((s) => s.openSheet);
+  const picker = useRef<HTMLInputElement>(null);
 
   return (
     <div className="flex items-center gap-1">
+      <input
+        ref={picker}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(event) => {
+          void useAttachments.getState().addFiles(Array.from(event.target.files ?? []));
+          event.target.value = "";
+        }}
+      />
       <Menu
         place="top-start"
         width={300}
@@ -65,6 +79,20 @@ export default function ComposerTools() {
             icon: Globe,
             checked: research,
             onSelect: () => setResearch(!research),
+          },
+          {
+            key: "photo",
+            label: "Add a photo",
+            detail: "Ask about a picture, a chart or a document - or paste or drop one",
+            icon: ImagePlus,
+            onSelect: () => picker.current?.click(),
+          },
+          {
+            key: "screen",
+            label: "Look at my screen",
+            detail: "A screenshot to ask about. In the app: Ctrl+Shift+Space from anywhere",
+            icon: ScreenShare,
+            onSelect: () => void useAttachments.getState().captureScreen(),
           },
           {
             key: "tools",

@@ -37,6 +37,8 @@ hiddenimports = (
     collect_submodules("server")
     + collect_submodules("uvicorn")
     + collect_submodules("apscheduler")
+    # mss picks its platform module (mss.windows) by name at runtime, like pywebview does.
+    + collect_submodules("mss")
     + ["webview"]
 )
 
