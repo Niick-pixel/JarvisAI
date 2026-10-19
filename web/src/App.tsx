@@ -9,6 +9,7 @@ import Home from "./chat/Home";
 import Thread from "./chat/Thread";
 import CaptureCard from "./memory/CaptureCard";
 import GetModel from "./models/GetModel";
+import EdgeGlow from "./shell/EdgeGlow";
 import Halo from "./shell/Halo";
 import ModelPill from "./shell/ModelPill";
 import SheetHost from "./shell/SheetHost";
@@ -56,6 +57,7 @@ export default function App() {
     <div className="flex h-full">
       <Sidebar />
       <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-bg">
+        <EdgeGlow busy={busy || listening} />
         <Halo
           state={listening ? "listening" : busy ? "busy" : "rest"}
           placement={hasTurns ? "bottom" : "center"}
