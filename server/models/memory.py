@@ -25,6 +25,11 @@ class MemoryEntry(BaseModel):
     """Groups one auto-extraction, so undo removes exactly what that pass wrote."""
     created_at: int = 0
     updated_at: int = 0
+    source_conversation_id: str | None = None
+    """The chat it was learned in, so the timeline can take you back there."""
+    source_message_id: str | None = None
+    source_title: str | None = None
+    """That chat's title, looked up when listed. None once the chat is deleted."""
     retrieved_count: int = 0
     last_used_at: int | None = None
 

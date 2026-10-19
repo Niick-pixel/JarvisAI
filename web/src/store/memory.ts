@@ -1,6 +1,7 @@
 // Memory: the facts on disk, and the batch the last turn just wrote.
 import { create } from "zustand";
 import { api } from "../api/client";
+import { memoryApi } from "../api/memory";
 import type { MemoryBatch, MemoryEntry } from "../api/types";
 
 interface MemoryState {
@@ -12,6 +13,11 @@ interface MemoryState {
   add: (title: string, content: string, always: boolean) => Promise<void>;
   edit: (id: string, patch: { title?: string; content?: string; always?: boolean }) => Promise<void>;
   forget: (id: string) => Promise<void>;
+  /** Forget everything one chat taught. */
+  forgetChat: (conversationId: string) => Promise<void>;
+  /** What the last forget removed, kept just long enough to undo it. */
+  forgotten: MemoryEntry[] | null;
+  undoForget: () => Promise<void>;
   awaitCapture: (messageId: string) => Promise<void>;
   undoCapture: () => Promise<void>;
   dismissCapture: () => void;
@@ -21,6 +27,7 @@ export const useMemory = create<MemoryState>((set, get) => ({
   entries: [],
   lastCapture: null,
   loading: false,
+  forgotten: null,
 
   refresh: async () => {
     set({ loading: true });
@@ -43,7 +50,22 @@ export const useMemory = create<MemoryState>((set, get) => ({
 
   /** A hard delete: the Markdown file is removed and the index rebuilt. */
   forget: async (id) => {
+    const entry = get().entries.find((e) => e.id === id);
     await api.forgetMemory(id);
+    set({ forgotten: entry ? [entry] : null });
+    await get().refresh();
+  },
+
+  forgetChat: async (conversationId) => {
+    const gone = await memoryApi.forgetChat(conversationId);
+    set({ forgotten: gone.length ? gone : null });
+    await get().refresh();
+  },
+
+  undoForget: async () => {
+    const back = get().forgotten;
+    set({ forgotten: null });
+    if (back) await memoryApi.restore(back);
     await get().refresh();
   },
 

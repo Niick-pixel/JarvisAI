@@ -4,7 +4,7 @@ One file per fact. It makes git diffs readable, makes "forget this" an `rm`, and
 store is inspectable with `cat` and `grep` - which is the difference between memory you own and
 memory a product keeps about you.
 
-Front-matter is parsed by hand rather than with a YAML dependency: the format is six known keys,
+Front-matter is parsed by hand rather than with a YAML dependency: the format is seven known keys,
 and a parser you can read in one screen is worth more here than generality.
 """
 
@@ -48,6 +48,7 @@ def serialize(entry: MemoryEntry) -> str:
             f"always: {'true' if entry.always else 'false'}",
             f"source: {entry.source}",
             f"batch: {entry.batch_id or ''}",
+            f"from: {entry.source_conversation_id or ''} {entry.source_message_id or ''}".rstrip(),
             f"created: {entry.created_at}",
             "---",
         ]
@@ -74,6 +75,7 @@ def parse(path: Path, root: Path) -> MemoryEntry | None:
     relative = path.relative_to(root).as_posix()
     scope, scope_ref = scope_of(relative)
     created = int(fields.get("created") or now_ms())
+    chat, _, message = fields.get("from", "").partition(" ")
     return MemoryEntry(
         id=fields.get("id") or new_id("mem"),
         path=relative,
@@ -84,6 +86,8 @@ def parse(path: Path, root: Path) -> MemoryEntry | None:
         always=fields.get("always", "false").lower() == "true",
         source="auto" if fields.get("source") == "auto" else "manual",
         batch_id=fields.get("batch") or None,
+        source_conversation_id=chat or None,
+        source_message_id=message.strip() or None,
         created_at=created,
         updated_at=int(path.stat().st_mtime * 1000),
     )

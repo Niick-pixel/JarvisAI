@@ -105,6 +105,8 @@ async def capture(state: AppState, prepared: PreparedRun) -> MemoryBatch:
                 content=fact,
                 source="auto",
                 batch_id=batch_id,
+                source_conversation_id=prepared.conversation_id,
+                source_message_id=prepared.message_id,
                 created_at=now_ms(),
                 updated_at=now_ms(),
             )
