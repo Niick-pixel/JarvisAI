@@ -11,7 +11,7 @@ class Attachment(BaseModel):
     id: str
     mime: str
     bytes: int
-    source: Literal["upload", "screen"] = "upload"
+    source: Literal["upload", "screen", "generated"] = "upload"
     message_id: str | None = None
     created_at: int
     url: str

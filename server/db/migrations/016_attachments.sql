@@ -6,7 +6,7 @@ CREATE TABLE attachments (
   message_id      TEXT REFERENCES messages(id) ON DELETE CASCADE,
   mime            TEXT NOT NULL,
   bytes           INTEGER NOT NULL,
-  source          TEXT NOT NULL DEFAULT 'upload' CHECK (source IN ('upload','screen')),
+  source          TEXT NOT NULL DEFAULT 'upload' CHECK (source IN ('upload','screen','generated')),
   created_at      INTEGER NOT NULL
 );
 CREATE INDEX idx_attachments_message ON attachments(message_id);

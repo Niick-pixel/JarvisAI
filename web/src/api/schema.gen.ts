@@ -2481,7 +2481,7 @@ export interface components {
              * @default upload
              * @enum {string}
              */
-            source: "upload" | "screen";
+            source: "upload" | "screen" | "generated";
             /** Url */
             url: string;
         };
