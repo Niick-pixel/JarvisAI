@@ -119,7 +119,12 @@ class FakeProvider:
 @pytest.fixture
 def settings(tmp_path: Path) -> Settings:
     return load_settings(
-        paths={"data_dir": str(tmp_path / "data"), "models_dir": str(tmp_path / "models")},
+        paths={
+            "data_dir": str(tmp_path / "data"),
+            "models_dir": str(tmp_path / "models"),
+            # Never the real ./memory: a test that writes there leaks into the next run.
+            "memory_dir": str(tmp_path / "memory"),
+        },
         providers={
             "llamacpp": {"enabled": False},
             "ollama": {"enabled": False},

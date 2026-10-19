@@ -116,11 +116,13 @@ def sync(conn: sqlite3.Connection, root: Path) -> int:
     for entry in entries:
         conn.execute(
             "INSERT INTO memory_entries (id, path, scope, scope_ref, title, content, content_hash,"
-            " always, source, batch_id, created_at, updated_at)"
-            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"
+            " always, source, batch_id, created_at, updated_at, source_conversation_id,"
+            " source_message_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
             " ON CONFLICT(path) DO UPDATE SET title=excluded.title, content=excluded.content,"
             " content_hash=excluded.content_hash, always=excluded.always, scope=excluded.scope,"
-            " scope_ref=excluded.scope_ref, updated_at=excluded.updated_at",
+            " scope_ref=excluded.scope_ref, updated_at=excluded.updated_at,"
+            " source_conversation_id=excluded.source_conversation_id,"
+            " source_message_id=excluded.source_message_id",
             (
                 entry.id,
                 entry.path,
@@ -134,6 +136,8 @@ def sync(conn: sqlite3.Connection, root: Path) -> int:
                 entry.batch_id,
                 entry.created_at,
                 entry.updated_at,
+                entry.source_conversation_id,
+                entry.source_message_id,
             ),
         )
 
@@ -157,7 +161,8 @@ def _row(row: sqlite3.Row) -> MemoryEntry:
 
 COLUMNS = (
     "e.id, e.path, e.scope, e.scope_ref, e.title, e.content, e.always, e.source, e.batch_id,"
-    " e.created_at, e.updated_at,"
+    " e.created_at, e.updated_at, e.source_conversation_id, e.source_message_id,"
+    " (SELECT title FROM conversations c WHERE c.id = e.source_conversation_id) AS source_title,"
     " (SELECT COUNT(*) FROM memory_usage u WHERE u.entry_id = e.id) AS retrieved_count,"
     " (SELECT MAX(used_at) FROM memory_usage u WHERE u.entry_id = e.id) AS last_used_at"
 )

@@ -1247,6 +1247,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/memory/from-conversation/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Forget Chat
+         * @description Forget everything one chat taught. Returns what went, so the client can offer undo.
+         */
+        delete: operations["forget_chat_api_memory_from_conversation__conversation_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/memory/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restore
+         * @description Undo a forget: the same facts, ids and origins written back as files.
+         */
+        post: operations["restore_api_memory_restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/memory/{entry_id}": {
         parameters: {
             query?: never;
@@ -1277,6 +1317,23 @@ export interface paths {
         };
         /** History */
         get: operations["history_api_memory__entry_id__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/memory/{entry_id}/uses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Uses */
+        get: operations["uses_api_memory__entry_id__uses_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3388,6 +3445,12 @@ export interface components {
              * @enum {string}
              */
             source: "manual" | "auto";
+            /** Source Conversation Id */
+            source_conversation_id?: string | null;
+            /** Source Message Id */
+            source_message_id?: string | null;
+            /** Source Title */
+            source_title?: string | null;
             /**
              * Title
              * @default
@@ -3407,6 +3470,20 @@ export interface components {
             content?: string | null;
             /** Title */
             title?: string | null;
+        };
+        /**
+         * MemoryUse
+         * @description One chat this memory was put in front of the model, most recent use first.
+         */
+        MemoryUse: {
+            /** Conversation Id */
+            conversation_id: string;
+            /** Last Used At */
+            last_used_at: number;
+            /** Times */
+            times: number;
+            /** Title */
+            title: string;
         };
         /** MergeRequest */
         MergeRequest: {
@@ -6771,6 +6848,70 @@ export interface operations {
             };
         };
     };
+    forget_chat_api_memory_from_conversation__conversation_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryEntry"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_api_memory_restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemoryEntry"][];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForgetResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     forget_api_memory__entry_id__delete: {
         parameters: {
             query?: never;
@@ -6855,6 +6996,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Commit"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    uses_api_memory__entry_id__uses_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryUse"][];
                 };
             };
             /** @description Validation Error */
