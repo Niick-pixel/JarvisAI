@@ -3,6 +3,7 @@
 // On a phone the menu becomes a row of chips above the page.
 import type { LucideIcon } from "lucide-react";
 import {
+  AtSign,
   Code2,
   Database,
   Image,
@@ -18,6 +19,7 @@ import {
 import { type ReactNode, useState } from "react";
 import Sheet from "../shell/Sheet";
 import { FIELD } from "../ui/controls";
+import AccountsSettings from "./AccountsSettings";
 import BriefingSettings from "./BriefingSettings";
 import DataSettings from "./DataSettings";
 import ImageSettings from "./ImageSettings";
@@ -87,6 +89,13 @@ const GROUPS: { title: string; pages: Page[] }[] = [
   {
     title: "Connections",
     pages: [
+      {
+        id: "accounts",
+        label: "Accounts",
+        icon: AtSign,
+        keywords: "gmail email mail github token connect home assistant",
+        render: () => <AccountsSettings />,
+      },
       {
         id: "phone",
         label: "Phone",
