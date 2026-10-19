@@ -8,6 +8,7 @@ import Orb from "../brand/Orb";
 import Sheet from "../shell/Sheet";
 import { useDownloads } from "../store/downloads";
 import { Button } from "../ui/controls";
+import { useConfirm } from "../ui/confirm";
 import { GLIDE } from "../ui/motion";
 
 const FIT: Record<string, string> = {
@@ -21,7 +22,9 @@ const ACTIVE = ["resolving", "downloading", "verifying"];
 
 function size(bytes: number | null | undefined): string {
   if (!bytes) return "";
-  return bytes >= 1e9 ? `${(bytes / 1e9).toFixed(1)} GB` : `${Math.round(bytes / 1e6)} MB`;
+  return bytes >= 1e9
+    ? `${(bytes / 1e9).toFixed(1)} GB`
+    : `${Math.round(bytes / 1e6)} MB`;
 }
 
 function Progress() {
@@ -39,11 +42,13 @@ function Progress() {
         <Orb size={32} state={busy ? "thinking" : "idle"} />
         <div className="min-w-0 flex-1">
           <p className="text-[15px] font-medium text-ink">
-            {done ? `${progress.display_name} is ready` : `Getting ${progress.display_name}`}
+            {done
+              ? `${progress.display_name} is ready`
+              : `Getting ${progress.display_name}`}
           </p>
           <p className="text-[13px] text-ink-faint">
             {done
-              ? launch?.detail ?? ""
+              ? (launch?.detail ?? "")
               : `${size(progress.bytes_done) || "0 MB"} of ${size(total) || "…"}${progress.detail ? ` · ${progress.detail}` : ""}`}
           </p>
         </div>
@@ -55,36 +60,94 @@ function Progress() {
       </div>
       {!done && (
         <div className="mt-4 h-2 overflow-hidden rounded-full bg-ink/[0.07]">
-          <motion.div className="h-full rounded-full bg-accent" animate={{ width: `${fraction * 100}%` }} transition={GLIDE} />
+          <motion.div
+            className="h-full rounded-full bg-accent"
+            animate={{ width: `${fraction * 100}%` }}
+            transition={GLIDE}
+          />
         </div>
       )}
     </div>
   );
 }
 
+/** Heavy models ask first, with the numbers: a 13 GB download that then crawls is worse than none. */
+async function get(
+  rec: ModelRecommendation,
+  start: (key: string) => Promise<void>,
+) {
+  if (rec.weight === "heavy") {
+    const yes = await useConfirm.getState().ask({
+      title: `${rec.display_name} is heavy for this PC`,
+      body: `${rec.warning}${rec.download_size_bytes ? ` The download is ${size(rec.download_size_bytes)}.` : ""}`,
+      confirm: "Download anyway",
+      danger: rec.words_per_sec < 8,
+    });
+    if (!yes) return;
+  }
+  await start(rec.key);
+}
+
+const WEIGHT: Record<string, { label: string; tone: string }> = {
+  heavy: { label: "Heavy", tone: "bg-accent/12 text-accent" },
+  too_heavy: { label: "Too big for this PC", tone: "bg-danger/10 text-danger" },
+};
+
 function Card({ rec, best }: { rec: ModelRecommendation; best: boolean }) {
   const start = useDownloads((s) => s.start);
+  const badge = WEIGHT[rec.weight];
   const busy = useDownloads((s) => ACTIVE.includes(s.progress?.state ?? ""));
   return (
-    <div className={`flex items-start gap-4 rounded-3xl p-4 transition-colors ${best ? "bg-ink/[0.04]" : "hover:bg-ink/[0.03]"}`}>
+    <div
+      className={`flex items-start gap-4 rounded-3xl p-4 transition-colors ${best ? "bg-ink/[0.04]" : "hover:bg-ink/[0.03]"}`}
+    >
       <div className="min-w-0 flex-1">
         <p className="flex items-center gap-2 text-[15px] font-medium text-ink">
           {rec.display_name}
-          {best && <span className="rounded-full bg-accent/12 px-2 py-0.5 text-[11.5px] font-medium text-accent">Best for this PC</span>}
+          {best && (
+            <span className="rounded-full bg-accent/12 px-2 py-0.5 text-[11.5px] font-medium text-accent">
+              Best for this PC
+            </span>
+          )}
+          {badge && (
+            <span
+              className={`rounded-full px-2 py-0.5 text-[11.5px] font-medium ${badge.tone}`}
+            >
+              {badge.label}
+            </span>
+          )}
         </p>
         <p className="mt-0.5 text-[12.5px] text-ink-faint">
           {FIT[rec.status] ?? FIT.unavailable}
           {rec.download_size_bytes ? ` · ${size(rec.download_size_bytes)}` : ""}
         </p>
-        <p className="mt-1.5 text-[13.5px] leading-snug text-ink-muted">{rec.why}</p>
-        {rec.note && <p className="mt-1 text-[12.5px] text-ink-faint">{rec.note}</p>}
+        <p className="mt-1.5 text-[13.5px] leading-snug text-ink-muted">
+          {rec.why}
+        </p>
+        {rec.warning ? (
+          <p
+            className={`mt-1.5 text-[12.5px] leading-snug ${rec.weight === "too_heavy" ? "text-danger" : "text-ink"}`}
+          >
+            {rec.warning}
+          </p>
+        ) : (
+          rec.note && (
+            <p className="mt-1 text-[12.5px] text-ink-faint">{rec.note}</p>
+          )
+        )}
       </div>
       {rec.installed ? (
         <span className="inline-flex h-8 items-center gap-1 text-[13px] text-success">
           <Check size={16} strokeWidth={2} /> Installed
         </span>
       ) : (
-        <Button small tone={best ? "primary" : "secondary"} icon={Download} disabled={busy} onClick={() => void start(rec.key)}>
+        <Button
+          small
+          tone={best ? "primary" : "secondary"}
+          icon={Download}
+          disabled={busy || rec.weight === "too_heavy"}
+          onClick={() => void get(rec, start)}
+        >
           Get
         </Button>
       )}
@@ -97,7 +160,9 @@ export default function GetModel() {
   const hide = useDownloads((s) => s.hide);
   const catalog = useDownloads((s) => s.catalog);
   const error = useDownloads((s) => s.error);
-  const bestKey = catalog.find((r) => !r.installed && r.status === "fits")?.key ?? catalog[0]?.key;
+  const bestKey =
+    catalog.find((r) => !r.installed && r.status === "fits")?.key ??
+    catalog[0]?.key;
 
   return (
     <AnimatePresence>
@@ -109,16 +174,25 @@ export default function GetModel() {
           width={640}
         >
           <Progress />
-          {error && <p className="mb-3 rounded-2xl bg-danger/[0.07] px-4 py-2.5 text-[13px] text-ink">{error}</p>}
-          {catalog.length === 0 && <p className="shimmer py-6 text-center text-[14px] font-medium">Looking at this PC</p>}
+          {error && (
+            <p className="mb-3 rounded-2xl bg-danger/[0.07] px-4 py-2.5 text-[13px] text-ink">
+              {error}
+            </p>
+          )}
+          {catalog.length === 0 && (
+            <p className="shimmer py-6 text-center text-[14px] font-medium">
+              Looking at this PC
+            </p>
+          )}
           <div className="-mx-4">
             {catalog.map((rec) => (
               <Card key={rec.key} rec={rec} best={rec.key === bestKey} />
             ))}
           </div>
           <p className="mt-4 text-[12.5px] leading-relaxed text-ink-faint">
-            Downloads come straight from each model's official page, are checked against their fingerprint, and pick up where they
-            left off if the connection drops.
+            Downloads come straight from each model's official page, are checked
+            against their fingerprint, and pick up where they left off if the
+            connection drops.
           </p>
         </Sheet>
       )}

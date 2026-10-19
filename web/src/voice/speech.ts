@@ -3,19 +3,30 @@
 
 /** Markdown is for eyes. Code is summarised rather than read out symbol by symbol. */
 export function speakable(markdown: string): string {
-  return markdown
-    .replace(/```[\s\S]*?(```|$)/g, " I've put the code on screen. ")
-    .replace(/`([^`]*)`/g, "$1")
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
-    .replace(/^\s{0,3}(#{1,6}|>|[-*+]|\d+\.)\s+/gm, "")
-    .replace(/[*_~|]+/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  return (
+    markdown
+      .replace(/```[\s\S]*?(```|$)/g, " I've put the code on screen. ")
+      .replace(/`([^`]*)`/g, "$1")
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+      .replace(/^\s{0,3}(#{1,6}|>|[-*+]|\d+\.)\s+/gm, "")
+      .replace(/[*_~|]+/g, "")
+      // Emoji are read by their Unicode names ("thumbs up sign"); a sentence of only emoji says nothing.
+      .replace(
+        /[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}\u{1F3FB}-\u{1F3FF}\u200d\ufe0f]/gu,
+        "",
+      )
+      .replace(/\s+/g, " ")
+      .trim()
+  );
 }
 
 /** Complete sentences in `text` from `from` on, and where the next unread one starts. */
-export function sentences(text: string, from: number, final: boolean): { parts: string[]; next: number } {
+export function sentences(
+  text: string,
+  from: number,
+  final: boolean,
+): { parts: string[]; next: number } {
   const parts: string[] = [];
   const boundary = /[.!?](?=\s)|\n\n/g;
   boundary.lastIndex = from;

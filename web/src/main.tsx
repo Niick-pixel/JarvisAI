@@ -5,6 +5,23 @@ import "./design/theme";
 import App from "./App";
 import "./index.css";
 
+// Anything that escapes React still reaches jarvis.log, so a crash leaves a trace to send.
+function report(where: string, error: unknown) {
+  const message =
+    error instanceof Error
+      ? String(error.stack || error.message)
+      : String(error);
+  void fetch("/api/client-errors", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ where, message: message.slice(0, 8000) }),
+  }).catch(() => undefined);
+}
+window.addEventListener("error", (e) => report("window", e.error ?? e.message));
+window.addEventListener("unhandledrejection", (e) =>
+  report("promise", e.reason),
+);
+
 const container = document.getElementById("root");
 if (!container) throw new Error("#root is missing from index.html");
 

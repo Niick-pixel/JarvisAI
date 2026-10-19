@@ -107,7 +107,9 @@ def scope_for(tool: Tool, target: str, ctx: ToolContext) -> str:
     """What "always allow here" would mean for this call: a directory, a host, or the workspace."""
     if tool.target_kind == "path":
         try:
-            resolved = Path(target).expanduser().resolve()
+            # A relative path is relative to where the tool runs, not to wherever Jarvis started.
+            path = Path(target).expanduser()
+            resolved = (path if path.is_absolute() else ctx.sandbox.cwd / path).resolve()
         except OSError:
             return ""
         return str(resolved.parent if resolved.suffix else resolved)

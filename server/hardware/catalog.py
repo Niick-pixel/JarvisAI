@@ -10,7 +10,8 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
-from server.hardware.recommend import budget_for, max_ctx_for
+from server.hardware import heavy
+from server.hardware.recommend import budget_for, max_ctx_for, weights_mb
 from server.models.hardware import FitStatus, GpuInfo, ModelRecommendation, VramBudget
 from server.models.provider import ModelInfo
 
@@ -27,6 +28,7 @@ def rank_catalog(
     browser_reserve_mb: int,
     kv_dtype: str = "q8_0",
     installed: set[str] | None = None,
+    ram_mb: int | None = None,
 ) -> list[ModelRecommendation]:
     """Rank by what fits, largest-that-fits first. Oversized models stay visible with the reason."""
     installed = installed or set()
@@ -56,6 +58,15 @@ def rank_catalog(
             params_b=params_b,
         )
         status, note = _status_for(budget, ctx, int(entry["ctx_len_max"]), gpu)
+        active = entry.get("active_params_b")
+        weight, speed, warning = heavy.assess(
+            display_name=entry["display_name"],
+            weights_mb=weights_mb(size_bytes=None, params_b=params_b, quant=entry.get("quant")),
+            params_b=params_b,
+            active_b=float(active) if active else None,
+            gpu=gpu,
+            ram_mb=ram_mb,
+        )
         out.append(
             ModelRecommendation(
                 key=entry["key"],
@@ -69,6 +80,10 @@ def rank_catalog(
                 note=note,
                 tags=list(entry.get("tags", [])),
                 installed=entry["key"] in installed,
+                active_params_b=float(active) if active else None,
+                weight=weight,
+                words_per_sec=speed,
+                warning=warning,
             )
         )
     order: dict[FitStatus, int] = {"fits": 0, "tight": 1, "needs_offload": 2, "unavailable": 3}

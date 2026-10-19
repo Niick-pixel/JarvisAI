@@ -7,6 +7,7 @@ import type { LiveSymbol } from "../api/types";
 import { useTrading } from "../store/trading";
 import { Empty } from "../ui/controls";
 import Alerts from "./Alerts";
+import { whenVisible } from "../ui/visible";
 
 const CLOCK = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
@@ -103,7 +104,7 @@ export default function Live() {
   useEffect(() => {
     void refreshAll().catch(() => undefined);
     const timer = window.setInterval(
-      () => void refreshLive().catch(() => undefined),
+      whenVisible(() => void refreshLive().catch(() => undefined)),
       5000,
     );
     return () => window.clearInterval(timer);
