@@ -36,6 +36,7 @@ from server.api import (
     memory_timeline,
     messages,
     models_api,
+    prefs,
     search,
     tools,
     trading,
@@ -222,6 +223,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         client_errors.router,
         connections.router,
         data.router,
+        prefs.router,
     ):
         app.include_router(router)
 

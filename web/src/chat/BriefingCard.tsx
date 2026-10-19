@@ -1,8 +1,9 @@
-// The morning briefing, waiting on Home: today's one, readable in place, ready to read aloud or to
-// ask about. Asked for on demand too, from the "Brief me" button underneath the composer.
+// The morning briefing on Home: shown once when a new one has something to say, then out of the
+// way - it counts as read as soon as it has been seen, and closing it closes it. "Brief me" under
+// the composer brings back the latest (or writes one). A briefing with nothing in it never shows.
 import { motion } from "framer-motion";
 import { MessageSquare, RefreshCw, Square, Sun, Volume2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useBriefing } from "../store/briefing";
 import { useSession } from "../store/session";
 import { useVoice } from "../store/voice";
@@ -13,24 +14,26 @@ import Markdown from "./Markdown";
 const FRESH_MS = 18 * 3_600_000;
 
 export default function BriefingCard() {
-  const { latest, settings, running, load, run, markRead } = useBriefing();
+  const { latest, settings, running, load, run, markRead, open, show, hide } = useBriefing();
   const speak = useVoice((s) => s.speak);
   const hush = useVoice((s) => s.hush);
   const speaking = useVoice((s) => latest !== null && s.speakingId === latest.id);
-  const [hidden, setHidden] = useState(false);
-
   useEffect(() => void load().catch(() => undefined), [load]);
   const fresh = latest && Date.now() - latest.created_at < FRESH_MS;
 
   useEffect(() => {
-    // Read aloud once, the first time Home is opened after it was written - never on every visit.
-    if (fresh && latest && !latest.read_at && settings?.speak) {
-      void speak(latest.id, latest.body);
+    // A new briefing with news: shown (and read aloud, if asked) once, and marked read right away,
+    // so the next visit to Home is clean.
+    if (fresh && latest && !latest.read_at && latest.sections.length > 0) {
+      show();
+      if (settings?.speak) void speak(latest.id, latest.body);
       void markRead();
     }
-  }, [fresh, latest, settings?.speak, speak, markRead]);
+  }, [fresh, latest, settings?.speak, speak, markRead, show]);
+  // Leaving Home (a new chat starts) puts it away; "Brief me" is how it comes back.
+  useEffect(() => hide, [hide]);
 
-  if (!fresh || !latest || hidden) return null;
+  if (!fresh || !latest || !open) return null;
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -51,7 +54,7 @@ export default function BriefingCard() {
           label="Hide"
           size={30}
           onClick={() => {
-            setHidden(true);
+            hide();
             void markRead();
           }}
         />

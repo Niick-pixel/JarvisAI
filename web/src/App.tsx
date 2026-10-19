@@ -57,11 +57,12 @@ export default function App() {
     <div className="flex h-full">
       <Sidebar />
       <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-bg">
-        <EdgeGlow busy={busy || listening} />
-        <Halo
-          state={listening ? "listening" : busy ? "busy" : "rest"}
-          placement={hasTurns ? "bottom" : "center"}
-        />
+        {/* Home: the soft glow behind the composer. A chat: small pools drifting along the edges. */}
+        {hasTurns ? (
+          <EdgeGlow busy={busy || listening} />
+        ) : (
+          <Halo state={listening ? "listening" : busy ? "busy" : "rest"} placement="center" />
+        )}
         <header className="relative z-10 flex h-14 shrink-0 items-center gap-1 px-3">
           {narrow && (
             <IconButton
