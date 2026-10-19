@@ -27,6 +27,7 @@ from server.voice.pack import VoicePack
 
 if TYPE_CHECKING:  # the scheduler imports the loop, which imports this module
     from server.agents.scheduler import JobScheduler
+    from server.briefing.service import Briefings
     from server.chat.agentic import ChatAgents
 
 
@@ -57,6 +58,8 @@ class AppState:
     """Files: the folders you opened, and Jarvis's proposed edits waiting for your decision."""
     chat_agents: ChatAgents | None = None
     """Agent-mode chat turns: tool use inside a conversation, through the same gate as jobs."""
+    briefings: Briefings | None = None
+    """The morning briefing: written on your schedule, shown on Home."""
     llama: LlamaServer | None = None
     """The llama-server this process started, if it started one. None when autostart is off."""
     extractions: dict[str, asyncio.Task[MemoryBatch]] = field(default_factory=dict)

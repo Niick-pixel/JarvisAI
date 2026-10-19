@@ -152,6 +152,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/briefing/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Latest */
+        get: operations["latest_api_briefing_latest_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/briefing/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run Now */
+        post: operations["run_now_api_briefing_run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/briefing/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Settings */
+        get: operations["get_settings_api_briefing_settings_get"];
+        /** Put Settings */
+        put: operations["put_settings_api_briefing_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/briefing/{briefing_id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read */
+        post: operations["read_api_briefing__briefing_id__read_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/chat/agent": {
         parameters: {
             query?: never;
@@ -2148,6 +2217,70 @@ export interface components {
             pinned: boolean;
             /** Source Ref */
             source_ref: string;
+        };
+        /** Briefing */
+        Briefing: {
+            /** Body */
+            body: string;
+            /** Conversation Id */
+            conversation_id?: string | null;
+            /** Created At */
+            created_at: number;
+            /** Id */
+            id: string;
+            /** Read At */
+            read_at?: number | null;
+            /** Sections */
+            sections: components["schemas"]["BriefingSection"][];
+            /** Title */
+            title: string;
+        };
+        /** BriefingSection */
+        BriefingSection: {
+            /** Facts */
+            facts: string;
+            /**
+             * Key
+             * @enum {string}
+             */
+            key: "markets" | "home" | "agents";
+            /** Title */
+            title: string;
+        };
+        /** BriefingSettings */
+        BriefingSettings: {
+            /**
+             * Days
+             * @default weekdays
+             * @enum {string}
+             */
+            days: "daily" | "weekdays";
+            /**
+             * Enabled
+             * @default false
+             */
+            enabled: boolean;
+            /** Next At */
+            next_at?: number | null;
+            /**
+             * Sections
+             * @default [
+             *       "markets",
+             *       "home",
+             *       "agents"
+             *     ]
+             */
+            sections: ("markets" | "home" | "agents")[];
+            /**
+             * Speak
+             * @default false
+             */
+            speak: boolean;
+            /**
+             * Time
+             * @default 07:30
+             */
+            time: string;
         };
         /** Candle */
         Candle: {
@@ -4821,6 +4954,130 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuditEntry"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    latest_api_briefing_latest_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Briefing"] | null;
+                };
+            };
+        };
+    };
+    run_now_api_briefing_run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Briefing"];
+                };
+            };
+        };
+    };
+    get_settings_api_briefing_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BriefingSettings"];
+                };
+            };
+        };
+    };
+    put_settings_api_briefing_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BriefingSettings"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BriefingSettings"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_api_briefing__briefing_id__read_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                briefing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

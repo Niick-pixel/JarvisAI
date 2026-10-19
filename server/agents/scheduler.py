@@ -8,6 +8,7 @@ every edit. That also means a job you disable stops firing immediately rather th
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable, Callable
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -32,6 +33,8 @@ class JobScheduler:
     def __init__(self, runtime: loop.Runtime) -> None:
         self.runtime = runtime
         self._scheduler = AsyncIOScheduler(timezone=None)
+        self._builtin: dict[str, tuple[str, Callable[[], Awaitable[object]]]] = {}
+        """App-owned schedules (the morning briefing): not rows in `jobs`, kept across syncs."""
 
     def start(self) -> None:
         self._scheduler.start()
@@ -41,9 +44,21 @@ class JobScheduler:
         if self._scheduler.running:
             self._scheduler.shutdown(wait=False)
 
+    def builtin(self, key: str, cron: str | None, fire: Callable[[], Awaitable[object]]) -> None:
+        """Schedule (or with cron=None, unschedule) one of the app's own recurring tasks."""
+        if cron is None:
+            self._builtin.pop(key, None)
+        else:
+            self._builtin[key] = (cron, fire)
+        self.sync()
+
     def sync(self) -> None:
         """Rebuild the schedule from the table. Called at startup and after any job edit."""
         self._scheduler.remove_all_jobs()
+        for key, (cron, fire) in self._builtin.items():
+            self._scheduler.add_job(
+                fire, CronTrigger.from_crontab(cron), id=f"builtin:{key}", replace_existing=True
+            )
         with self.runtime.db.session() as conn:
             jobs = repo.agents.list_jobs(conn)
         for job in jobs:
