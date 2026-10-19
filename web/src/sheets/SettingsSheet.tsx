@@ -11,6 +11,7 @@ import { type ThinkMode, useUi } from "../store/ui";
 import { useVoice } from "../store/voice";
 import { Button, FIELD, Row, Segmented, Switch } from "../ui/controls";
 import VoicePack from "../voice/VoicePack";
+import LocalModels from "./LocalModels";
 import Machine from "./Machine";
 import Updates from "./Updates";
 
@@ -89,6 +90,10 @@ export default function SettingsSheet() {
             Models
           </Button>
         </Row>
+      </Section>
+
+      <Section title="Models on this PC">
+        <LocalModels />
       </Section>
 
       <Section title="Voice">

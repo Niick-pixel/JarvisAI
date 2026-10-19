@@ -25,6 +25,8 @@ dependencies = [
     "apscheduler>=3.10",
     # Exchange time zones (America/Chicago for CME). Windows has no IANA database of its own.
     "tzdata>=2024.1",
+    # Files: edit Word documents paragraph by paragraph, keeping their formatting.
+    "python-docx>=1.1",
 ]
 
 [project.optional-dependencies]
