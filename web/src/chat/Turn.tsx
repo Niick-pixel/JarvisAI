@@ -82,7 +82,11 @@ export function AssistantTurn({ message, streaming }: { message: Message; stream
 
         {(message.attachments ?? []).map((a) => (
           <a key={a.id} href={a.url} download={`jarvis-${a.id}.png`} title="Save this picture" className="mb-2 block w-fit overflow-hidden rounded-3xl border border-ink/[0.07]">
-            <img src={a.url} alt="A picture Jarvis made" className="max-h-[420px] max-w-full" />
+            {a.mime.startsWith("video/") ? (
+              <video src={a.url} controls loop autoPlay muted playsInline className="max-h-[420px] max-w-full" />
+            ) : (
+              <img src={a.url} alt="A picture Jarvis made" className="max-h-[420px] max-w-full" />
+            )}
           </a>
         ))}
         {editing ? (

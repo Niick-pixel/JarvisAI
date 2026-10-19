@@ -15,13 +15,21 @@ from server.ids import new_id, now_ms
 from server.models.attachments import Attachment
 
 MAX_BYTES = 12 * 1024 * 1024
+MAX_VIDEO_BYTES = 80 * 1024 * 1024
+"""A generated clip. Never an upload: only Jarvis's own video model writes these."""
 MAGIC = {
     b"\x89PNG\r\n\x1a\n": "image/png",
     b"\xff\xd8\xff": "image/jpeg",
     b"GIF87a": "image/gif",
     b"GIF89a": "image/gif",
 }
-EXT = {"image/png": "png", "image/jpeg": "jpg", "image/gif": "gif", "image/webp": "webp"}
+EXT = {
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/gif": "gif",
+    "image/webp": "webp",
+    "video/webm": "webm",
+}
 
 
 def sniff(data: bytes) -> str | None:
@@ -30,6 +38,8 @@ def sniff(data: bytes) -> str | None:
             return mime
     if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
         return "image/webp"
+    if data[:4] == b"\x1a\x45\xdf\xa3":  # EBML: the start of every WebM file
+        return "video/webm"
     return None
 
 
@@ -55,9 +65,11 @@ def save(
     conversation_id: str | None = None,
 ) -> Attachment:
     mime = sniff(data)
-    if mime is None:
+    if mime is None or (mime.startswith("video/") and source != "generated"):
         raise ValueError("That is not a PNG, JPEG, GIF or WebP image.")
-    if len(data) > MAX_BYTES:
+    if mime.startswith("video/") and len(data) > MAX_VIDEO_BYTES:
+        raise ValueError("That clip is too large to keep.")
+    if not mime.startswith("video/") and len(data) > MAX_BYTES:
         raise ValueError(f"Images up to {MAX_BYTES // (1024 * 1024)} MB.")
     attachment_id = new_id("att")
     target = path_for(data_dir, attachment_id, mime)
@@ -109,7 +121,10 @@ def images_for(
     """Each message's images as data URLs, for the prompt."""
     return {
         message_id: [
-            data_url(data_dir, a) for a in found if path_for(data_dir, a.id, a.mime).is_file()
+            data_url(data_dir, a)
+            for a in found
+            # A clip is not a picture: a vision model gets only the images.
+            if a.mime.startswith("image/") and path_for(data_dir, a.id, a.mime).is_file()
         ]
         for message_id, found in for_conversation(conn, conversation_id).items()
     }

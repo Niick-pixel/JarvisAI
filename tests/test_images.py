@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from server.imagegen import runtime
+from server.imagegen import catalog, parts, runtime
 from server.imagegen.engine import ImageEngine
 from server.main import create_app
 from server.settings import Settings
@@ -74,7 +74,9 @@ def test_a_picture_becomes_the_answer(
     with TestClient(app) as client:
         assert client.get("/api/images/status").json()["ready"] is False  # no model yet
         engine: ImageEngine = app.state.app.images
-        model = engine.model_path("sd-turbo")
+        model = parts.path(
+            settings.paths.models_dir, parts.files(catalog.entry("sd-turbo") or {})[0]
+        )
         model.parent.mkdir(parents=True)
         model.write_bytes(b"weights")
         assert client.get("/api/images/status").json()["ready"] is True
@@ -109,4 +111,41 @@ def test_not_set_up_says_where_to_set_it_up(settings: Settings) -> None:
             "/api/images/generate", json={"conversation_id": cid, "prompt": "a fox"}
         )
         assert refused.status_code == 503
-        assert "Settings > Images" in refused.json()["message"]
+        assert "get it in Images" in refused.json()["message"]
+
+
+def test_a_model_in_parts_gets_each_part_under_its_flag(settings: Settings, tmp_path: Path) -> None:
+    sd = runtime.folder(settings.paths.models_dir) / "sd.exe"
+    sd.parent.mkdir(parents=True)
+    sd.write_bytes(b"MZ")
+    engine = ImageEngine(settings)
+    flux = catalog.entry("flux-schnell") or {}
+    for spec in parts.files(flux):
+        target = parts.path(settings.paths.models_dir, spec)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(b"w")
+    assert engine.installed("flux-schnell") and not engine.installed("z-image-turbo")
+    argv = engine.command("a fox", "", 1, tmp_path / "o.png", "flux-schnell")
+    for flag in ("--diffusion-model", "--vae", "--clip_l", "--t5xxl"):
+        assert argv[argv.index(flag) + 1].startswith(str(parts.folder(settings.paths.models_dir)))
+    assert "-m" not in argv and "-M" not in argv and "--clip-on-cpu" in argv
+    # Z-Image shares FLUX's VAE: one file on disk, already here.
+    zvae = (catalog.entry("z-image-turbo") or {})["parts"]["vae"]
+    assert parts.path(settings.paths.models_dir, zvae).is_file()
+
+
+def test_video_runs_in_video_mode(settings: Settings, tmp_path: Path) -> None:
+    sd = runtime.folder(settings.paths.models_dir) / "sd.exe"
+    sd.parent.mkdir(parents=True)
+    sd.write_bytes(b"MZ")
+    engine = ImageEngine(settings)
+    key = catalog.video_key()
+    assert key is not None
+    for spec in parts.files(catalog.entry(key) or {}):
+        target = parts.path(settings.paths.models_dir, spec)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(b"w")
+    argv = engine.command("a cat", "", 1, tmp_path / "o.webm", key)
+    assert argv[1:5] == ["-M", "vid_gen", "--video-frames", "33"]
+    assert argv[argv.index("-n") + 1].startswith("blurry") and "--flow-shift" in argv
+    assert engine.status().video_ready and not engine.status().ready  # pictures still need a model

@@ -1,5 +1,5 @@
 // The left side of the composer: "+" for the bigger tools, and how hard to think.
-import { BookOpen, BrainCircuit, Camera, SquareTerminal, Globe, ImagePlus, Lightbulb, Palette, Plus, ScreenShare, Users, Wrench, X, Zap } from "lucide-react";
+import { BookOpen, BrainCircuit, Camera, Clapperboard, SquareTerminal, Globe, ImagePlus, Lightbulb, Palette, Plus, ScreenShare, Users, Wrench, X, Zap } from "lucide-react";
 import { useRef } from "react";
 import { useAttachments } from "../store/attachments";
 import { useImages } from "../store/images";
@@ -61,6 +61,7 @@ export default function ComposerTools() {
   const codeOn = useCode((s) => s.on);
   const project = useCode((s) => s.project);
   const setImageMode = useImages((s) => s.setMode);
+  const videoMode = useImages((s) => s.video);
 
   return (
     <div className="flex items-center gap-1">
@@ -100,8 +101,16 @@ export default function ComposerTools() {
             label: "Create an image",
             detail: "Describe a picture and Jarvis paints it, on this PC",
             icon: Palette,
-            checked: imageMode,
-            onSelect: () => setImageMode(!imageMode),
+            checked: imageMode && !videoMode,
+            onSelect: () => setImageMode(!(imageMode && !videoMode)),
+          },
+          {
+            key: "video",
+            label: "Create a video",
+            detail: "Experimental: a two-second clip from a description. Takes minutes; set it up in Images",
+            icon: Clapperboard,
+            checked: videoMode,
+            onSelect: () => useImages.getState().setVideo(!videoMode),
           },
           {
             key: "share",
@@ -160,7 +169,9 @@ export default function ComposerTools() {
       {research && <Chip label="Research" icon={Globe} active onClear={() => setResearch(false)} />}
       {tools && <Chip label="Tools" icon={Wrench} active onClear={() => setTools(false)} />}
       {codeOn && <Chip label={`Code · ${folderName(project)}`} icon={SquareTerminal} active onClear={() => useCode.getState().stop()} />}
-      {imageMode && <Chip label="Image" icon={Palette} active onClear={() => setImageMode(false)} />}
+      {imageMode && (
+        <Chip label={videoMode ? "Video" : "Image"} icon={videoMode ? Clapperboard : Palette} active onClear={() => setImageMode(false)} />
+      )}
     </div>
   );
 }

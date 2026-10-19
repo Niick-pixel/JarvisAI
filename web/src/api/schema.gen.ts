@@ -3871,6 +3871,11 @@ export interface components {
             conversation_id: string;
             /** Created At */
             created_at: number;
+            /**
+             * Mime
+             * @default image/png
+             */
+            mime: string;
             /** Prompt */
             prompt: string;
         };
@@ -3887,6 +3892,11 @@ export interface components {
             prompt: string;
             /** Seed */
             seed?: number | null;
+            /**
+             * Video
+             * @default false
+             */
+            video: boolean;
         };
         /** Generated */
         Generated: {
@@ -4087,12 +4097,27 @@ export interface components {
         ImageModelOption: {
             /** Display Name */
             display_name: string;
+            /**
+             * Heavy
+             * @default false
+             */
+            heavy: boolean;
             /** Installed */
             installed: boolean;
             /** Key */
             key: string;
             /** License */
             license: string;
+            /**
+             * Size Gb
+             * @default 0
+             */
+            size_gb: number;
+            /**
+             * Video
+             * @default false
+             */
+            video: boolean;
             /** Why */
             why: string;
         };
@@ -4129,6 +4154,11 @@ export interface components {
              * @default 0
              */
             total: number;
+            /**
+             * Video Ready
+             * @default false
+             */
+            video_ready: boolean;
         };
         /** ImportResult */
         ImportResult: {
