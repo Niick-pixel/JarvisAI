@@ -16,6 +16,15 @@ from server.models.stream import StopReason, StreamEvent
 QUEUE_MAX = 2048
 
 
+class _Tokens:
+    """Every token streamed by this process, for the HUD's tokens-per-second. Never reset."""
+
+    count = 0
+
+
+TOKENS = _Tokens()
+
+
 @dataclass
 class LiveRun:
     run_id: str
@@ -30,6 +39,8 @@ class LiveRun:
     subscribers: set[asyncio.Queue[StreamEvent | None]] = field(default_factory=set)
 
     def publish(self, event: StreamEvent) -> None:
+        if getattr(event, "type", "") == "token":
+            TOKENS.count += 1
         for queue in list(self.subscribers):
             try:
                 queue.put_nowait(event)

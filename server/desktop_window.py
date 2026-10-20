@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from server import desktop_hotkey as hotkey
-from server import paths
+from server import desktop_widget, paths
 
 TITLE = "Jarvis"
 WINDOW_TEST_TIMEOUT_S = 90.0
@@ -65,6 +65,8 @@ def open_window(
         if on_closed is not None:
             window.events.closed += on_closed
         hotkey.listen(lambda: _screen_to_chat(window, bridge))
+        # A small always-on-top tile while Jarvis is minimised (server/desktop_widget.py).
+        desktop_widget.attach(window, url)
         # Not private: pywebview's default is an incognito-style window whose storage is thrown
         # away on close, which made Jarvis forget your name and theme at every launch.
         webview.start(gui=_gui(), private_mode=False, storage_path=str(paths.user_path("webview")))

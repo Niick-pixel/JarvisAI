@@ -18,3 +18,11 @@ class LaunchStatus(BaseModel):
     log_path: str = ""
     detail: str = ""
     """Plain sentence: what happened, or the reason nothing did."""
+    loading: bool = False
+    """llama-server is starting and reading the model: the chat cannot answer yet."""
+    load_stage: str = ""
+    """Where the load is, from llama-server's own log: reading, placing layers, warming up."""
+    load_started_at: float = 0.0
+    """Unix seconds."""
+    load_expected_s: float = 0.0
+    """How long this model took last time (or a guess from its size the first time)."""

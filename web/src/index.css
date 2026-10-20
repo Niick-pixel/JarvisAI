@@ -229,3 +229,9 @@ svg.lucide {
   95% { transform: translate(0cqw, 33cqh); }
   100% { transform: translate(0cqw, 0cqh); }
 }
+
+/* An indeterminate bar: a short segment sliding along its track (shell/ActivityBubble.tsx). */
+@keyframes slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}

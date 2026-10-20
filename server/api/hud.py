@@ -23,7 +23,7 @@ HUD_RESPONSES: dict[int | str, dict[str, object]] = {
 
 @router.get("/stream", responses=HUD_RESPONSES)
 async def hud_stream(state: State) -> EventSourceResponse:
-    return EventSourceResponse(telemetry.stream(state.live))
+    return EventSourceResponse(telemetry.stream(state))
 
 
 @router.get("/counters")

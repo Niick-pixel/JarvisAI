@@ -2,9 +2,22 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel
 
 from server.models.hardware import GpuInfo
+
+
+class Activity(BaseModel):
+    """One thing happening in the background, as the activity panel lists it."""
+
+    kind: Literal["model", "answer", "download", "image", "index", "update", "forecast", "agent"]
+    label: str
+    detail: str = ""
+    progress: float | None = None
+    """0-1 when it can be measured; None shows as working without a percentage."""
+    seconds: int | None = None
 
 
 class HudSample(BaseModel):
@@ -14,6 +27,10 @@ class HudSample(BaseModel):
     ram_total_mb: int
     tokens_per_second: float = 0.0
     active_runs: int = 0
+    cpu_percent: float = 0.0
+    model: str = ""
+    """The model llama-server is serving, by file name; empty when none is loaded."""
+    activity: list[Activity] = []
 
 
 class LifetimeCounters(BaseModel):
