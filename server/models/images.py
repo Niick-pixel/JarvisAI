@@ -15,6 +15,10 @@ class ImageModelOption(BaseModel):
     why: str
     license: str
     installed: bool
+    video: bool = False
+    heavy: bool = False
+    size_gb: float = 0.0
+    """Roughly what the download weighs, all parts together."""
 
 
 class ImageStatus(BaseModel):
@@ -23,6 +27,8 @@ class ImageStatus(BaseModel):
     model: str
     model_installed: bool
     ready: bool
+    video_ready: bool = False
+    """The video model and the engine are both here."""
     options: list[ImageModelOption]
     state: Literal["idle", "installing", "generating", "failed"] = "idle"
     detail: str = ""
@@ -39,6 +45,8 @@ class GenerateRequest(BaseModel):
     prompt: str
     negative: str = ""
     seed: int | None = None
+    video: bool = False
+    """A short clip from the video model instead of a picture."""
 
 
 class Generated(BaseModel):
@@ -55,3 +63,4 @@ class GalleryItem(BaseModel):
     conversation_id: str
     prompt: str
     created_at: int
+    mime: str = "image/png"

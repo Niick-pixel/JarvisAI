@@ -11,6 +11,7 @@ from server.chat import titles
 from server.db import repo
 from server.deps import State
 from server.errors import NotFound, SovereignError
+from server.imagegen import catalog
 from server.imagegen.engine import ImageError
 from server.models.conversation import ConversationUpdate
 from server.models.images import (
@@ -39,8 +40,10 @@ async def install(body: InstallRequest, state: State) -> ImageStatus:
         result = state.images.install(body.model)
     except ImageError as exc:
         raise SovereignError("invalid_request", str(exc)) from exc
-    with state.db.session() as conn:
-        repo.settings.put(conn, CHOSEN, body.model)
+    if not (catalog.entry(body.model) or {}).get("video"):
+        # The video model is its own thing: getting it never changes which one makes pictures.
+        with state.db.session() as conn:
+            repo.settings.put(conn, CHOSEN, body.model)
     return result
 
 
@@ -50,14 +53,14 @@ async def generate(body: GenerateRequest, state: State) -> Generated:
     assert state.images is not None
     prompt = body.prompt.strip()
     if not prompt:
-        raise SovereignError("invalid_request", "Describe the picture you want.")
+        raise SovereignError("invalid_request", "Describe what you want made.")
     with state.db.session() as conn:
         conversation = repo.conversations.get(conn, body.conversation_id)
     if conversation is None:
         raise NotFound("Conversation")
     started = time.monotonic()
     try:
-        png = await state.images.generate(prompt, body.negative, body.seed)
+        png = await state.images.generate(prompt, body.negative, body.seed, video=body.video)
     except ImageError as exc:
         raise SovereignError("provider_unavailable", str(exc), status_code=503) from exc
     data_dir = state.settings.paths.data_dir
@@ -79,7 +82,9 @@ async def generate(body: GenerateRequest, state: State) -> Generated:
             role="assistant",
             content="",
             parent_id=ask.id,
-            model_id=f"image:{state.settings.images.model}",
+            model_id=f"video:{catalog.video_key()}"
+            if body.video
+            else f"image:{state.settings.images.model}",
         )
         picture = attachments.save(conn, data_dir, png, source="generated")
         attachments.link(conn, [picture.id], conversation.id, answer.id)
@@ -100,7 +105,7 @@ def gallery(state: State, limit: int = 120) -> list[GalleryItem]:
     with state.db.session() as conn:
         rows = conn.execute(
             "SELECT a.id AS attachment_id, a.conversation_id AS conversation_id,"
-            " COALESCE(u.content, '') AS prompt, a.created_at AS created_at"
+            " COALESCE(u.content, '') AS prompt, a.created_at AS created_at, a.mime AS mime"
             " FROM attachments a"
             " LEFT JOIN messages m ON m.id = a.message_id"
             " LEFT JOIN messages u ON u.id = m.parent_id"

@@ -70,6 +70,7 @@ export default function Composer({ autoFocus }: { autoFocus?: boolean }) {
   const running = runId !== null;
   const pictures = useAttachments((s) => s.pending.length);
   const imageMode = useImages((s) => s.mode);
+  const videoMode = useImages((s) => s.video);
   const empty = draft.trim() === "" && pictures === 0;
 
   useEffect(() => {
@@ -134,7 +135,9 @@ export default function Composer({ autoFocus }: { autoFocus?: boolean }) {
         : running
           ? "Steer the answer - Enter to nudge, Esc to stop"
           : imageMode
-            ? "Describe the picture"
+            ? videoMode
+              ? "Describe a short video"
+              : "Describe the picture"
             : "Ask Jarvis";
 
   return (
