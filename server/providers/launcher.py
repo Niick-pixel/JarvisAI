@@ -28,7 +28,7 @@ import httpx
 from server.db import repo
 from server.db.connection import Database
 from server.models.launch import LaunchStatus
-from server.providers import launch_args
+from server.providers import launch_args, loadtimes
 from server.settings import Settings
 
 log = logging.getLogger("jarvis.llamacpp")
@@ -88,7 +88,7 @@ class LlamaServer:
             log_path=str(self.log_path),
             detail="starting llama-server and loading the model",
         )
-        status = await self._spawn(argv, cfg.startup_timeout_s)
+        status = await self._loading(argv, cfg.startup_timeout_s)
         if status.started or not launch_args.cache_type_refused(status.detail):
             return status
         # A quantised KV cache needs the model's head size to be a multiple of the quant block
@@ -96,13 +96,33 @@ class LlamaServer:
         # at all is worse than spending more VRAM on their cache. Say which happened.
         f16 = launch_args.with_cache_type(argv, "f16")
         self.status = self.status.model_copy(update={"command": f16})
-        status = await self._spawn(f16, cfg.startup_timeout_s)
+        status = await self._loading(f16, cfg.startup_timeout_s)
         if status.started:
             status = self._note(
                 f"{status.detail} (f16 KV cache: this model's head size does not fit "
                 f"{self.settings.hardware.kv_cache_dtype})"
             )
         return status
+
+    async def _loading(self, argv: list[str], timeout: float) -> LaunchStatus:
+        """`_spawn`, with the load on show: stage, start time, and how long it should take."""
+        path = Path(self.status.model_path)
+        self.status = self.status.model_copy(
+            update={
+                "loading": True,
+                "load_stage": "Starting",
+                "load_started_at": time.time(),
+                "load_expected_s": loadtimes.expected(self.settings.paths.data_dir, path),
+            }
+        )
+        started = time.monotonic()
+        try:
+            status = await self._spawn(argv, timeout)
+        finally:
+            self.status = self.status.model_copy(update={"loading": False, "load_stage": ""})
+        if status.started:
+            loadtimes.record(self.settings.paths.data_dir, path, time.monotonic() - started)
+        return self.status
 
     def _resolve(self) -> tuple[str, int]:
         cfg = self.settings.providers.llamacpp
@@ -145,6 +165,9 @@ class LlamaServer:
                 self._process = None
                 self._close_log()
                 return self._note(f"llama-server exited with code {code}: {self._tail()}")
+            stage = loadtimes.stage(self._run_text())
+            if stage:
+                self.status = self.status.model_copy(update={"load_stage": stage})
             if await healthy(base_url):
                 self.status = self.status.model_copy(
                     update={
@@ -186,6 +209,15 @@ class LlamaServer:
     def _note(self, detail: str) -> LaunchStatus:
         self.status = self.status.model_copy(update={"detail": detail})
         return self.status
+
+    def _run_text(self) -> str:
+        """This run's log so far (its last 16 KB): where the load has got to."""
+        try:
+            with self.log_path.open("rb") as handle:
+                handle.seek(max(self._log_from, handle.seek(0, 2) - 16_384))
+                return handle.read().decode(errors="replace")
+        except OSError:
+            return ""
 
     def _tail(self) -> str:
         """This run's own last words, which are almost always the actual explanation."""

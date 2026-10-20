@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 // First: sets the theme's colours before anything paints, so there is never a flash of the wrong one.
 import "./design/theme";
 import App from "./App";
+import MiniWidget from "./widget/MiniWidget";
 import "./index.css";
 import { syncPrefs } from "./store/prefs";
 
@@ -23,13 +24,13 @@ window.addEventListener("unhandledrejection", (e) =>
   report("promise", e.reason),
 );
 
-void syncPrefs();
+if (!new URLSearchParams(window.location.search).has("widget")) void syncPrefs();
 
 const container = document.getElementById("root");
 if (!container) throw new Error("#root is missing from index.html");
 
-createRoot(container).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
+// The desktop's minimised tile (server/desktop_widget.py) is this same page, showing only the gauge.
+const widget = new URLSearchParams(window.location.search).has("widget");
+if (widget) document.body.style.background = "#16181D";
+
+createRoot(container).render(<React.StrictMode>{widget ? <MiniWidget /> : <App />}</React.StrictMode>);

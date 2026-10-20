@@ -9,7 +9,9 @@ import Home from "./chat/Home";
 import Thread from "./chat/Thread";
 import CaptureCard from "./memory/CaptureCard";
 import GetModel from "./models/GetModel";
+import ActivityBubble from "./shell/ActivityBubble";
 import EdgeGlow from "./shell/EdgeGlow";
+import LoadingBar from "./shell/LoadingBar";
 import Halo from "./shell/Halo";
 import ModelPill from "./shell/ModelPill";
 import SheetHost from "./shell/SheetHost";
@@ -74,7 +76,9 @@ export default function App() {
             />
           )}
           <ModelPill />
+          <ActivityBubble />
         </header>
+        <LoadingBar />
         <LayoutGroup>
           {hasTurns ? (
             <>

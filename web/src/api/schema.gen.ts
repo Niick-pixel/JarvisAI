@@ -2648,6 +2648,28 @@ export interface components {
              */
             who: string;
         };
+        /**
+         * Activity
+         * @description One thing happening in the background, as the activity panel lists it.
+         */
+        Activity: {
+            /**
+             * Detail
+             * @default
+             */
+            detail: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "model" | "answer" | "download" | "image" | "index" | "update" | "forecast" | "agent";
+            /** Label */
+            label: string;
+            /** Progress */
+            progress?: number | null;
+            /** Seconds */
+            seconds?: number | null;
+        };
         /** AgentTurn */
         AgentTurn: {
             /**
@@ -4061,7 +4083,22 @@ export interface components {
              * @default 0
              */
             active_runs: number;
+            /**
+             * Activity
+             * @default []
+             */
+            activity: components["schemas"]["Activity"][];
+            /**
+             * Cpu Percent
+             * @default 0
+             */
+            cpu_percent: number;
             gpu?: components["schemas"]["GpuInfo"] | null;
+            /**
+             * Model
+             * @default
+             */
+            model: string;
             /** Ram Total Mb */
             ram_total_mb: number;
             /** Ram Used Mb */
@@ -4514,6 +4551,26 @@ export interface components {
              * @default
              */
             detail: string;
+            /**
+             * Load Expected S
+             * @default 0
+             */
+            load_expected_s: number;
+            /**
+             * Load Stage
+             * @default
+             */
+            load_stage: string;
+            /**
+             * Load Started At
+             * @default 0
+             */
+            load_started_at: number;
+            /**
+             * Loading
+             * @default false
+             */
+            loading: boolean;
             /**
              * Log Path
              * @default
