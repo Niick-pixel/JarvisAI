@@ -28,13 +28,12 @@ import httpx
 from server.db import repo
 from server.db.connection import Database
 from server.models.launch import LaunchStatus
-from server.providers import launch_args, loadtimes
+from server.providers import launch_args, launch_log, loadtimes
 from server.settings import Settings
 
 log = logging.getLogger("jarvis.llamacpp")
 LOG_NAME = "llama-server.log"
 POLL_S = 0.5
-TAIL_LINES = 12
 TERM_GRACE_S = 10.0
 
 
@@ -164,8 +163,9 @@ class LlamaServer:
                 code = self._process.returncode
                 self._process = None
                 self._close_log()
-                return self._note(f"llama-server exited with code {code}: {self._tail()}")
-            stage = loadtimes.stage(self._run_text())
+                last = launch_log.tail(self.log_path, self._log_from)
+                return self._note(f"llama-server exited with code {code}: {last}")
+            stage = loadtimes.stage(launch_log.recent(self.log_path, self._log_from))
             if stage:
                 self.status = self.status.model_copy(update={"load_stage": stage})
             if await healthy(base_url):
@@ -181,7 +181,8 @@ class LlamaServer:
             await asyncio.sleep(POLL_S)
 
         await self.stop()
-        return self._note(f"llama-server did not answer within {timeout:.0f}s: {self._tail()}")
+        last = launch_log.tail(self.log_path, self._log_from)
+        return self._note(f"llama-server did not answer within {timeout:.0f}s: {last}")
 
     async def restart(self) -> LaunchStatus:
         """Serve whatever `_resolve` now picks. Used after a download, so the new model is live
@@ -209,25 +210,6 @@ class LlamaServer:
     def _note(self, detail: str) -> LaunchStatus:
         self.status = self.status.model_copy(update={"detail": detail})
         return self.status
-
-    def _run_text(self) -> str:
-        """This run's log so far (its last 16 KB): where the load has got to."""
-        try:
-            with self.log_path.open("rb") as handle:
-                handle.seek(max(self._log_from, handle.seek(0, 2) - 16_384))
-                return handle.read().decode(errors="replace")
-        except OSError:
-            return ""
-
-    def _tail(self) -> str:
-        """This run's own last words, which are almost always the actual explanation."""
-        try:
-            with self.log_path.open("rb") as handle:
-                handle.seek(self._log_from)
-                lines = handle.read().decode(errors="replace").splitlines()
-        except OSError:
-            return f"see {self.log_path}"
-        return " / ".join(line.strip() for line in lines[-TAIL_LINES:] if line.strip())[-600:]
 
     def _close_log(self) -> None:
         if self._log is not None:
